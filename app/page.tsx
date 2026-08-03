@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber } from "@/lib/campaign";
 import { getCampaignStats } from "@/lib/stats";
 import { prisma } from "@/lib/db";
+import { LogoOnDark } from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,11 @@ export default async function Home() {
       <section className="bg-navy text-cream relative overflow-hidden">
         <div className="glow-dot absolute -top-24 right-0 h-96 w-96 rounded-full" />
         <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20 relative">
+          <div className="mb-6">
+            <LogoOnDark className="h-14 w-auto" />
+          </div>
           <p className="text-gold-soft font-display tracking-widest uppercase text-sm mb-4">
-            Elul 5786 &middot; A whole-shul campaign
+            Elul 5786 &middot; A whole-shul campaign of Adas Torah
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
             One small thing for Shabbos.

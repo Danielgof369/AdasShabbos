@@ -105,7 +105,18 @@ Priority per household: **WhatsApp → SMS → email → console**.
   link token is unguessable; `/find` will take anyone who knows a signup's
   phone/email to that household's page (fine at shul scale — swap for a
   send-me-my-link flow if that ever feels too open).
-- **Seed suggestions are placeholders** — replace them in `/admin` (or edit
-  `prisma/seed.ts`) once the real campaign list is finalized.
+- **Seed suggestions are the real campaign list** (11 adult + 4 kid options);
+  tweak titles, units, or add options anytime in `/admin`.
 - The donation counter is a **pledge display** (sponsor pays offline); no
   payment processing on the site.
+
+## Adding the Adas Torah logo
+
+Drop the logo files into `public/` and every slot (header, hero, footer)
+picks them up automatically — no code changes:
+
+- `public/logo.png` (or `logo.svg`) — full-color version for light backgrounds
+- `public/logo-white.png` (or `logo-white.svg`) — white/knockout version for
+  the navy header, hero, and footer (falls back to the color version)
+
+Transparent-background PNG or SVG, at least ~400px wide, works best.

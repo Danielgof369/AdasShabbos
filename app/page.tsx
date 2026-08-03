@@ -13,8 +13,9 @@ export default async function Home() {
   const suggestions = await prisma.suggestion.findMany({
     where: { active: true },
     orderBy: { sortOrder: "asc" },
-    take: 6,
   });
+  const adultIdeas = suggestions.filter((s) => s.audience !== "kid");
+  const kidIdeas = suggestions.filter((s) => s.audience !== "adult");
 
   const started = rawWeek >= 1;
   const nextShabbos = shabbosOfWeek(campaign, week);
@@ -154,39 +155,99 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Sample commitments */}
+      {/* Commitment ideas */}
       <section className="mx-auto max-w-3xl px-4 py-12">
         <h2 className="font-display text-3xl text-navy mb-8 text-center">
-          Ideas to choose from
+          What you can take on
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {suggestions.map((s) => (
+        <h3 className="font-display text-xl text-navy mb-4">For adults</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
+          {adultIdeas.map((s) => (
             <div
               key={s.id}
               className="bg-white rounded-xl border border-parchment px-5 py-4"
             >
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-navy">{s.title}</h3>
-                {s.kidFriendly && (
-                  <span className="shrink-0 text-xs bg-gold-pale text-navy-deep rounded-full px-2 py-0.5 mt-0.5">
-                    kids too
-                  </span>
-                )}
-              </div>
+              <h4 className="font-semibold text-navy">{s.title}</h4>
               {s.detail && (
                 <p className="text-ink-soft text-sm mt-1">{s.detail}</p>
               )}
             </div>
           ))}
         </div>
-        <div className="text-center mt-10">
-          <Link
-            href="/signup"
-            className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-navy-soft transition-colors"
-          >
-            Join the campaign
-          </Link>
+        <h3 className="font-display text-xl text-navy mb-4">
+          For kids (grades 5–8)
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {kidIdeas.map((s) => (
+            <div
+              key={s.id}
+              className="bg-gold-pale/50 rounded-xl border border-gold/30 px-5 py-4"
+            >
+              <h4 className="font-semibold text-navy">{s.title}</h4>
+              {s.detail && (
+                <p className="text-ink-soft text-sm mt-1">{s.detail}</p>
+              )}
+            </div>
+          ))}
         </div>
+        <p className="text-ink-soft text-sm text-center mt-6">
+          …or write in your own idea when you sign up.
+        </p>
+      </section>
+
+      {/* Kids' incentives */}
+      <section className="bg-navy text-cream">
+        <div className="mx-auto max-w-3xl px-4 py-12">
+          <h2 className="font-display text-3xl mb-2 text-center">
+            Prizes for the kids
+          </h2>
+          <p className="text-cream/70 text-center mb-8">
+            Taking on Shabbos should be sweet.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              {
+                icon: "🍷",
+                title: "A kiddush just for the boys",
+                body: "Every boy who signs up gets a special kiddush in their honor the first week.",
+              },
+              {
+                icon: "🎁",
+                title: "Gift card for every girl",
+                body: "Every girl who signs up for a commitment gets an Amazon gift card.",
+              },
+              {
+                icon: "🎟️",
+                title: "Weekly raffle",
+                body: "Did your commitment? Every check-in is an entry into that week's raffle.",
+              },
+              {
+                icon: "🚌",
+                title: "The grand trip",
+                body: "Complete all 4 weeks and you're on the end-of-Elul trip.",
+              },
+            ].map((p) => (
+              <div
+                key={p.title}
+                className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5"
+              >
+                <div className="text-3xl mb-2">{p.icon}</div>
+                <h3 className="font-semibold text-gold-soft mb-1">{p.title}</h3>
+                <p className="text-cream/80 text-sm leading-relaxed">{p.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="mx-auto max-w-3xl px-4 py-12 text-center">
+        <Link
+          href="/signup"
+          className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-navy-soft transition-colors"
+        >
+          Join the campaign
+        </Link>
       </section>
     </div>
   );

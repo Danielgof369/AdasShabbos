@@ -3,9 +3,17 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://shabboswithadas.com"),
   title: "The Elul Shabbos Project | Adas Torah",
   description:
     "One small thing for Shabbos, every week of Elul. Join the Adas Torah community campaign.",
+  openGraph: {
+    title: "The Elul Shabbos Project",
+    description:
+      "One small thing for Shabbos, every week of Elul. Men, women & kids — sign up, get a weekly reminder, and watch the whole shul's numbers grow.",
+    url: "https://shabboswithadas.com",
+    siteName: "The Elul Shabbos Project",
+  },
 };
 
 export default function RootLayout({

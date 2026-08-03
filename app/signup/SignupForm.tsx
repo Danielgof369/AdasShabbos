@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { SuggestionOption } from "@/lib/types";
+import { audienceMatches, type SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
   name: string;
   isChild: boolean;
+  gender: "boy" | "girl" | null;
   suggestionId: string | null;
   customTitle: string;
   useCustom: boolean;
@@ -14,6 +15,7 @@ type PersonDraft = {
 const emptyPerson = (): PersonDraft => ({
   name: "",
   isChild: false,
+  gender: null,
   suggestionId: null,
   customTitle: "",
   useCustom: false,
@@ -67,6 +69,7 @@ export default function SignupForm({
           members: people.map((p) => ({
             name: p.name.trim(),
             isChild: p.isChild,
+            gender: p.isChild ? p.gender : null,
             suggestionId: p.useCustom ? null : p.suggestionId,
             customTitle: p.useCustom ? p.customTitle.trim() : null,
           })),
@@ -162,7 +165,7 @@ export default function SignupForm({
               </button>
             )}
           </div>
-          <div className="flex gap-3 items-center mb-4">
+          <div className="flex gap-3 items-center mb-3">
             <input
               type="text"
               placeholder="First name"
@@ -174,19 +177,47 @@ export default function SignupForm({
               <input
                 type="checkbox"
                 checked={p.isChild}
-                onChange={(e) => updatePerson(i, { isChild: e.target.checked })}
+                onChange={(e) =>
+                  updatePerson(i, {
+                    isChild: e.target.checked,
+                    gender: e.target.checked ? p.gender : null,
+                    suggestionId: null,
+                  })
+                }
                 className="size-4 accent-[#c19a3d]"
               />
               Kid
             </label>
           </div>
 
+          {p.isChild && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-ink-soft">
+                For the kids&rsquo; prizes:
+              </span>
+              {(["boy", "girl"] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => updatePerson(i, { gender: g })}
+                  className={`rounded-full px-4 py-1.5 text-sm border transition-colors ${
+                    p.gender === g
+                      ? "border-gold bg-gold-pale text-navy-deep font-medium"
+                      : "border-parchment bg-cream hover:border-gold-soft"
+                  }`}
+                >
+                  {g === "boy" ? "Boy" : "Girl"}
+                </button>
+              ))}
+            </div>
+          )}
+
           <p className="text-sm text-ink-soft mb-2">
             This week, {p.name.trim() || "they"}&rsquo;ll take on:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {suggestions
-              .filter((s) => !p.isChild || s.kidFriendly)
+              .filter((s) => audienceMatches(s.audience, p.isChild))
               .map((s) => {
                 const selected = !p.useCustom && p.suggestionId === s.id;
                 return (

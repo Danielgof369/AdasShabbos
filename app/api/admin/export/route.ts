@@ -28,6 +28,7 @@ export async function GET() {
   const header = [
     "Name",
     "Child",
+    "Boy/Girl",
     "Phone",
     "Email",
     ...Array.from({ length: campaign.weeks }, (_, i) => [
@@ -40,6 +41,7 @@ export async function GET() {
     const cells = [
       m.name,
       m.isChild ? "yes" : "no",
+      m.gender ?? "",
       m.household.phone ?? "",
       m.household.email ?? "",
     ];

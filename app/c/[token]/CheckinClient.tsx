@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { MemberGoalView, SuggestionOption } from "@/lib/types";
+import { audienceMatches, type MemberGoalView, type SuggestionOption } from "@/lib/types";
 
 function ProgressRow({
   history,
@@ -67,7 +67,7 @@ function GoalPicker({
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {suggestions
-          .filter((s) => !isChild || s.kidFriendly)
+          .filter((s) => audienceMatches(s.audience, isChild))
           .map((s) => (
             <button
               key={s.id}

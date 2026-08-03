@@ -32,6 +32,7 @@ model Member {
   householdId String
   name        String
   isChild     Boolean @default(false)
+  gender      String? // "boy" | "girl" for kids — drives the signup incentives
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   goals     Goal[]
@@ -49,9 +50,10 @@ model Suggestion {
   // unitValue e.g. 15 (minutes) or 1 (table)
   unitLabel String
   unitValue Int     @default(1)
-  kidFriendly Boolean @default(true)
-  sortOrder   Int     @default(0)
-  active      Boolean @default(true)
+  // Who this option is shown to: "adult" | "kid" | "both"
+  audience  String  @default("both")
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
 
   goals Goal[]
 }

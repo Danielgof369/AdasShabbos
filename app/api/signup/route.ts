@@ -7,6 +7,7 @@ import { normalizePhone, normalizeEmail } from "@/lib/contact";
 type MemberInput = {
   name?: unknown;
   isChild?: unknown;
+  gender?: unknown;
   suggestionId?: unknown;
   customTitle?: unknown;
 };
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     )
   );
 
-  const cleanMembers: { name: string; isChild: boolean; suggestionId: string | null; customTitle: string | null }[] = [];
+  const cleanMembers: { name: string; isChild: boolean; gender: string | null; suggestionId: string | null; customTitle: string | null }[] = [];
   for (const m of members) {
     const name = typeof m.name === "string" ? m.name.trim().slice(0, 60) : "";
     if (!name) {
@@ -77,7 +78,11 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    cleanMembers.push({ name, isChild: m.isChild === true, suggestionId, customTitle });
+    const gender =
+      m.isChild === true && (m.gender === "boy" || m.gender === "girl")
+        ? m.gender
+        : null;
+    cleanMembers.push({ name, isChild: m.isChild === true, gender, suggestionId, customTitle });
   }
 
   // Reuse an existing household for the same contact so families can add
@@ -114,7 +119,12 @@ export async function POST(req: NextRequest) {
 
   for (const m of cleanMembers) {
     const member = await prisma.member.create({
-      data: { householdId: household.id, name: m.name, isChild: m.isChild },
+      data: {
+        householdId: household.id,
+        name: m.name,
+        isChild: m.isChild,
+        gender: m.gender,
+      },
     });
     await prisma.goal.create({
       data: {

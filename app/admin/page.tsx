@@ -146,7 +146,13 @@ export default async function AdminPage() {
                   {h.members.map((m) => (
                     <div key={m.id}>
                       {m.name}
-                      {m.isChild ? " 🧒" : ""}
+                      {m.isChild
+                        ? m.gender === "boy"
+                          ? " 👦"
+                          : m.gender === "girl"
+                            ? " 👧"
+                            : " 🧒"
+                        : ""}
                     </div>
                   ))}
                 </td>
@@ -248,11 +254,15 @@ export default async function AdminPage() {
                     className={inputCls}
                   />
                 </label>
+                <label className="text-xs text-ink-soft">
+                  Shown to
+                  <select name="audience" defaultValue={s.audience} className={inputCls}>
+                    <option value="adult">Adults</option>
+                    <option value="kid">Kids</option>
+                    <option value="both">Both</option>
+                  </select>
+                </label>
                 <div className="flex items-end gap-4 text-sm">
-                  <label className="flex items-center gap-1.5">
-                    <input type="checkbox" name="kidFriendly" defaultChecked={s.kidFriendly} />
-                    Kid-friendly
-                  </label>
                   <label className="flex items-center gap-1.5">
                     <input type="checkbox" name="active" defaultChecked={s.active} />
                     Active
@@ -300,11 +310,15 @@ export default async function AdminPage() {
               Sort order
               <input name="sortOrder" type="number" defaultValue={99} className={inputCls} />
             </label>
+            <label className="text-xs text-ink-soft">
+              Shown to
+              <select name="audience" defaultValue="both" className={inputCls}>
+                <option value="adult">Adults</option>
+                <option value="kid">Kids</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
             <div className="flex items-end gap-4 text-sm">
-              <label className="flex items-center gap-1.5">
-                <input type="checkbox" name="kidFriendly" defaultChecked />
-                Kid-friendly
-              </label>
               <label className="flex items-center gap-1.5">
                 <input type="checkbox" name="active" defaultChecked />
                 Active

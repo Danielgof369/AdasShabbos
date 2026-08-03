@@ -2,8 +2,13 @@ export type SuggestionOption = {
   id: string;
   title: string;
   detail: string | null;
-  kidFriendly: boolean;
+  audience: string; // "adult" | "kid" | "both"
 };
+
+export function audienceMatches(audience: string, isChild: boolean): boolean {
+  if (audience === "both") return true;
+  return isChild ? audience === "kid" : audience === "adult";
+}
 
 export type MemberGoalView = {
   memberId: string;

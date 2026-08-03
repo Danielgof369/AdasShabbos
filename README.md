@@ -42,10 +42,15 @@ they signed up with.
 
 ```bash
 npm install
-npx prisma db push        # creates prisma/dev.db (SQLite)
-npx tsx prisma/seed.ts    # seeds placeholder commitment options + campaign config
+npm run db:push           # creates the tables in your DATABASE_URL database
+npm run db:seed           # seeds placeholder commitment options + campaign config
 npm run dev
 ```
+
+The schema is set up for Postgres (point `DATABASE_URL` at a free Neon or
+Supabase database — the same one as production, or a second "dev" one). If
+you'd rather run with zero accounts, flip the provider in
+`prisma/schema.prisma` to `sqlite` and set `DATABASE_URL="file:./dev.db"`.
 
 Copy `.env.example` to `.env` and fill in what you have. With **no** provider
 keys set, reminder messages print to the server console — the whole flow is
@@ -77,15 +82,16 @@ Priority per household: **WhatsApp → SMS → email → console**.
 
 ## Deploying (Vercel + Postgres)
 
-1. Change `provider` in `prisma/schema.prisma` from `sqlite` to `postgresql`.
-2. Create a Postgres database (Supabase/Neon/Vercel Postgres) and set
-   `DATABASE_URL`.
-3. `npx prisma db push && npx tsx prisma/seed.ts` against that database.
-4. Deploy to Vercel with the env vars from `.env.example`
+1. Create a Postgres database (Neon/Supabase/Vercel Postgres) and copy its
+   connection string.
+2. Locally: set `DATABASE_URL` to it, then `npm run db:push && npm run db:seed`.
+3. Import the GitHub repo in Vercel and set the env vars from `.env.example`
    (`NEXT_PUBLIC_BASE_URL` should be the real site URL — it's used in the
    reminder links). Vercel picks up `vercel.json` cron schedules
-   automatically when `CRON_SECRET` is set.
-5. Point a subdomain (e.g. `elul.adastorah.org`) at the Vercel project.
+   automatically; set `CRON_SECRET` so only Vercel can trigger them.
+4. Add your domain in Vercel → Settings → Domains, then at your registrar
+   (e.g. GoDaddy → DNS) add the records Vercel shows: an `A` record `@` →
+   `76.76.21.21` and a `CNAME` `www` → `cname.vercel-dns.com`.
 
 ## Notes & decisions
 

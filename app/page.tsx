@@ -38,9 +38,9 @@ export default async function Home() {
             Every week of Elul.
           </h1>
           <p className="text-cream/85 text-lg max-w-xl mb-8">
-            Men, women, and kids — everyone picks one extra way to honor
-            Shabbos each week. Light candles a little early, set a beautiful
-            table, bake challah. Small commitments, taken on together.
+            Every man, woman, and kid picks one extra way to honor Shabbos
+            each week. Learn at the table, set it Thursday night, sing the
+            zemiros. Small commitments, taken on together.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -78,6 +78,44 @@ export default async function Home() {
             every weekly check-in.
           </p>
         </div>
+      </section>
+
+      {/* Why we're doing this */}
+      <section className="mx-auto max-w-3xl px-4 pt-10">
+        <details className="group bg-white rounded-2xl border border-parchment shadow-sm">
+          <summary className="cursor-pointer list-none px-6 py-5 flex items-center justify-between gap-3">
+            <span className="font-display text-xl sm:text-2xl text-navy">
+              Why we&rsquo;re doing this
+            </span>
+            <span className="text-gold text-xl transition-transform group-open:rotate-45">
+              +
+            </span>
+          </summary>
+          <div className="px-6 pb-6 text-ink-soft leading-relaxed space-y-4 border-t border-parchment pt-5">
+            <p>
+              Before Rosh Hashanah 5784, Rabbi Revah shared a teaching of the
+              Aruch LaNer: when Rosh Hashanah falls on Shabbos and the shofar
+              goes silent, the year that follows tends to be extraordinary,
+              for blessing or for tragedy. On that day it is not the shofar
+              that pleads for Klal Yisroel. It is Shabbos itself that stands
+              as our <strong className="text-navy">meileitz yosher</strong>,
+              our advocate. How we hold Shabbos becomes how the year holds us.
+            </p>
+            <p>
+              We all remember what came one month later. October 7th changed
+              us, and demanded that we re-examine who we are and what we are
+              committed to.
+            </p>
+            <p className="font-medium text-navy">
+              This year, Rosh Hashanah falls on Shabbos again.
+            </p>
+            <p>
+              So this Elul we are doing our part, every man, woman, and child
+              of Adas Torah, to send Shabbos into the new year as our
+              advocate. One small commitment, each week, together.
+            </p>
+          </div>
+        </details>
       </section>
 
       {/* Highlight reel */}

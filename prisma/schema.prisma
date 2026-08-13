@@ -51,7 +51,10 @@ model Suggestion {
   // unitValue e.g. 15 (minutes) or 1 (table)
   unitLabel String
   unitValue Int     @default(1)
-  // Who this option is shown to: "adult" | "kid" | "both"
+  // Comma-separated categories this option is offered to:
+  // any of "man","woman","boy","girl" (e.g. "man,woman")
+  categories String @default("man,woman,boy,girl")
+  // Legacy field kept for old rows; categories is authoritative
   audience  String  @default("both")
   sortOrder Int     @default(0)
   active    Boolean @default(true)

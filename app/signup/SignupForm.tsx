@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { audienceMatches, type SuggestionOption } from "@/lib/types";
+import { CATEGORIES, CATEGORY_LABELS, categoriesInclude, type Category } from "@/lib/categories";
+import type { SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
   name: string;
-  isChild: boolean;
-  gender: "boy" | "girl" | null;
+  category: Category | null;
   suggestionId: string | null;
   customTitle: string;
   useCustom: boolean;
@@ -14,8 +14,7 @@ type PersonDraft = {
 
 const emptyPerson = (): PersonDraft => ({
   name: "",
-  isChild: false,
-  gender: null,
+  category: null,
   suggestionId: null,
   customTitle: "",
   useCustom: false,
@@ -45,17 +44,21 @@ export default function SignupForm({
       setError("Please enter your family (last) name.");
       return;
     }
-    if (!phone.trim() && !email.trim()) {
-      setError("Please enter an email (or phone) so we can send your reminders.");
+    if (!email.trim()) {
+      setError("Please enter an email so we can send your weekly reminders.");
       return;
     }
     for (const p of people) {
       if (!p.name.trim()) {
-        setError("Please give every person a name.");
+        setError("Please give every person a first name.");
+        return;
+      }
+      if (!p.category) {
+        setError(`Choose man, woman, boy, or girl for ${p.name.trim() || "each person"}.`);
         return;
       }
       if (!p.useCustom && !p.suggestionId) {
-        setError(`Pick a commitment for ${p.name.trim() || "each person"} — or write your own.`);
+        setError(`Pick a commitment for ${p.name.trim()} — or write your own.`);
         return;
       }
       if (p.useCustom && !p.customTitle.trim()) {
@@ -71,11 +74,10 @@ export default function SignupForm({
         body: JSON.stringify({
           familyName: familyName.trim(),
           phone: phone.trim() || null,
-          email: email.trim() || null,
+          email: email.trim(),
           members: people.map((p) => ({
             name: p.name.trim(),
-            isChild: p.isChild,
-            gender: p.isChild ? p.gender : null,
+            category: p.category,
             suggestionId: p.useCustom ? null : p.suggestionId,
             customTitle: p.useCustom ? p.customTitle.trim() : null,
           })),
@@ -101,25 +103,22 @@ export default function SignupForm({
           You&rsquo;re in — welcome!
         </h2>
         <p className="text-ink-soft mb-6">
-          We&rsquo;ll remind you on <strong>Thursday</strong> so you&rsquo;re
-          ready for Shabbos, and again after Shabbos to check in. Your $5 is on
-          its way to Tomchei Shabbos, and every check-in adds another $1.
+          Your family profile is ready. We&rsquo;ll email you a reminder before
+          Shabbos, and again afterward to check in. Your $5 per person is on
+          its way to Tomchei Shabbos — every check-in adds another $1.
         </p>
-        <div className="bg-parchment/60 rounded-lg p-4 mb-4 text-left">
-          <p className="text-sm text-ink-soft mb-1">Your personal check-in link:</p>
+        <a
+          href={link}
+          className="inline-block bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-gold-soft transition-colors mb-4"
+        >
+          See my family profile
+        </a>
+        <div className="bg-parchment/60 rounded-lg p-4 text-left">
+          <p className="text-sm text-ink-soft mb-1">Your personal link (also in every reminder):</p>
           <a href={link} className="text-navy font-medium break-all underline underline-offset-2">
             {link}
           </a>
         </div>
-        <button
-          onClick={() => navigator.clipboard.writeText(link)}
-          className="bg-navy text-cream rounded-lg px-6 py-2.5 font-medium hover:bg-navy-soft transition-colors"
-        >
-          Copy my link
-        </button>
-        <p className="text-sm text-ink-soft mt-4">
-          Every reminder we send includes this link too — no password to remember.
-        </p>
       </div>
     );
   }
@@ -130,16 +129,9 @@ export default function SignupForm({
       <section className="bg-white rounded-2xl border border-parchment shadow-sm p-5 sm:p-6">
         <h2 className="font-semibold text-navy mb-1">Your family</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Weekly reminders arrive by email. Phone number is optional.
+          Weekly reminders arrive by email. Phone is optional.
         </p>
         <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="Family (last) name"
-            value={familyName}
-            onChange={(e) => setFamilyName(e.target.value)}
-            className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
-          />
           <input
             type="email"
             inputMode="email"
@@ -154,6 +146,13 @@ export default function SignupForm({
             placeholder="Cell phone (optional)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
+          />
+          <input
+            type="text"
+            placeholder="Family (last) name"
+            value={familyName}
+            onChange={(e) => setFamilyName(e.target.value)}
             className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
           />
         </div>
@@ -178,99 +177,88 @@ export default function SignupForm({
               </button>
             )}
           </div>
-          <div className="flex gap-3 items-center mb-3">
-            <input
-              type="text"
-              placeholder="First name"
-              value={p.name}
-              onChange={(e) => updatePerson(i, { name: e.target.value })}
-              className="flex-1 rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
-            />
-            <label className="flex items-center gap-2 text-sm text-ink-soft whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={p.isChild}
-                onChange={(e) =>
-                  updatePerson(i, {
-                    isChild: e.target.checked,
-                    gender: e.target.checked ? p.gender : null,
-                    suggestionId: null,
-                  })
+
+          <input
+            type="text"
+            placeholder="First name"
+            value={p.name}
+            onChange={(e) => updatePerson(i, { name: e.target.value })}
+            className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold mb-3"
+          />
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() =>
+                  updatePerson(i, { category: c, suggestionId: null, useCustom: false })
                 }
-                className="size-4 accent-[#c19a3d]"
-              />
-              Kid
-            </label>
+                className={`rounded-full px-4 py-2 text-sm border transition-colors ${
+                  p.category === c
+                    ? "border-gold bg-gold-pale text-navy-deep font-semibold"
+                    : "border-parchment bg-cream hover:border-gold-soft"
+                }`}
+              >
+                {CATEGORY_LABELS[c]}
+              </button>
+            ))}
           </div>
 
-          {p.isChild && (
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm text-ink-soft">
-                For the kids&rsquo; prizes:
-              </span>
-              {(["boy", "girl"] as const).map((g) => (
+          {p.category ? (
+            <>
+              <p className="text-sm text-ink-soft mb-2">
+                This week, {p.name.trim() || "they"}&rsquo;ll take on:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {suggestions
+                  .filter((s) => categoriesInclude(s.categories, p.category!))
+                  .map((s) => {
+                    const selected = !p.useCustom && p.suggestionId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() =>
+                          updatePerson(i, { suggestionId: s.id, useCustom: false })
+                        }
+                        className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
+                          selected
+                            ? "border-gold bg-gold-pale text-navy-deep font-medium"
+                            : "border-parchment bg-cream hover:border-gold-soft"
+                        }`}
+                      >
+                        {s.title}
+                      </button>
+                    );
+                  })}
                 <button
-                  key={g}
                   type="button"
-                  onClick={() => updatePerson(i, { gender: g })}
-                  className={`rounded-full px-4 py-1.5 text-sm border transition-colors ${
-                    p.gender === g
+                  onClick={() => updatePerson(i, { useCustom: true, suggestionId: null })}
+                  className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
+                    p.useCustom
                       ? "border-gold bg-gold-pale text-navy-deep font-medium"
                       : "border-parchment bg-cream hover:border-gold-soft"
                   }`}
                 >
-                  {g === "boy" ? "Boy" : "Girl"}
+                  ✏️ My own idea…
                 </button>
-              ))}
-            </div>
-          )}
-
-          <p className="text-sm text-ink-soft mb-2">
-            This week, {p.name.trim() || "they"}&rsquo;ll take on:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {suggestions
-              .filter((s) => audienceMatches(s.audience, p.isChild))
-              .map((s) => {
-                const selected = !p.useCustom && p.suggestionId === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() =>
-                      updatePerson(i, { suggestionId: s.id, useCustom: false })
-                    }
-                    className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
-                      selected
-                        ? "border-gold bg-gold-pale text-navy-deep font-medium"
-                        : "border-parchment bg-cream hover:border-gold-soft"
-                    }`}
-                  >
-                    {s.title}
-                  </button>
-                );
-              })}
-            <button
-              type="button"
-              onClick={() => updatePerson(i, { useCustom: true, suggestionId: null })}
-              className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
-                p.useCustom
-                  ? "border-gold bg-gold-pale text-navy-deep font-medium"
-                  : "border-parchment bg-cream hover:border-gold-soft"
-              }`}
-            >
-              ✏️ My own idea…
-            </button>
-          </div>
-          {p.useCustom && (
-            <input
-              type="text"
-              autoFocus
-              placeholder="What will they take on for Shabbos?"
-              value={p.customTitle}
-              onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
-              className="mt-3 w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 outline-none focus:border-gold"
-            />
+              </div>
+              {p.useCustom && (
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="What will they take on for Shabbos?"
+                  value={p.customTitle}
+                  onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
+                  className="mt-3 w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 outline-none focus:border-gold"
+                />
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-ink-soft italic">
+              Choose Man, Woman, Boy, or Girl to see their commitment options.
+            </p>
           )}
         </section>
       ))}
@@ -280,7 +268,7 @@ export default function SignupForm({
         onClick={() => setPeople((ps) => [...ps, emptyPerson()])}
         className="w-full rounded-xl border-2 border-dashed border-gold-soft text-navy py-3.5 font-medium hover:bg-gold-pale transition-colors"
       >
-        + Add another person (kids too!)
+        + Add another person
       </button>
 
       {error && (
@@ -298,8 +286,8 @@ export default function SignupForm({
         {submitting ? "Signing you up…" : `Sign up for week ${week}`}
       </button>
       <p className="text-xs text-ink-soft text-center pb-4">
-        By signing up you agree to receive weekly reminder messages for this
-        campaign. Reply STOP to any text to opt out.
+        By signing up you agree to receive weekly reminder emails for this
+        campaign. Unsubscribe anytime.
       </p>
     </div>
   );

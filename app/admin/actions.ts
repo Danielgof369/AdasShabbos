@@ -44,13 +44,15 @@ export async function saveCampaignAction(formData: FormData) {
 export async function saveSuggestionAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
-  const audienceRaw = String(formData.get("audience") ?? "both");
+  const pickedCategories = ["man", "woman", "boy", "girl"].filter(
+    (c) => formData.get(`cat_${c}`) === "on"
+  );
   const data = {
     title: String(formData.get("title") ?? "").trim().slice(0, 120),
     detail: String(formData.get("detail") ?? "").trim().slice(0, 300) || null,
     unitLabel: String(formData.get("unitLabel") ?? "").trim().slice(0, 80),
     unitValue: Math.max(1, Number(formData.get("unitValue")) || 1),
-    audience: ["adult", "kid", "both"].includes(audienceRaw) ? audienceRaw : "both",
+    categories: (pickedCategories.length ? pickedCategories : ["man", "woman", "boy", "girl"]).join(","),
     active: formData.get("active") === "on",
     sortOrder: Number(formData.get("sortOrder")) || 0,
   };

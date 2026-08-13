@@ -6,6 +6,7 @@ import {
   formatShabbosDate,
 } from "@/lib/campaign";
 import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
+import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
@@ -207,18 +208,15 @@ export default async function AdminPage() {
                   {h.email && <div className="text-ink-soft">{h.email}</div>}
                 </td>
                 <td className="py-2 pr-3">
-                  {h.members.map((m) => (
-                    <div key={m.id}>
-                      {m.name}
-                      {m.isChild
-                        ? m.gender === "boy"
-                          ? " 👦"
-                          : m.gender === "girl"
-                            ? " 👧"
-                            : " 🧒"
-                        : ""}
-                    </div>
-                  ))}
+                  {h.members.map((m) => {
+                    const cat = memberCategory(m);
+                    const icon = { man: "👨", woman: "👩", boy: "👦", girl: "👧" }[cat];
+                    return (
+                      <div key={m.id}>
+                        {m.name} {icon}
+                      </div>
+                    );
+                  })}
                 </td>
                 <td className="py-2 pr-3">
                   {h.members.map((m) => {
@@ -318,19 +316,24 @@ export default async function AdminPage() {
                     className={inputCls}
                   />
                 </label>
-                <label className="text-xs text-ink-soft">
+                <div className="text-xs text-ink-soft sm:col-span-2">
                   Shown to
-                  <select name="audience" defaultValue={s.audience} className={inputCls}>
-                    <option value="adult">Adults</option>
-                    <option value="kid">Kids</option>
-                    <option value="both">Both</option>
-                  </select>
-                </label>
-                <div className="flex items-end gap-4 text-sm">
-                  <label className="flex items-center gap-1.5">
-                    <input type="checkbox" name="active" defaultChecked={s.active} />
-                    Active
-                  </label>
+                  <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink">
+                    {(["man", "woman", "boy", "girl"] as const).map((c) => (
+                      <label key={c} className="flex items-center gap-1.5 capitalize">
+                        <input
+                          type="checkbox"
+                          name={`cat_${c}`}
+                          defaultChecked={s.categories.includes(c)}
+                        />
+                        {c}
+                      </label>
+                    ))}
+                    <label className="flex items-center gap-1.5 ml-4">
+                      <input type="checkbox" name="active" defaultChecked={s.active} />
+                      Active (visible on the site)
+                    </label>
+                  </div>
                 </div>
                 <div className="sm:col-span-2 flex gap-3">
                   <button className={btnCls}>Save</button>
@@ -374,19 +377,20 @@ export default async function AdminPage() {
               Sort order
               <input name="sortOrder" type="number" defaultValue={99} className={inputCls} />
             </label>
-            <label className="text-xs text-ink-soft">
+            <div className="text-xs text-ink-soft sm:col-span-2">
               Shown to
-              <select name="audience" defaultValue="both" className={inputCls}>
-                <option value="adult">Adults</option>
-                <option value="kid">Kids</option>
-                <option value="both">Both</option>
-              </select>
-            </label>
-            <div className="flex items-end gap-4 text-sm">
-              <label className="flex items-center gap-1.5">
-                <input type="checkbox" name="active" defaultChecked />
-                Active
-              </label>
+              <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink">
+                {(["man", "woman", "boy", "girl"] as const).map((c) => (
+                  <label key={c} className="flex items-center gap-1.5 capitalize">
+                    <input type="checkbox" name={`cat_${c}`} defaultChecked />
+                    {c}
+                  </label>
+                ))}
+                <label className="flex items-center gap-1.5 ml-4">
+                  <input type="checkbox" name="active" defaultChecked />
+                  Active (visible on the site)
+                </label>
+              </div>
             </div>
             <div className="sm:col-span-2">
               <button className={btnCls}>Add option</button>

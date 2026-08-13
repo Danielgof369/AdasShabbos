@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { audienceMatches, type MemberGoalView, type SuggestionOption } from "@/lib/types";
+import Avatar from "@/components/Avatar";
+import { categoriesInclude } from "@/lib/categories";
+import type { MemberGoalView, SuggestionOption } from "@/lib/types";
 
 function ProgressRow({
   history,
@@ -14,22 +16,23 @@ function ProgressRow({
   return (
     <div className="flex items-center gap-2">
       {history.map((h, i) => (
-        <div key={i} className="flex flex-col items-center gap-1">
-          <div
-            className={
-              "size-7 rounded-full flex items-center justify-center text-xs font-semibold border " +
-              (h === "done"
-                ? "bg-gold text-navy-deep border-gold"
+        <div
+          key={i}
+          className={
+            "size-7 rounded-full flex items-center justify-center text-xs font-semibold border " +
+            (h === "done"
+              ? "bg-gold text-navy-deep border-gold"
+              : h === "late"
+                ? "bg-gold-pale text-navy-deep border-gold-soft"
                 : h === "set"
                   ? "bg-white text-navy border-navy/40"
                   : h === "missed"
                     ? "bg-parchment text-ink-soft border-parchment"
                     : "bg-transparent text-ink-soft/50 border-parchment")
-            }
-            title={`Week ${i + 1}`}
-          >
-            {h === "done" ? "✓" : i + 1}
-          </div>
+          }
+          title={`Week ${i + 1}`}
+        >
+          {h === "done" || h === "late" ? "✓" : i + 1}
         </div>
       ))}
       <span className="text-xs text-ink-soft ml-1">of {totalWeeks} weeks</span>
@@ -39,14 +42,12 @@ function ProgressRow({
 
 function GoalPicker({
   suggestions,
-  isChild,
-  lastTitle,
+  member,
   onPick,
   busy,
 }: {
   suggestions: SuggestionOption[];
-  isChild: boolean;
-  lastTitle: string | null;
+  member: MemberGoalView;
   onPick: (choice: { suggestionId?: string; customTitle?: string; sameAgain?: boolean }) => void;
   busy: boolean;
 }) {
@@ -55,19 +56,19 @@ function GoalPicker({
 
   return (
     <div>
-      {lastTitle && (
+      {member.lastTitle && (
         <button
           type="button"
           disabled={busy}
           onClick={() => onPick({ sameAgain: true })}
           className="w-full mb-2 rounded-lg border-2 border-gold bg-gold-pale px-3.5 py-3 text-sm font-medium text-navy-deep hover:bg-gold-soft/40 transition-colors disabled:opacity-60"
         >
-          🔁 Same as last time: {lastTitle}
+          🔁 Same as last time: {member.lastTitle}
         </button>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {suggestions
-          .filter((s) => audienceMatches(s.audience, isChild))
+          .filter((s) => categoriesInclude(s.categories, member.category))
           .map((s) => (
             <button
               key={s.id}
@@ -192,7 +193,6 @@ export default function CheckinClient({
         const showPending = m.pending && !dismissed[m.memberId];
         const wantsPicker =
           m.nextGoalWeek !== null &&
-          (!m.upcoming || pickerOpen[m.memberId]) &&
           (pickerOpen[m.memberId] || !m.upcoming);
 
         return (
@@ -200,18 +200,30 @@ export default function CheckinClient({
             key={m.memberId}
             className="bg-white rounded-2xl border border-parchment shadow-sm p-5 sm:p-6"
           >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-xl text-navy">
-                {m.name}
-                {m.isChild && (
-                  <span className="ml-2 text-xs align-middle bg-gold-pale text-navy-deep rounded-full px-2 py-0.5">
-                    kid
-                  </span>
+            <div className="flex items-start gap-4 mb-4">
+              <Avatar
+                category={m.category}
+                celebrating={!!celebrating[m.memberId]}
+                className="h-20 w-auto shrink-0"
+              />
+              <div className="min-w-0">
+                <h2 className="font-display text-xl text-navy flex items-center gap-2 flex-wrap">
+                  {m.name}
+                  {m.streak > 0 && (
+                    <span className="text-xs bg-gold-pale text-navy-deep rounded-full px-2.5 py-0.5 font-sans font-medium">
+                      🔥 {m.streak}-week streak
+                    </span>
+                  )}
+                </h2>
+                {m.upcoming && !pickerOpen[m.memberId] && (
+                  <p className="text-sm text-ink-soft mt-0.5 truncate">
+                    This Shabbos: {m.upcoming.title}
+                  </p>
                 )}
-              </h2>
-            </div>
-            <div className="mb-4">
-              <ProgressRow history={m.history} totalWeeks={totalWeeks} />
+                <div className="mt-2">
+                  <ProgressRow history={m.history} totalWeeks={totalWeeks} />
+                </div>
+              </div>
             </div>
 
             {celebrating[m.memberId] && (
@@ -226,7 +238,12 @@ export default function CheckinClient({
                 <p className="text-xs uppercase tracking-wide text-ink-soft mb-1">
                   Week {m.pending.week} · Shabbos {m.pending.shabbosLabel}
                 </p>
-                <p className="font-medium text-navy mb-3">{m.pending.title}</p>
+                <p className="font-medium text-navy mb-1">{m.pending.title}</p>
+                <p className="text-xs text-ink-soft mb-3">
+                  {m.pending.late
+                    ? "The streak window has closed — but check in anyway, it still counts toward the shul-wide totals."
+                    : "Check in by Monday night to keep the streak."}
+                </p>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -269,15 +286,14 @@ export default function CheckinClient({
             )}
 
             {wantsPicker && m.nextGoalWeek !== null && (
-              <div className="rounded-xl border border-gold/40 bg-white p-4">
+              <div className="rounded-xl border border-gold/40 bg-white p-4 mt-3">
                 <p className="text-sm font-medium text-navy mb-3">
                   {m.upcoming ? "Switch" : "Set"} {m.name}&rsquo;s commitment for
                   week {m.nextGoalWeek}:
                 </p>
                 <GoalPicker
                   suggestions={suggestions}
-                  isChild={m.isChild}
-                  lastTitle={m.lastTitle}
+                  member={m}
                   busy={busy}
                   onPick={(choice) => setGoal(m, m.nextGoalWeek!, choice)}
                 />
@@ -309,7 +325,7 @@ export default function CheckinClient({
         <a href="/signup" className="underline hover:text-navy">
           Sign them up here
         </a>{" "}
-        with the same phone or email.
+        with the same email.
       </p>
     </div>
   );

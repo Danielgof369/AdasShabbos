@@ -1,25 +1,27 @@
+import type { Category } from "@/lib/categories";
+
 export type SuggestionOption = {
   id: string;
   title: string;
   detail: string | null;
-  audience: string; // "adult" | "kid" | "both"
+  categories: string; // CSV of man/woman/boy/girl
 };
-
-export function audienceMatches(audience: string, isChild: boolean): boolean {
-  if (audience === "both") return true;
-  return isChild ? audience === "kid" : audience === "adult";
-}
 
 export type MemberGoalView = {
   memberId: string;
   name: string;
+  category: Category;
   isChild: boolean;
+  /** Consecutive on-time weeks for this person. */
+  streak: number;
   /** Goal awaiting a check-in (its Shabbos has passed). */
   pending: {
     goalId: string;
     week: number;
     title: string;
     shabbosLabel: string;
+    /** true once the 48-hour streak window has closed */
+    late: boolean;
   } | null;
   /** Goal set for the upcoming Shabbos, if any. */
   upcoming: {
@@ -33,6 +35,6 @@ export type MemberGoalView = {
   nextGoalWeek: number | null;
   /** Last commitment title, offered as the "same again" default. */
   lastTitle: string | null;
-  /** Per-week history for the progress row: week -> "done" | "missed" | "set" | "none". */
-  history: ("done" | "missed" | "set" | "none")[];
+  /** Per-week history: "done" | "late" | "missed" | "set" | "none". */
+  history: ("done" | "late" | "missed" | "set" | "none")[];
 };

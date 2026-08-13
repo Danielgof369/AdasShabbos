@@ -50,6 +50,16 @@ export function activeWeek(campaign: CampaignInfo, now = new Date()): number {
   return w;
 }
 
+/**
+ * Streak check-in deadline for a week: ~48 hours after Motzei Shabbos,
+ * i.e. through Monday night (Tuesday 00:00 LA time). Late check-ins are
+ * still accepted and count toward shul-wide totals, just not streaks.
+ */
+export function checkinDeadline(campaign: CampaignInfo, week: number): Date {
+  const shabbos = shabbosOfWeek(campaign, week);
+  return new Date(shabbos.getTime() + 3 * DAY_MS);
+}
+
 export function formatShabbosDate(d: Date): string {
   return d.toLocaleDateString("en-US", {
     month: "long",

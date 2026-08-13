@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/adminAuth";
 import { getCampaign } from "@/lib/campaign";
 import { goalTitle } from "@/lib/household";
+import { memberCategory } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,7 @@ export async function GET() {
   const header = [
     "Family",
     "Name",
-    "Child",
-    "Boy/Girl",
+    "Category",
     "Phone",
     "Email",
     ...Array.from({ length: campaign.weeks }, (_, i) => [
@@ -42,8 +42,7 @@ export async function GET() {
     const cells = [
       m.household.familyName ?? "",
       m.name,
-      m.isChild ? "yes" : "no",
-      m.gender ?? "",
+      memberCategory(m),
       m.household.phone ?? "",
       m.household.email ?? "",
     ];

@@ -3,6 +3,7 @@ import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber }
 import { getCampaignStats } from "@/lib/stats";
 import { prisma } from "@/lib/db";
 import { LogoOnDark } from "@/components/Logo";
+import { parseCategories, CATEGORY_LABELS } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,6 @@ export default async function Home() {
     where: { active: true },
     orderBy: { sortOrder: "asc" },
   });
-  const adultIdeas = suggestions.filter((s) => s.audience !== "kid");
-  const kidIdeas = suggestions.filter((s) => s.audience !== "adult");
 
   const started = rawWeek >= 1;
   const nextShabbos = shabbosOfWeek(campaign, week);
@@ -161,12 +160,14 @@ export default async function Home() {
 
       {/* Commitment ideas */}
       <section className="mx-auto max-w-3xl px-4 py-12">
-        <h2 className="font-display text-3xl text-navy mb-8 text-center">
+        <h2 className="font-display text-3xl text-navy mb-2 text-center">
           What you can take on
         </h2>
-        <h3 className="font-display text-xl text-navy mb-4">For adults</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-          {adultIdeas.map((s) => (
+        <p className="text-ink-soft text-center mb-8">
+          Every option is tagged for who it&rsquo;s for — men, women, boys, girls.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {suggestions.map((s) => (
             <div
               key={s.id}
               className="bg-white rounded-xl border border-parchment px-5 py-4"
@@ -175,22 +176,16 @@ export default async function Home() {
               {s.detail && (
                 <p className="text-ink-soft text-sm mt-1">{s.detail}</p>
               )}
-            </div>
-          ))}
-        </div>
-        <h3 className="font-display text-xl text-navy mb-4">
-          For kids (grades 5–8)
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {kidIdeas.map((s) => (
-            <div
-              key={s.id}
-              className="bg-gold-pale/50 rounded-xl border border-gold/30 px-5 py-4"
-            >
-              <h4 className="font-semibold text-navy">{s.title}</h4>
-              {s.detail && (
-                <p className="text-ink-soft text-sm mt-1">{s.detail}</p>
-              )}
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {parseCategories(s.categories).map((c) => (
+                  <span
+                    key={c}
+                    className="text-[11px] uppercase tracking-wide bg-gold-pale text-navy-deep rounded-full px-2 py-0.5"
+                  >
+                    {CATEGORY_LABELS[c]}
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>

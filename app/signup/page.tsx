@@ -10,7 +10,7 @@ export default async function SignupPage() {
   const suggestions = await prisma.suggestion.findMany({
     where: { active: true },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, title: true, detail: true, audience: true },
+    select: { id: true, title: true, detail: true, categories: true },
   });
 
   return (

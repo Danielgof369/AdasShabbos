@@ -2,8 +2,10 @@ import { prisma } from "@/lib/db";
 import {
   CampaignInfo,
   shabbosOfWeek,
+  checkinDeadline,
   formatShabbosDate,
 } from "@/lib/campaign";
+import { memberCategory } from "@/lib/categories";
 import type { MemberGoalView } from "@/lib/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,6 +37,16 @@ export function nextShabbosWeek(campaign: CampaignInfo, now = new Date()): numbe
   return campaign.weeks + 1;
 }
 
+/** Was this goal checked in within its 48-hour streak window? */
+function onTime(
+  campaign: CampaignInfo,
+  week: number,
+  checkedInAt: Date | null
+): boolean {
+  if (!checkedInAt) return false;
+  return checkedInAt.getTime() <= checkinDeadline(campaign, week).getTime();
+}
+
 export async function getHouseholdView(token: string, campaign: CampaignInfo) {
   const household = await prisma.household.findUnique({
     where: { token },
@@ -53,9 +65,10 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
 
   const members: MemberGoalView[] = household.members.map((m) => {
     const byWeek = new Map(m.goals.map((g) => [g.week, g]));
+    const category = memberCategory(m);
 
     // Pending check-in: most recent past-Shabbos goal not yet checked in,
-    // within a ~8 day grace window.
+    // within a ~8 day grace window. `late` = streak window already closed.
     let pending: MemberGoalView["pending"] = null;
     for (let w = lastWeek; w >= 1; w--) {
       const g = byWeek.get(w);
@@ -68,6 +81,7 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
           week: w,
           title: goalTitle(g),
           shabbosLabel: formatShabbosDate(shabbos),
+          late: now.getTime() > checkinDeadline(campaign, w).getTime(),
         };
       }
       break; // only the most recent past goal matters
@@ -92,16 +106,35 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
     const history: MemberGoalView["history"] = [];
     for (let w = 1; w <= campaign.weeks; w++) {
       const g = byWeek.get(w);
-      if (g?.checkedInAt) history.push("done");
+      if (g?.checkedInAt) history.push(onTime(campaign, w, g.checkedInAt) ? "done" : "late");
       else if (g && w <= lastWeek) history.push("missed");
       else if (g) history.push("set");
       else history.push("none");
     }
 
+    // Personal streak: consecutive on-time weeks counting back from the most
+    // recent closed week. A still-open pending week doesn't break the streak.
+    let streak = 0;
+    for (let w = lastWeek; w >= 1; w--) {
+      const g = byWeek.get(w);
+      if (g && onTime(campaign, w, g.checkedInAt)) {
+        streak++;
+      } else if (
+        w === lastWeek &&
+        now.getTime() <= checkinDeadline(campaign, w).getTime()
+      ) {
+        continue; // window still open — pending, not broken
+      } else {
+        break;
+      }
+    }
+
     return {
       memberId: m.id,
       name: m.name,
-      isChild: m.isChild,
+      category,
+      isChild: category === "boy" || category === "girl",
+      streak,
       pending,
       upcoming,
       nextGoalWeek,
@@ -110,15 +143,20 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
     };
   });
 
-  // Family streak: consecutive completed weeks (ending at the most recent
-  // past Shabbos) in which at least one family member checked in.
+  // Family streak: consecutive weeks (ending at the most recent closed week)
+  // in which at least one family member checked in on time.
   let streak = 0;
   for (let w = lastWeek; w >= 1; w--) {
     const anyDone = household.members.some((m) =>
-      m.goals.some((g) => g.week === w && g.checkedInAt)
+      m.goals.some((g) => g.week === w && onTime(campaign, w, g.checkedInAt))
     );
-    if (anyDone) streak++;
-    else break;
+    if (anyDone) {
+      streak++;
+    } else if (w === lastWeek && now.getTime() <= checkinDeadline(campaign, w).getTime()) {
+      continue;
+    } else {
+      break;
+    }
   }
 
   return {

@@ -3,17 +3,22 @@ import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { getCampaign, activeWeek } from "@/lib/campaign";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
+import { isCategory, isChildCategory } from "@/lib/categories";
 
 type MemberInput = {
   name?: unknown;
-  isChild?: unknown;
-  gender?: unknown;
+  category?: unknown;
   suggestionId?: unknown;
   customTitle?: unknown;
 };
 
 export async function POST(req: NextRequest) {
-  let body: { familyName?: unknown; phone?: unknown; email?: unknown; members?: unknown };
+  let body: {
+    familyName?: unknown;
+    phone?: unknown;
+    email?: unknown;
+    members?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -28,26 +33,21 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
-  const rawEmail = typeof body.email === "string" ? body.email.trim() : "";
 
+  const rawEmail = typeof body.email === "string" ? body.email.trim() : "";
+  const email = rawEmail ? normalizeEmail(rawEmail) : null;
+  if (!email) {
+    return NextResponse.json(
+      { error: "Please provide a valid email — that's where your weekly reminders go." },
+      { status: 400 }
+    );
+  }
+
+  const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
   const phone = rawPhone ? normalizePhone(rawPhone) : null;
   if (rawPhone && !phone) {
     return NextResponse.json(
       { error: "That phone number doesn't look right — please double-check it." },
-      { status: 400 }
-    );
-  }
-  const email = rawEmail ? normalizeEmail(rawEmail) : null;
-  if (rawEmail && !email) {
-    return NextResponse.json(
-      { error: "That email doesn't look right — please double-check it." },
-      { status: 400 }
-    );
-  }
-  if (!phone && !email) {
-    return NextResponse.json(
-      { error: "Please provide a phone number or email." },
       { status: 400 }
     );
   }
@@ -66,11 +66,22 @@ export async function POST(req: NextRequest) {
     )
   );
 
-  const cleanMembers: { name: string; isChild: boolean; gender: string | null; suggestionId: string | null; customTitle: string | null }[] = [];
+  const cleanMembers: {
+    name: string;
+    category: string;
+    suggestionId: string | null;
+    customTitle: string | null;
+  }[] = [];
   for (const m of members) {
     const name = typeof m.name === "string" ? m.name.trim().slice(0, 60) : "";
     if (!name) {
-      return NextResponse.json({ error: "Every person needs a name." }, { status: 400 });
+      return NextResponse.json({ error: "Every person needs a first name." }, { status: 400 });
+    }
+    if (!isCategory(m.category)) {
+      return NextResponse.json(
+        { error: `Choose man, woman, boy, or girl for ${name}.` },
+        { status: 400 }
+      );
     }
     const suggestionId =
       typeof m.suggestionId === "string" && validSuggestionIds.has(m.suggestionId)
@@ -86,11 +97,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const gender =
-      m.isChild === true && (m.gender === "boy" || m.gender === "girl")
-        ? m.gender
-        : null;
-    cleanMembers.push({ name, isChild: m.isChild === true, gender, suggestionId, customTitle });
+    cleanMembers.push({ name, category: m.category, suggestionId, customTitle });
   }
 
   // Reuse an existing household for the same contact so families can add
@@ -98,8 +105,8 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.household.findFirst({
     where: {
       OR: [
+        { email },
         ...(phone ? [{ phone }] : []),
-        ...(email ? [{ email }] : []),
       ],
     },
   });
@@ -116,7 +123,6 @@ export async function POST(req: NextRequest) {
     }));
 
   if (existing) {
-    // Fill in any newly provided contact channel or missing family name.
     await prisma.household.update({
       where: { id: existing.id },
       data: {
@@ -132,8 +138,8 @@ export async function POST(req: NextRequest) {
       data: {
         householdId: household.id,
         name: m.name,
-        isChild: m.isChild,
-        gender: m.gender,
+        gender: m.category,
+        isChild: isChildCategory(m.category as "boy" | "girl" | "man" | "woman"),
       },
     });
     await prisma.goal.create({

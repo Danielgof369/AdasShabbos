@@ -30,11 +30,11 @@ export default function FindPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="font-display text-3xl text-navy mb-2">Check in</h1>
+      <h1 className="font-display text-3xl text-navy mb-2">Sign in</h1>
       <p className="text-ink-soft mb-6">
-        Enter the phone number or email you signed up with and we&rsquo;ll take
-        you to your family&rsquo;s check-in page. (Your reminder texts and
-        emails have a direct link too.)
+        Enter the email (or phone) you signed up with and we&rsquo;ll take you
+        straight to your family&rsquo;s page — no password needed. Every
+        reminder email has a direct link too.
       </p>
       <form onSubmit={submit} className="space-y-4">
         <input
@@ -55,7 +55,7 @@ export default function FindPage() {
           disabled={busy || !contact.trim()}
           className="w-full bg-gold text-navy-deep font-semibold rounded-lg py-3.5 hover:bg-gold-soft transition-colors disabled:opacity-60"
         >
-          {busy ? "Looking you up…" : "Take me to my check-in"}
+          {busy ? "Looking you up…" : "Take me to my family page"}
         </button>
       </form>
       <p className="text-sm text-ink-soft mt-6 text-center">

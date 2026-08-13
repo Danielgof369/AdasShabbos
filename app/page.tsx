@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber } from "@/lib/campaign";
 import { getCampaignStats } from "@/lib/stats";
 import { prisma } from "@/lib/db";
@@ -19,6 +20,8 @@ export default async function Home() {
 
   const started = rawWeek >= 1;
   const nextShabbos = shabbosOfWeek(campaign, week);
+  const myToken = (await cookies()).get("elul_token")?.value;
+  const checkinHref = myToken ? `/c/${encodeURIComponent(myToken)}` : "/find";
 
   return (
     <div>
@@ -50,7 +53,7 @@ export default async function Home() {
               Sign up to join
             </Link>
             <Link
-              href="/find"
+              href={checkinHref}
               className="border border-cream/40 rounded-lg px-8 py-3.5 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors"
             >
               Check in for this week

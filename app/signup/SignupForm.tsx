@@ -85,6 +85,9 @@ export default function SignupForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
+      try {
+        document.cookie = `elul_token=${encodeURIComponent(data.token)}; path=/; max-age=15552000; SameSite=Lax`;
+      } catch {}
       setDone({ token: data.token });
       window.scrollTo({ top: 0 });
     } catch (e) {

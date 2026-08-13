@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { getCampaign, activeWeek } from "@/lib/campaign";
+import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
+import { sendToHousehold } from "@/lib/messaging";
 
 type MemberInput = {
   name?: unknown;
@@ -150,6 +151,40 @@ export async function POST(req: NextRequest) {
         customTitle: m.customTitle,
       },
     });
+  }
+
+  // Welcome email with the family's permanent link (first signup only).
+  const welcomed = await prisma.messageLog.findFirst({
+    where: { householdId: household.id, kind: "welcome" },
+  });
+  if (!welcomed) {
+    const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const link = `${base}/c/${household.token}`;
+    const memberGoals = await prisma.member.findMany({
+      where: { householdId: household.id },
+      include: { goals: { where: { week }, include: { suggestion: true } } },
+    });
+    const lines = memberGoals
+      .filter((m) => m.goals.length)
+      .map((m) => `• ${m.name}: ${m.goals[0].suggestion?.title ?? m.goals[0].customTitle}`);
+    const text = [
+      `Welcome to the Elul Shabbos Project! 🕯️`,
+      ``,
+      `The ${familyName} family is signed up for Shabbos ${formatShabbosDate(shabbosOfWeek(campaign, week))}:`,
+      ...lines,
+      ``,
+      `Your family page (save this email — it's your link for check-ins and streaks):`,
+      link,
+      ``,
+      `We'll remind you before Shabbos, and after Shabbos to check in. Every signup sent $5 to Tomchei Shabbos, and every check-in adds $1 more.`,
+    ].join("\n");
+    // Fire-and-forget: never block or fail the signup on email trouble.
+    sendToHousehold(
+      household,
+      { subject: `Your family page — The Elul Shabbos Project`, text },
+      "welcome",
+      week
+    ).catch(() => {});
   }
 
   return NextResponse.json({ token: household.token });

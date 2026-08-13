@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { LogoOnDark } from "@/components/Logo";
 import "./globals.css";
 
@@ -17,11 +18,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const token = (await cookies()).get("elul_token")?.value;
+  const familyHref = token ? `/c/${encodeURIComponent(token)}` : "/find";
+
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
@@ -32,9 +36,17 @@ export default function RootLayout({
                 The Elul Shabbos Project
               </span>
             </Link>
-            <Link href="/" className="shrink-0">
-              <LogoOnDark className="h-9 w-auto" />
-            </Link>
+            <div className="flex items-center gap-4 shrink-0">
+              <Link
+                href={familyHref}
+                className="text-sm text-gold-soft hover:text-gold underline underline-offset-4 whitespace-nowrap"
+              >
+                {token ? "My family" : "Sign in"}
+              </Link>
+              <Link href="/" className="shrink-0">
+                <LogoOnDark className="h-9 w-auto" />
+              </Link>
+            </div>
           </div>
         </header>
         <main className="flex-1">{children}</main>
@@ -45,7 +57,7 @@ export default function RootLayout({
               Adas Torah &middot; 9040 W. Pico Blvd, Los Angeles
             </span>
             <Link href="/find" className="underline underline-offset-2 hover:text-gold-soft">
-              Find my check-in link
+              Sign in to my family page
             </Link>
           </div>
         </footer>

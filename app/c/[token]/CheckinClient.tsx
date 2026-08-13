@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { categoriesInclude } from "@/lib/categories";
@@ -130,6 +130,13 @@ export default function CheckinClient({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+
+  // Remember this family on the device so the header shows "My family".
+  useEffect(() => {
+    try {
+      document.cookie = `elul_token=${encodeURIComponent(token)}; path=/; max-age=15552000; SameSite=Lax`;
+    } catch {}
+  }, [token]);
   const [error, setError] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState<Record<string, boolean>>({});
   const [pickerOpen, setPickerOpen] = useState<Record<string, boolean>>({});

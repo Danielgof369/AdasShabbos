@@ -149,15 +149,21 @@ export default async function Home() {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="font-display text-2xl text-navy">{stats.members}</div>
-            <div className="text-ink-soft text-sm">people signed up</div>
+            <div className="text-ink-soft text-sm">
+              {stats.members === 1 ? "person signed up" : "people signed up"}
+            </div>
           </div>
           <div>
             <div className="font-display text-2xl text-navy">{stats.kids}</div>
-            <div className="text-ink-soft text-sm">kids joining</div>
+            <div className="text-ink-soft text-sm">
+              {stats.kids === 1 ? "kid joining" : "kids joining"}
+            </div>
           </div>
           <div>
             <div className="font-display text-2xl text-navy">{stats.checkins}</div>
-            <div className="text-ink-soft text-sm">check-ins so far</div>
+            <div className="text-ink-soft text-sm">
+              {stats.checkins === 1 ? "check-in so far" : "check-ins so far"}
+            </div>
           </div>
         </div>
       </section>

@@ -3,7 +3,7 @@ import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber }
 import { getCampaignStats } from "@/lib/stats";
 import { prisma } from "@/lib/db";
 import { LogoOnDark } from "@/components/Logo";
-import { parseCategories, CATEGORY_LABELS } from "@/lib/categories";
+import JoinNudge from "@/components/JoinNudge";
 
 export const dynamic = "force-dynamic";
 
@@ -166,6 +166,14 @@ export default async function Home() {
             </div>
           </div>
         </div>
+        <div className="text-center mt-8">
+          <Link
+            href="/signup"
+            className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 hover:bg-navy-soft transition-colors"
+          >
+            Add your family to the count
+          </Link>
+        </div>
       </section>
 
       {/* How it works */}
@@ -208,7 +216,7 @@ export default async function Home() {
           What you can take on
         </h2>
         <p className="text-ink-soft text-center mb-8">
-          Every option is tagged for who it&rsquo;s for — men, women, boys, girls.
+          When you sign up, everyone gets suggestions matched to them.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {suggestions.map((s) => (
@@ -220,78 +228,68 @@ export default async function Home() {
               {s.detail && (
                 <p className="text-ink-soft text-sm mt-1">{s.detail}</p>
               )}
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {parseCategories(s.categories).map((c) => (
-                  <span
-                    key={c}
-                    className="text-[11px] uppercase tracking-wide bg-gold-pale text-navy-deep rounded-full px-2 py-0.5"
-                  >
-                    {CATEGORY_LABELS[c]}
-                  </span>
-                ))}
-              </div>
             </div>
           ))}
         </div>
         <p className="text-ink-soft text-sm text-center mt-6">
           …or write in your own idea when you sign up.
         </p>
+        <div className="text-center mt-8">
+          <Link
+            href="/signup"
+            className="inline-block bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-gold-soft transition-colors"
+          >
+            Join now — it takes 30 seconds
+          </Link>
+        </div>
       </section>
 
-      {/* Kids' incentives */}
+      {/* What your signup gives */}
       <section className="bg-navy text-cream">
         <div className="mx-auto max-w-3xl px-4 py-12">
           <h2 className="font-display text-3xl mb-2 text-center">
-            Prizes for the kids
+            Every signup gives. Every check-in gives again.
           </h2>
           <p className="text-cream/70 text-center mb-8">
-            Taking on Shabbos should be sweet.
+            Your commitment does more than build your own Shabbos.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              {
-                icon: "🍷",
-                title: "A kiddush just for the boys",
-                body: "Every boy who signs up gets a special kiddush in their honor the first week.",
-              },
-              {
-                icon: "🎁",
-                title: "Gift card for every girl",
-                body: "Every girl who signs up for a commitment gets an Amazon gift card.",
-              },
-              {
-                icon: "🎟️",
-                title: "Weekly raffle",
-                body: "Did your commitment? Every check-in is an entry into that week's raffle.",
-              },
-              {
-                icon: "🚌",
-                title: "The grand trip",
-                body: "Complete all 4 weeks and you're on the end-of-Elul trip.",
-              },
-            ].map((p) => (
-              <div
-                key={p.title}
-                className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5"
-              >
-                <div className="text-3xl mb-2">{p.icon}</div>
-                <h3 className="font-semibold text-gold-soft mb-1">{p.title}</h3>
-                <p className="text-cream/80 text-sm leading-relaxed">{p.body}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5 text-center">
+              <div className="font-display text-4xl text-gold-soft mb-1">$5</div>
+              <p className="text-cream/85 text-sm leading-relaxed">
+                to <strong>Tomchei Shabbos</strong> for every single person who
+                signs up
+              </p>
+            </div>
+            <div className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5 text-center">
+              <div className="font-display text-4xl text-gold-soft mb-1">+$1</div>
+              <p className="text-cream/85 text-sm leading-relaxed">
+                more every time anyone checks in after Shabbos
+              </p>
+            </div>
+            <div className="rounded-xl border border-gold/50 bg-navy-soft/40 p-5 text-center">
+              <div className="text-4xl mb-1">🍕</div>
+              <p className="text-cream/85 text-sm leading-relaxed">
+                <strong className="text-gold-soft">Weekly pizza raffle</strong> —
+                every family where <em>everyone</em> checks in is entered to win
+                pizza on Motzei Shabbos
+              </p>
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <Link
+              href="/signup"
+              className="inline-block bg-gold text-navy-deep font-bold rounded-lg px-10 py-4 text-lg hover:bg-gold-soft transition-colors"
+            >
+              Join the campaign
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="mx-auto max-w-3xl px-4 py-12 text-center">
-        <Link
-          href="/signup"
-          className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-navy-soft transition-colors"
-        >
-          Join the campaign
-        </Link>
-      </section>
+      {/* breathing room above the sticky join bar */}
+      <div className="h-20" />
+      <JoinNudge />
     </div>
   );
 }

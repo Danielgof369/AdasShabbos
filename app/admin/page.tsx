@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db";
-import { getCampaign, activeWeek } from "@/lib/campaign";
+import {
+  getCampaign,
+  activeWeek,
+  shabbosOfWeek,
+  formatShabbosDate,
+} from "@/lib/campaign";
+import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
 import { getCampaignStats } from "@/lib/stats";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
@@ -61,6 +67,28 @@ export default async function AdminPage() {
     orderBy: [{ week: "asc" }],
   });
 
+  const upWeek = Math.min(nextShabbosWeek(campaign), campaign.weeks);
+  const doneWeek = lastShabbosWeek(campaign);
+  const upShabbos = formatShabbosDate(shabbosOfWeek(campaign, upWeek));
+  const preShabbosBlast = [
+    `🕯️ *The Elul Shabbos Project — Week ${upWeek} of ${campaign.weeks}*`,
+    ``,
+    `Shabbos ${upShabbos} is coming! Whatever you signed up for this week — this is your Shabbos to do it. 💪`,
+    ``,
+    `Not signed up yet? It takes 30 seconds, the whole family can join, and every signup sends $5 to ${campaign.charityName}:`,
+    `https://shabboswithadas.com`,
+  ].join("\n");
+  const checkinBlast = [
+    `✨ *Gut voch, Adas Torah!*`,
+    ``,
+    doneWeek >= 1
+      ? `How did week ${doneWeek} go? Take 10 seconds to check in — every check-in sends another $1 to ${campaign.charityName} and moves the whole shul's numbers:`
+      : `The campaign is about to begin — sign up now and pick your first commitment:`,
+    `https://shabboswithadas.com/find`,
+    ``,
+    `Then pick your commitment for next Shabbos while you're there. 🔥`,
+  ].join("\n");
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-10">
       <div className="flex items-center justify-between">
@@ -120,6 +148,41 @@ export default async function AdminPage() {
         )}
       </section>
 
+      {/* WhatsApp blast texts */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">
+          WhatsApp / announcement blasts
+        </h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Ready-to-paste messages for the shul WhatsApp group — long-press to
+          select and copy. They update automatically each week.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-medium text-navy mb-1">
+              Before Shabbos (send Thursday/Friday):
+            </p>
+            <textarea
+              readOnly
+              rows={6}
+              className="w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm"
+              defaultValue={preShabbosBlast}
+            />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-navy mb-1">
+              After Shabbos (send Motzei Shabbos/Sunday):
+            </p>
+            <textarea
+              readOnly
+              rows={6}
+              className="w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm"
+              defaultValue={checkinBlast}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Households */}
       <section className="bg-white rounded-xl border border-parchment p-5 overflow-x-auto">
         <h2 className="font-semibold text-navy mb-3">
@@ -139,6 +202,7 @@ export default async function AdminPage() {
             {households.map((h) => (
               <tr key={h.id} className="border-b border-parchment/60 align-top">
                 <td className="py-2 pr-3 whitespace-nowrap">
+                  {h.familyName && <div className="font-medium">{h.familyName}</div>}
                   {h.phone && <div>{h.phone}</div>}
                   {h.email && <div className="text-ink-soft">{h.email}</div>}
                 </td>

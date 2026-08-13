@@ -110,11 +110,24 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
     };
   });
 
+  // Family streak: consecutive completed weeks (ending at the most recent
+  // past Shabbos) in which at least one family member checked in.
+  let streak = 0;
+  for (let w = lastWeek; w >= 1; w--) {
+    const anyDone = household.members.some((m) =>
+      m.goals.some((g) => g.week === w && g.checkedInAt)
+    );
+    if (anyDone) streak++;
+    else break;
+  }
+
   return {
     id: household.id,
     token: household.token,
+    familyName: household.familyName,
     phone: household.phone,
     email: household.email,
+    streak,
     members,
   };
 }

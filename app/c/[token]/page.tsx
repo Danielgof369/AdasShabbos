@@ -25,12 +25,18 @@ export default async function HouseholdPage({
   return (
     <div className="mx-auto max-w-xl px-4 py-10">
       <h1 className="font-display text-3xl text-navy mb-1">
-        Your family&rsquo;s check-in
+        {view.familyName ? `The ${view.familyName} Family` : "Your family's check-in"}
       </h1>
-      <p className="text-ink-soft mb-8">
+      <p className="text-ink-soft mb-2">
         Check in on last Shabbos, set next week&rsquo;s commitment, and keep
         the streak going.
       </p>
+      {view.streak > 0 && (
+        <p className="inline-block bg-gold-pale text-navy-deep text-sm font-medium rounded-full px-4 py-1.5 mb-6">
+          🔥 Family streak: {view.streak} {view.streak === 1 ? "week" : "weeks"} strong
+        </p>
+      )}
+      {view.streak === 0 && <div className="mb-6" />}
       <CheckinClient
         token={view.token}
         members={view.members}

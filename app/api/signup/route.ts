@@ -13,13 +13,21 @@ type MemberInput = {
 };
 
 export async function POST(req: NextRequest) {
-  let body: { phone?: unknown; email?: unknown; members?: unknown };
+  let body: { familyName?: unknown; phone?: unknown; email?: unknown; members?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  const familyName =
+    typeof body.familyName === "string" ? body.familyName.trim().slice(0, 60) : "";
+  if (!familyName) {
+    return NextResponse.json(
+      { error: "Please provide your family (last) name." },
+      { status: 400 }
+    );
+  }
   const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
   const rawEmail = typeof body.email === "string" ? body.email.trim() : "";
 
@@ -101,16 +109,18 @@ export async function POST(req: NextRequest) {
     (await prisma.household.create({
       data: {
         token: randomBytes(9).toString("base64url"),
+        familyName,
         phone,
         email,
       },
     }));
 
   if (existing) {
-    // Fill in any newly provided contact channel.
+    // Fill in any newly provided contact channel or missing family name.
     await prisma.household.update({
       where: { id: existing.id },
       data: {
+        familyName: existing.familyName ?? familyName,
         phone: existing.phone ?? phone,
         email: existing.email ?? email,
       },

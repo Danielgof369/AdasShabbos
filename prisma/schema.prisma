@@ -11,11 +11,12 @@ datasource db {
 
 // A household is the unit that signs up: one phone/email, one or more people.
 model Household {
-  id        String   @id @default(cuid())
-  token     String   @unique // personal check-in link token
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  token      String   @unique // personal check-in link token
+  familyName String? // "Gofman" -> shown as "The Gofman Family"
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
 
   smsOptIn   Boolean @default(true)
   emailOptIn Boolean @default(true)

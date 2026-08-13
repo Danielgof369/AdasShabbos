@@ -26,6 +26,7 @@ export async function GET() {
   });
 
   const header = [
+    "Family",
     "Name",
     "Child",
     "Boy/Girl",
@@ -39,6 +40,7 @@ export async function GET() {
 
   const rows = members.map((m) => {
     const cells = [
+      m.household.familyName ?? "",
       m.name,
       m.isChild ? "yes" : "no",
       m.gender ?? "",

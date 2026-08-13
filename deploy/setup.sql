@@ -5,6 +5,7 @@ CREATE SCHEMA IF NOT EXISTS "public";
 CREATE TABLE "Household" (
     "id" TEXT NOT NULL,
     "token" TEXT NOT NULL,
+    "familyName" TEXT,
     "phone" TEXT,
     "email" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -108,7 +109,8 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_memberId_fkey" FOREIGN KEY ("memberId") 
 -- AddForeignKey
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_suggestionId_fkey" FOREIGN KEY ("suggestionId") REFERENCES "Suggestion"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
--- Seed data for the Elul Shabbos Project (idempotent)
+
+-- Seed data (idempotent)
 INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audience","sortOrder","active") VALUES ('sug_a01','Learn Hilchos Shabbos at the table','A few minutes of practical halacha at the seudah — suggested topics coming soon.','tables learning Hilchos Shabbos',1,'adult',1,true) ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audience","sortOrder","active") VALUES ('sug_a02','Prepare and say a dvar Torah at the table','Prepare something on the parsha to share at the seudah.','divrei Torah shared',1,'adult',2,true) ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audience","sortOrder","active") VALUES ('sug_a03','Keep your phone off until Rabbeinu Tam','Don''t turn your phone back on until Rabbeinu Tam''s zman after Shabbos.','minutes added to Shabbos',30,'adult',3,true) ON CONFLICT ("id") DO NOTHING;
@@ -125,3 +127,6 @@ INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audienc
 INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audience","sortOrder","active") VALUES ('sug_k03','Say a dvar Torah at the table','Share something you learned this week at the seudah.','divrei Torah shared',1,'kid',22,true) ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "Suggestion" ("id","title","detail","unitLabel","unitValue","audience","sortOrder","active") VALUES ('sug_k04','Come and stay in shul for Kabbalas Shabbos','Be there from Lecha Dodi through the end.','Kabbalas Shabbos davened in shul',1,'kid',23,true) ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "Campaign" ("id","name","startDate","weeks","signupDeadline","pledgePerSignup","pledgePerCheckin","charityName") VALUES ('campaign','The Elul Shabbos Project','2026-08-09T07:00:00Z',4,'2026-08-15T02:00:00Z',5,1,'Tomchei Shabbos') ON CONFLICT ("id") DO NOTHING;
+
+-- Safe to run on a database created from an older setup.sql:
+ALTER TABLE "Household" ADD COLUMN IF NOT EXISTS "familyName" TEXT;

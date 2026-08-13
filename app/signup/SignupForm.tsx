@@ -28,6 +28,7 @@ export default function SignupForm({
   suggestions: SuggestionOption[];
   week: number;
 }) {
+  const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [people, setPeople] = useState<PersonDraft[]>([emptyPerson()]);
@@ -40,8 +41,12 @@ export default function SignupForm({
 
   async function submit() {
     setError(null);
+    if (!familyName.trim()) {
+      setError("Please enter your family (last) name.");
+      return;
+    }
     if (!phone.trim() && !email.trim()) {
-      setError("Please enter a phone number or an email so we can send your reminders.");
+      setError("Please enter an email (or phone) so we can send your reminders.");
       return;
     }
     for (const p of people) {
@@ -64,6 +69,7 @@ export default function SignupForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          familyName: familyName.trim(),
           phone: phone.trim() || null,
           email: email.trim() || null,
           members: people.map((p) => ({
@@ -122,25 +128,32 @@ export default function SignupForm({
     <div className="space-y-6">
       {/* Contact */}
       <section className="bg-white rounded-2xl border border-parchment shadow-sm p-5 sm:p-6">
-        <h2 className="font-semibold text-navy mb-1">How should we reach you?</h2>
+        <h2 className="font-semibold text-navy mb-1">Your family</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Phone gets you text reminders; email works great too. One is enough.
+          Weekly reminders arrive by email. Phone number is optional.
         </p>
         <div className="space-y-3">
           <input
-            type="tel"
-            inputMode="tel"
-            placeholder="Cell phone (for text reminders)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="text"
+            placeholder="Family (last) name"
+            value={familyName}
+            onChange={(e) => setFamilyName(e.target.value)}
             className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
           />
           <input
             type="email"
             inputMode="email"
-            placeholder="Email"
+            placeholder="Email (for weekly reminders)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
+          />
+          <input
+            type="tel"
+            inputMode="tel"
+            placeholder="Cell phone (optional)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
           />
         </div>

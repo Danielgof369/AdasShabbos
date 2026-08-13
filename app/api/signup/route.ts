@@ -173,8 +173,10 @@ export async function POST(req: NextRequest) {
       `The ${familyName} family is signed up for Shabbos ${formatShabbosDate(shabbosOfWeek(campaign, week))}:`,
       ...lines,
       ``,
-      `Your family page (save this email — it's your link for check-ins and streaks):`,
+      `Your family page — there's no password, this link IS your login:`,
       link,
+      ``,
+      `Lost the link? Tap "Sign in" at shabboswithadas.com and enter this email address — that's it.`,
       ``,
       `We'll remind you before Shabbos, and after Shabbos to check in. Every signup sent $5 to Tomchei Shabbos, and every check-in adds $1 more.`,
     ].join("\n");

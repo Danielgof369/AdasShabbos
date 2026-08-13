@@ -52,6 +52,7 @@ async function sendResend(to: string, subject: string, text: string): Promise<vo
       to: [to],
       subject,
       text,
+      ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
     }),
   });
   if (!res.ok) {

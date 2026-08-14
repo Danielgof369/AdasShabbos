@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     }
     if (!isCategory(m.category)) {
       return NextResponse.json(
-        { error: `Choose man, woman, boy, or girl for ${name}.` },
+        { error: `Choose adult or child for ${name}.` },
         { status: 400 }
       );
     }

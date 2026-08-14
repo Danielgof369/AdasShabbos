@@ -1,21 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, CATEGORY_LABELS, audienceMatches, type Category } from "@/lib/categories";
+import { audienceMatches, type Category } from "@/lib/categories";
+import Avatar from "@/components/Avatar";
 import type { SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
   name: string;
-  category: Category | null;
+  audience: "adult" | "child" | null;
+  avatar: Category | null;
   suggestionIds: string[];
-  customTitle: string;
 };
 
 const emptyPerson = (): PersonDraft => ({
   name: "",
-  category: null,
+  audience: null,
+  avatar: null,
   suggestionIds: [],
-  customTitle: "",
 });
 
 export default function SignupForm({
@@ -63,12 +64,16 @@ export default function SignupForm({
         setError("Please give every person a first name.");
         return;
       }
-      if (!p.category) {
-        setError(`Choose man, woman, boy, or girl for ${p.name.trim() || "each person"}.`);
+      if (!p.audience) {
+        setError(`Choose adult or child for ${p.name.trim() || "each person"}.`);
         return;
       }
-      if (p.suggestionIds.length === 0 && !p.customTitle.trim()) {
-        setError(`Pick at least one commitment for ${p.name.trim()} — or write your own.`);
+      if (!p.avatar) {
+        setError(`Pick an avatar for ${p.name.trim() || "each person"}.`);
+        return;
+      }
+      if (p.suggestionIds.length === 0) {
+        setError(`Pick at least one commitment for ${p.name.trim()}.`);
         return;
       }
     }
@@ -83,9 +88,8 @@ export default function SignupForm({
           emails: emails.map((e) => e.trim()).filter(Boolean),
           members: people.map((p) => ({
             name: p.name.trim(),
-            category: p.category,
+            category: p.avatar,
             suggestionIds: p.suggestionIds,
-            customTitle: p.customTitle.trim() || null,
           })),
         }),
       });
@@ -221,31 +225,58 @@ export default function SignupForm({
           />
 
           <div className="flex flex-wrap gap-2 mb-4">
-            {CATEGORIES.map((c) => (
+            {(["adult", "child"] as const).map((a) => (
               <button
-                key={c}
+                key={a}
                 type="button"
-                onClick={() => updatePerson(i, { category: c, suggestionIds: [] })}
-                className={`rounded-full px-4 py-2 text-sm border transition-colors ${
-                  p.category === c
+                onClick={() =>
+                  updatePerson(i, { audience: a, avatar: null, suggestionIds: [] })
+                }
+                className={`rounded-full px-5 py-2 text-sm border transition-colors capitalize ${
+                  p.audience === a
                     ? "border-gold bg-gold-pale text-navy-deep font-semibold"
                     : "border-parchment bg-cream hover:border-gold-soft"
                 }`}
               >
-                {CATEGORY_LABELS[c]}
+                {a}
               </button>
             ))}
           </div>
 
-          {p.category ? (
+          {p.audience && (
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-sm text-ink-soft">Their avatar:</span>
+              {(p.audience === "adult"
+                ? (["man", "woman"] as const)
+                : (["boy", "girl"] as const)
+              ).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => updatePerson(i, { avatar: c })}
+                  className={`rounded-xl border p-1.5 transition-colors ${
+                    p.avatar === c
+                      ? "border-gold bg-gold-pale"
+                      : "border-parchment bg-cream hover:border-gold-soft"
+                  }`}
+                  aria-label={c}
+                >
+                  <Avatar category={c} className="h-12 w-auto" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {p.audience ? (
             <>
               <p className="text-sm text-ink-soft mb-2">
                 For all four Shabbosos, {p.name.trim() || "they"}&rsquo;ll take on
-                <span className="text-navy font-medium"> (pick one or more)</span>:
+                <span className="text-navy font-medium"> (pick one or more — you
+                can add more later, but commitments are for keeps)</span>:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {suggestions
-                  .filter((s) => audienceMatches(s.categories, p.category!))
+                  .filter((s) => audienceMatches(s.categories, p.audience === "child"))
                   .map((s) => {
                     const selected = p.suggestionIds.includes(s.id);
                     return (
@@ -265,14 +296,7 @@ export default function SignupForm({
                     );
                   })}
               </div>
-              <input
-                type="text"
-                placeholder="✏️ …or add your own idea"
-                value={p.customTitle}
-                onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
-                className="mt-3 w-full rounded-lg border border-parchment bg-cream px-4 py-2.5 text-sm outline-none focus:border-gold"
-              />
-              {(p.category === "boy" || p.category === "girl") && (
+              {p.audience === "child" && (
                 <p className="mt-2 text-xs text-ink-soft">
                   🖍️ Need ideas for helping at home? See the{" "}
                   <a
@@ -288,7 +312,7 @@ export default function SignupForm({
             </>
           ) : (
             <p className="text-sm text-ink-soft italic">
-              Choose Man, Woman, Boy, or Girl to see their commitment options.
+              Choose Adult or Child to see their commitment options.
             </p>
           )}
         </section>

@@ -40,7 +40,7 @@ function ProgressRow({
   );
 }
 
-function AdjustPicker({
+function AddPicker({
   suggestions,
   member,
   onSave,
@@ -49,14 +49,12 @@ function AdjustPicker({
 }: {
   suggestions: SuggestionOption[];
   member: MemberGoalView;
-  onSave: (suggestionIds: string[], customTitle: string | null) => void;
+  onSave: (suggestionIds: string[]) => void;
   onCancel: () => void;
   busy: boolean;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(
-    new Set(member.currentSuggestionIds)
-  );
-  const [custom, setCustom] = useState(member.currentCustomTitle ?? "");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const held = new Set(member.currentSuggestionIds);
   const toggle = (id: string) =>
     setSelected((s) => {
       const next = new Set(s);
@@ -64,16 +62,24 @@ function AdjustPicker({
       else next.add(id);
       return next;
     });
+  const available = suggestions.filter(
+    (s) => audienceMatches(s.categories, member.category) && !held.has(s.id)
+  );
 
   return (
     <div>
       <p className="text-sm text-ink-soft mb-2">
-        Pick one or more — the new commitments apply from the next Shabbos on:
+        Commitments are for keeps through Shabbos Shuva — you can{" "}
+        <span className="font-medium text-navy">add</span> more, but not remove.
+        Pick what to add:
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-        {suggestions
-          .filter((s) => audienceMatches(s.categories, member.category))
-          .map((s) => (
+      {available.length === 0 ? (
+        <p className="text-sm text-ink-soft italic mb-3">
+          {member.name} has already taken on every available option — amazing!
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+          {available.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -89,22 +95,16 @@ function AdjustPicker({
               {s.title}
             </button>
           ))}
-      </div>
-      <input
-        type="text"
-        placeholder="…or add your own idea"
-        value={custom}
-        onChange={(e) => setCustom(e.target.value)}
-        className="w-full rounded-lg border border-parchment bg-cream px-4 py-2.5 text-sm outline-none focus:border-gold mb-3"
-      />
+        </div>
+      )}
       <div className="flex gap-3">
         <button
           type="button"
-          disabled={busy || (selected.size === 0 && !custom.trim())}
-          onClick={() => onSave([...selected], custom.trim() || null)}
+          disabled={busy || selected.size === 0}
+          onClick={() => onSave([...selected])}
           className="bg-navy text-cream rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-navy-soft transition-colors disabled:opacity-60"
         >
-          Save commitments
+          Add {selected.size > 0 ? `${selected.size} ` : ""}commitment{selected.size === 1 ? "" : "s"}
         </button>
         <button type="button" onClick={onCancel} className="text-sm text-ink-soft underline hover:text-navy">
           Cancel
@@ -166,12 +166,8 @@ export default function CheckinClient({
     if (ok) setCelebrating((c) => ({ ...c, [m.memberId]: true }));
   }
 
-  async function saveCommitments(
-    m: MemberGoalView,
-    suggestionIds: string[],
-    customTitle: string | null
-  ) {
-    const ok = await post("/api/goal", { token, memberId: m.memberId, suggestionIds, customTitle });
+  async function addCommitments(m: MemberGoalView, suggestionIds: string[]) {
+    const ok = await post("/api/goal", { token, memberId: m.memberId, suggestionIds });
     if (ok) setAdjusting((a) => ({ ...a, [m.memberId]: false }));
   }
 
@@ -255,11 +251,11 @@ export default function CheckinClient({
 
           {adjusting[m.memberId] ? (
             <div className="rounded-xl border border-gold/40 bg-white p-4">
-              <AdjustPicker
+              <AddPicker
                 suggestions={suggestions}
                 member={m}
                 busy={busy}
-                onSave={(ids, custom) => saveCommitments(m, ids, custom)}
+                onSave={(ids) => addCommitments(m, ids)}
                 onCancel={() => setAdjusting((a) => ({ ...a, [m.memberId]: false }))}
               />
             </div>
@@ -275,7 +271,7 @@ export default function CheckinClient({
                   onClick={() => setAdjusting((a) => ({ ...a, [m.memberId]: true }))}
                   className="mt-2 text-sm text-ink-soft underline hover:text-navy"
                 >
-                  Adjust commitments
+                  + Add another commitment
                 </button>
               )}
             </div>
@@ -284,11 +280,11 @@ export default function CheckinClient({
               <p className="text-sm font-medium text-navy mb-2">
                 Set {m.name}&rsquo;s commitments for the rest of the campaign:
               </p>
-              <AdjustPicker
+              <AddPicker
                 suggestions={suggestions}
                 member={m}
                 busy={busy}
-                onSave={(ids, custom) => saveCommitments(m, ids, custom)}
+                onSave={(ids) => addCommitments(m, ids)}
                 onCancel={() => {}}
               />
             </div>

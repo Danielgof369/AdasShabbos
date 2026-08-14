@@ -16,6 +16,8 @@ model Household {
   familyName String? // "Gofman" -> shown as "The Gofman Family"
   phone      String?
   email      String?
+  email2     String? // additional reminder recipients (e.g. both parents)
+  email3     String?
   createdAt  DateTime @default(now())
 
   smsOptIn   Boolean @default(true)

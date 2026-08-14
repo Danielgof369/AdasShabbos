@@ -27,3 +27,7 @@ UPDATE "Suggestion" SET "title" = 'Come 20 minutes early Shabbos morning to lear
 UPDATE "Suggestion" SET "title" = 'Be fully dressed in bigdei Shabbos by zman hadlakas neiros', "detail" = 'Fully ready, dressed b''kavod, by the zman of candle lighting.' WHERE "id" = 'sug_a07';
 UPDATE "Suggestion" SET "title" = 'Wear bigdei Shabbos outside the house, all of Shabbos', "detail" = 'Your Shabbos best whenever you''re out, from candle lighting to havdalah.' WHERE "id" = 'sug_a11';
 UPDATE "Suggestion" SET "title" = 'Children: come to shul and stay through Kabbalas Shabbos' WHERE "id" = 'sug_k04';
+
+-- Round 3: multiple reminder emails per family
+ALTER TABLE "Household" ADD COLUMN IF NOT EXISTS "email2" TEXT;
+ALTER TABLE "Household" ADD COLUMN IF NOT EXISTS "email3" TEXT;

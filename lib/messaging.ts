@@ -40,7 +40,7 @@ async function sendTwilio(to: string, body: string, whatsapp: boolean): Promise<
   }
 }
 
-async function sendResend(to: string, subject: string, text: string): Promise<void> {
+async function sendResend(to: string[], subject: string, text: string): Promise<void> {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -49,7 +49,7 @@ async function sendResend(to: string, subject: string, text: string): Promise<vo
     },
     body: JSON.stringify({
       from: process.env.EMAIL_FROM ?? "Elul Shabbos Project <onboarding@resend.dev>",
-      to: [to],
+      to,
       subject,
       text,
       ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
@@ -67,7 +67,15 @@ async function sendResend(to: string, subject: string, text: string): Promise<vo
  * Logs the send to MessageLog. Returns the channel used, or null on failure.
  */
 export async function sendToHousehold(
-  household: { id: string; phone: string | null; email: string | null; smsOptIn: boolean; emailOptIn: boolean },
+  household: {
+    id: string;
+    phone: string | null;
+    email: string | null;
+    email2?: string | null;
+    email3?: string | null;
+    smsOptIn: boolean;
+    emailOptIn: boolean;
+  },
   message: OutboundMessage,
   kind: string,
   week: number
@@ -86,10 +94,13 @@ export async function sendToHousehold(
       run: () => sendTwilio(household.phone!, message.text, false),
     });
   }
-  if (household.email && household.emailOptIn && process.env.RESEND_API_KEY) {
+  const emails = [household.email, household.email2, household.email3].filter(
+    (e): e is string => !!e
+  );
+  if (emails.length && household.emailOptIn && process.env.RESEND_API_KEY) {
     attempts.push({
       channel: "email",
-      run: () => sendResend(household.email!, message.subject, message.text),
+      run: () => sendResend(emails, message.subject, message.text),
     });
   }
   if (attempts.length === 0) {

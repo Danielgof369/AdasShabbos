@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     where: {
       OR: [
         ...(phone ? [{ phone }] : []),
-        ...(email ? [{ email }] : []),
+        ...(email ? [{ email }, { email2: email }, { email3: email }] : []),
       ],
     },
   });

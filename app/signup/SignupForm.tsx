@@ -25,7 +25,7 @@ export default function SignupForm({
 }) {
   const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [emails, setEmails] = useState<string[]>([""]);
   const [people, setPeople] = useState<PersonDraft[]>([emptyPerson()]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export default function SignupForm({
       setError("Please enter your family (last) name.");
       return;
     }
-    if (!email.trim()) {
+    if (!emails.some((e) => e.trim())) {
       setError("Please enter an email so we can send your weekly reminders.");
       return;
     }
@@ -80,7 +80,7 @@ export default function SignupForm({
         body: JSON.stringify({
           familyName: familyName.trim(),
           phone: phone.trim() || null,
-          email: email.trim(),
+          emails: emails.map((e) => e.trim()).filter(Boolean),
           members: people.map((p) => ({
             name: p.name.trim(),
             category: p.category,
@@ -142,14 +142,38 @@ export default function SignupForm({
           Weekly reminders arrive by email. Phone is optional.
         </p>
         <div className="space-y-3">
-          <input
-            type="email"
-            inputMode="email"
-            placeholder="Email (for weekly reminders)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
-          />
+          {emails.map((em, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                type="email"
+                inputMode="email"
+                placeholder={i === 0 ? "Email (for weekly reminders)" : `Email ${i + 1}`}
+                value={em}
+                onChange={(e) =>
+                  setEmails((es) => es.map((x, j) => (j === i ? e.target.value : x)))
+                }
+                className="flex-1 rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
+              />
+              {i > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setEmails((es) => es.filter((_, j) => j !== i))}
+                  className="text-sm text-ink-soft underline hover:text-navy shrink-0"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          {emails.length < 3 && (
+            <button
+              type="button"
+              onClick={() => setEmails((es) => [...es, ""])}
+              className="text-sm text-navy underline underline-offset-2 hover:text-navy-deep"
+            >
+              + Add another email (both parents get the reminders)
+            </button>
+          )}
           <input
             type="tel"
             inputMode="tel"

@@ -44,7 +44,7 @@ export async function GET() {
       m.name,
       memberCategory(m),
       m.household.phone ?? "",
-      m.household.email ?? "",
+      [m.household.email, m.household.email2, m.household.email3].filter(Boolean).join("; "),
     ];
     for (let w = 1; w <= campaign.weeks; w++) {
       const g = m.goals.find((g) => g.week === w);

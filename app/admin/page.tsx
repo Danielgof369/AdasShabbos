@@ -206,6 +206,8 @@ export default async function AdminPage() {
                   {h.familyName && <div className="font-medium">{h.familyName}</div>}
                   {h.phone && <div>{h.phone}</div>}
                   {h.email && <div className="text-ink-soft">{h.email}</div>}
+                  {h.email2 && <div className="text-ink-soft">{h.email2}</div>}
+                  {h.email3 && <div className="text-ink-soft">{h.email3}</div>}
                 </td>
                 <td className="py-2 pr-3">
                   {h.members.map((m) => {

@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     familyName?: unknown;
     phone?: unknown;
     email?: unknown;
+    emails?: unknown;
     members?: unknown;
   };
   try {
@@ -35,8 +36,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rawEmail = typeof body.email === "string" ? body.email.trim() : "";
-  const email = rawEmail ? normalizeEmail(rawEmail) : null;
+  const rawEmails = Array.isArray(body.emails)
+    ? (body.emails as unknown[]).filter((e): e is string => typeof e === "string")
+    : typeof body.email === "string"
+      ? [body.email]
+      : [];
+  const emails: string[] = [];
+  for (const raw of rawEmails.slice(0, 3)) {
+    if (!raw.trim()) continue;
+    const normalized = normalizeEmail(raw);
+    if (!normalized) {
+      return NextResponse.json(
+        { error: `"${raw.trim()}" doesn't look like a valid email — please double-check it.` },
+        { status: 400 }
+      );
+    }
+    if (!emails.includes(normalized)) emails.push(normalized);
+  }
+  const email = emails[0] ?? null;
   if (!email) {
     return NextResponse.json(
       { error: "Please provide a valid email — that's where your weekly reminders go." },
@@ -105,7 +122,7 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.household.findFirst({
     where: {
       OR: [
-        { email },
+        ...emails.flatMap((e) => [{ email: e }, { email2: e }, { email3: e }]),
         ...(phone ? [{ phone }] : []),
       ],
     },
@@ -119,16 +136,25 @@ export async function POST(req: NextRequest) {
         familyName,
         phone,
         email,
+        email2: emails[1] ?? null,
+        email3: emails[2] ?? null,
       },
     }));
 
   if (existing) {
+    // Fill in any newly provided contact details without overwriting old ones.
+    const known = new Set(
+      [existing.email, existing.email2, existing.email3].filter(Boolean)
+    );
+    const fresh = emails.filter((e) => !known.has(e));
     await prisma.household.update({
       where: { id: existing.id },
       data: {
         familyName: existing.familyName ?? familyName,
         phone: existing.phone ?? phone,
-        email: existing.email ?? email,
+        email: existing.email ?? fresh.shift() ?? null,
+        email2: existing.email2 ?? fresh.shift() ?? null,
+        email3: existing.email3 ?? fresh.shift() ?? null,
       },
     });
   }

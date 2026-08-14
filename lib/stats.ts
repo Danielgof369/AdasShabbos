@@ -41,8 +41,7 @@ export async function getCampaignStats(activeWeek: number): Promise<CampaignStat
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
-  const pledgeTotal =
-    members * campaign.pledgePerSignup + checkins * campaign.pledgePerCheckin;
+  const pledgeTotal = households * campaign.pledgePerSignup;
 
   return {
     households,

@@ -32,7 +32,7 @@ export default function JoinNudge() {
       <div className="fixed bottom-0 inset-x-0 z-40 bg-navy-deep/95 border-t border-gold/40 px-4 py-3">
         <div className="mx-auto max-w-3xl flex items-center gap-3">
           <span className="hidden sm:block text-cream/85 text-sm flex-1">
-            One small thing for Shabbos. Every signup sends $5 to Tomchei Shabbos.
+            One small thing for Shabbos. Every family that joins sends $5 to Tomchei Shabbos.
           </span>
           <Link
             href="/signup"
@@ -59,7 +59,7 @@ export default function JoinNudge() {
             </h2>
             <p className="text-ink-soft text-sm mb-5">
               30 seconds to sign up your whole family — and $5 goes to Tomchei
-              Shabbos for every person the moment you do.
+              Shabbos the moment you do.
             </p>
             <Link
               href="/signup"

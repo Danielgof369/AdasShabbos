@@ -114,8 +114,8 @@ export default function SignupForm({
         <p className="text-ink-soft mb-6">
           Your family profile is ready, and your commitments are set for all
           four Shabbosos. We&rsquo;ll email you before each Shabbos, and again
-          afterward to check in. Your $5 per person is on its way to Tomchei
-          Shabbos — every check-in adds another $1.
+          afterward to check in. Your family&rsquo;s $5 is on its way to
+          Tomchei Shabbos.
         </p>
         <a
           href={link}

@@ -269,7 +269,7 @@ async function main() {
       weeks: 4,
       signupDeadline: new Date("2026-08-14T19:00:00-07:00"),
       pledgePerSignup: 5,
-      pledgePerCheckin: 1,
+      pledgePerCheckin: 0,
       charityName: "Tomchei Shabbos",
     },
   });

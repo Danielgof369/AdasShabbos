@@ -76,14 +76,14 @@ export default async function AdminPage() {
     ``,
     `Shabbos ${upShabbos} is coming! Whatever you signed up for this week — this is your Shabbos to do it. 💪`,
     ``,
-    `Not signed up yet? It takes 30 seconds, the whole family can join, and every signup sends $5 to ${campaign.charityName}:`,
+    `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $5 to ${campaign.charityName}:`,
     `https://shabboswithadas.com`,
   ].join("\n");
   const checkinBlast = [
     `✨ *Gut voch, Adas Torah!*`,
     ``,
     doneWeek >= 1
-      ? `How did week ${doneWeek} go? Take 10 seconds to check in — every check-in sends another $1 to ${campaign.charityName} and moves the whole shul's numbers:`
+      ? `How did week ${doneWeek} go? Take 10 seconds to check in — keep your family's streak alive and move the whole shul's numbers:`
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
     `https://shabboswithadas.com/find`,
     ``,
@@ -444,20 +444,11 @@ export default async function AdminPage() {
             <input name="charityName" defaultValue={campaign.charityName} className={inputCls} />
           </label>
           <label className="text-xs text-ink-soft">
-            $ per signup
+            $ per family signup
             <input
               name="pledgePerSignup"
               type="number"
               defaultValue={campaign.pledgePerSignup}
-              className={inputCls}
-            />
-          </label>
-          <label className="text-xs text-ink-soft">
-            $ per check-in
-            <input
-              name="pledgePerCheckin"
-              type="number"
-              defaultValue={campaign.pledgePerCheckin}
               className={inputCls}
             />
           </label>

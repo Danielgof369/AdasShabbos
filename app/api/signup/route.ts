@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
       ``,
       `Lost the link? Tap "Sign in" at shabboswithadas.com and enter this email address — that's it.`,
       ``,
-      `We'll remind you before each Shabbos, and after Shabbos to check in. Every signup sent $5 to Tomchei Shabbos, and every check-in adds $1 more.`,
+      `We'll remind you before each Shabbos, and after Shabbos to check in. Your family's signup sent $5 to Tomchei Shabbos.`,
       ...(cleanMembers.some((m) => m.category === "boy" || m.category === "girl")
         ? [``, `P.S. For the children: the Shabbos Helpers Guide, full of jobs worth owning — ${base}/shabbos-helpers-guide.pdf`]
         : []),

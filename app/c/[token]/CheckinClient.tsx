@@ -216,7 +216,7 @@ export default function CheckinClient({
 
           {celebrating[m.memberId] && (
             <div className="mb-4 rounded-lg bg-gold-pale border border-gold/40 px-4 py-3 text-navy-deep text-sm">
-              🎉 <strong>Beautiful!</strong> Another $1 goes to Tomchei Shabbos —
+              🎉 <strong>Beautiful!</strong> The shul-wide count just went up —
               same commitment again next Shabbos. Keep the streak going!
             </div>
           )}

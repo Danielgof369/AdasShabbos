@@ -126,7 +126,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     const isLastWeek = week >= campaign.weeks;
     const text = [
       `✨ Gut voch! How did week ${week} go?`,
-      `Check in for ${names} — every check-in sends another $1 to ${campaign.charityName}.`,
+      `Check in for ${names} — every check-in grows your streak and the whole shul's numbers.`,
       isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
       link,
     ]

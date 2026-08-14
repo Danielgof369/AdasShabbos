@@ -13,7 +13,9 @@ export default async function HouseholdPage({
 }) {
   const { token } = await params;
   const campaign = await getCampaign();
-  const view = await getHouseholdView(token, campaign);
+  const view =
+    (await getHouseholdView(token, campaign)) ??
+    (await getHouseholdView(decodeURIComponent(token).toLowerCase(), campaign));
   if (!view) notFound();
 
   const suggestions = await prisma.suggestion.findMany({

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
@@ -128,11 +127,23 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Friendly personal link: /c/theirname, with a number appended for
+  // duplicate family names (gofman, gofman2, ...).
+  async function slugToken(name: string): Promise<string> {
+    const base = name.toLowerCase().replace(/[^a-z0-9]/g, "") || "family";
+    for (let n = 1; n < 100; n++) {
+      const candidate = n === 1 ? base : `${base}${n}`;
+      const taken = await prisma.household.findUnique({ where: { token: candidate } });
+      if (!taken) return candidate;
+    }
+    return `${base}${Date.now()}`;
+  }
+
   const household =
     existing ??
     (await prisma.household.create({
       data: {
-        token: randomBytes(9).toString("base64url"),
+        token: await slugToken(familyName),
         familyName,
         phone,
         email,

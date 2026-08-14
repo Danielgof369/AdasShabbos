@@ -238,6 +238,18 @@ export default async function Home() {
         <p className="text-ink-soft text-sm text-center mt-6">
           …or write in your own idea when you sign up.
         </p>
+        <div className="mt-6 bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
+          <p className="text-navy text-sm">
+            🖍️ <span className="font-semibold">For the children:</span> download the{" "}
+            <a
+              href="/shabbos-helpers-guide.pdf"
+              className="underline underline-offset-2 font-semibold hover:text-navy-deep"
+            >
+              Shabbos Helpers Guide
+            </a>{" "}
+            — fifteen jobs with titles worth owning, and a fridge checklist to go with them.
+          </p>
+        </div>
         <div className="text-center mt-8">
           <Link
             href="/signup"

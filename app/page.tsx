@@ -170,12 +170,18 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center">
           <Link
             href="/signup"
             className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 hover:bg-navy-soft transition-colors"
           >
             Add your family to the count
+          </Link>
+          <Link
+            href="/families"
+            className="inline-block border border-navy/30 text-navy font-semibold rounded-lg px-8 py-3.5 hover:border-gold hover:text-navy-deep transition-colors"
+          >
+            🏅 See who's joined
           </Link>
         </div>
       </section>

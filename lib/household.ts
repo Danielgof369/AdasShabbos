@@ -176,3 +176,31 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
     members,
   };
 }
+
+/** Family streak from raw member goal rows (for the public families wall). */
+export function familyStreakFromGoals(
+  campaign: CampaignInfo,
+  members: { goals: { week: number; checkedInAt: Date | null }[] }[],
+  now = new Date()
+): number {
+  const lastWeek = lastShabbosWeek(campaign, now);
+  let streak = 0;
+  for (let w = lastWeek; w >= 1; w--) {
+    const anyDone = members.some((m) =>
+      m.goals.some((g) => g.week === w && onTimeCheck(campaign, w, g.checkedInAt))
+    );
+    if (anyDone) {
+      streak++;
+    } else if (w === lastWeek && now.getTime() <= checkinDeadline(campaign, w).getTime()) {
+      continue;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function onTimeCheck(campaign: CampaignInfo, week: number, checkedInAt: Date | null): boolean {
+  if (!checkedInAt) return false;
+  return checkedInAt.getTime() <= checkinDeadline(campaign, week).getTime();
+}

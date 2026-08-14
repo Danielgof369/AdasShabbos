@@ -159,7 +159,7 @@ export default async function Home() {
           <div>
             <div className="font-display text-2xl text-navy">{stats.kids}</div>
             <div className="text-ink-soft text-sm">
-              {stats.kids === 1 ? "child joining" : "children joining"}
+              {stats.kids === 1 ? "child joined" : "children joined"}
             </div>
           </div>
           <div>

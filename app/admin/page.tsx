@@ -10,9 +10,12 @@ import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 import {
   loginAction,
   logoutAction,
+  deleteHouseholdAction,
+  deleteMemberAction,
   saveCampaignAction,
   saveSuggestionAction,
   deleteSuggestionAction,
@@ -214,8 +217,19 @@ export default async function AdminPage() {
                     const cat = memberCategory(m);
                     const icon = { man: "👨", woman: "👩", boy: "👦", girl: "👧" }[cat];
                     return (
-                      <div key={m.id}>
-                        {m.name} {icon}
+                      <div key={m.id} className="flex items-center gap-2">
+                        <span>
+                          {m.name} {icon}
+                        </span>
+                        <form action={deleteMemberAction} className="inline">
+                          <input type="hidden" name="id" value={m.id} />
+                          <ConfirmSubmit
+                            message={`Remove ${m.name} and all their check-ins? This cannot be undone.`}
+                            className="text-xs text-red-700/70 hover:text-red-700"
+                          >
+                            ✕
+                          </ConfirmSubmit>
+                        </form>
                       </div>
                     );
                   })}
@@ -242,12 +256,23 @@ export default async function AdminPage() {
                   ))}
                 </td>
                 <td className="py-2">
-                  <a
-                    href={`/c/${h.token}`}
-                    className="text-navy underline underline-offset-2"
-                  >
-                    open
-                  </a>
+                  <div className="flex flex-col gap-1">
+                    <a
+                      href={`/c/${h.token}`}
+                      className="text-navy underline underline-offset-2"
+                    >
+                      open
+                    </a>
+                    <form action={deleteHouseholdAction}>
+                      <input type="hidden" name="id" value={h.id} />
+                      <ConfirmSubmit
+                        message={`Delete the ${h.familyName ?? ""} family entirely — every member and check-in? This cannot be undone.`}
+                        className="text-xs text-red-700/70 underline hover:text-red-700"
+                      >
+                        delete family
+                      </ConfirmSubmit>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -93,3 +93,35 @@ export async function sendCheckinAction() {
   await runCheckinReminders();
   revalidatePath("/admin");
 }
+
+export async function deleteHouseholdAction(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  // Cascades to members and goals; message log rows are cleaned up explicitly.
+  await prisma.messageLog.deleteMany({ where: { householdId: id } });
+  await prisma.household.delete({ where: { id } }).catch(() => {});
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/families");
+}
+
+export async function deleteMemberAction(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const member = await prisma.member.findUnique({
+    where: { id },
+    include: { household: { include: { members: true } } },
+  });
+  if (!member) return;
+  await prisma.member.delete({ where: { id } });
+  // If that was the household's last member, remove the empty household too.
+  if (member.household.members.length <= 1) {
+    await prisma.messageLog.deleteMany({ where: { householdId: member.householdId } });
+    await prisma.household.delete({ where: { id: member.householdId } }).catch(() => {});
+  }
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/families");
+}

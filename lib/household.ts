@@ -5,7 +5,7 @@ import {
   checkinDeadline,
   formatShabbosDate,
 } from "@/lib/campaign";
-import { memberCategory } from "@/lib/categories";
+import { memberCategory, isChildCategory } from "@/lib/categories";
 import type { MemberGoalView } from "@/lib/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -37,12 +37,7 @@ export function nextShabbosWeek(campaign: CampaignInfo, now = new Date()): numbe
   return campaign.weeks + 1;
 }
 
-/** Was this goal checked in within its 48-hour streak window? */
-function onTime(
-  campaign: CampaignInfo,
-  week: number,
-  checkedInAt: Date | null
-): boolean {
+function onTime(campaign: CampaignInfo, week: number, checkedInAt: Date | null): boolean {
   if (!checkedInAt) return false;
   return checkedInAt.getTime() <= checkinDeadline(campaign, week).getTime();
 }
@@ -64,66 +59,65 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
   const nextWeek = nextShabbosWeek(campaign, now);
 
   const members: MemberGoalView[] = household.members.map((m) => {
-    const byWeek = new Map(m.goals.map((g) => [g.week, g]));
+    const byWeek = new Map<number, typeof m.goals>();
+    for (const g of m.goals) {
+      const arr = byWeek.get(g.week) ?? [];
+      arr.push(g);
+      byWeek.set(g.week, arr);
+    }
     const category = memberCategory(m);
 
-    // Pending check-in: most recent past-Shabbos goal not yet checked in,
-    // within a ~8 day grace window. `late` = streak window already closed.
+    // Week status helper
+    const status = (w: number): "done" | "late" | "missed" | "set" | "none" => {
+      const goals = byWeek.get(w) ?? [];
+      if (goals.length === 0) return "none";
+      const allChecked = goals.every((g) => g.checkedInAt);
+      if (allChecked) {
+        return goals.every((g) => onTime(campaign, w, g.checkedInAt)) ? "done" : "late";
+      }
+      return w <= lastWeek ? "missed" : "set";
+    };
+
+    // Pending: most recent past week with any unchecked goal, ~8 day grace.
     let pending: MemberGoalView["pending"] = null;
     for (let w = lastWeek; w >= 1; w--) {
-      const g = byWeek.get(w);
-      if (!g) continue;
+      const goals = byWeek.get(w) ?? [];
+      if (goals.length === 0) continue;
       const shabbos = shabbosOfWeek(campaign, w);
       const age = now.getTime() - shabbos.getTime();
-      if (!g.checkedInAt && age <= 8 * DAY_MS) {
+      if (goals.some((g) => !g.checkedInAt) && age <= 8 * DAY_MS) {
         pending = {
-          goalId: g.id,
           week: w,
-          title: goalTitle(g),
           shabbosLabel: formatShabbosDate(shabbos),
           late: now.getTime() > checkinDeadline(campaign, w).getTime(),
+          items: goals.map((g) => ({
+            goalId: g.id,
+            title: goalTitle(g),
+            done: !!g.checkedInAt,
+          })),
         };
       }
-      break; // only the most recent past goal matters
+      break; // only the most recent past week matters
     }
 
-    const upcomingGoal = nextWeek <= campaign.weeks ? byWeek.get(nextWeek) : undefined;
-    const upcoming = upcomingGoal
-      ? {
-          goalId: upcomingGoal.id,
-          week: nextWeek,
-          title: goalTitle(upcomingGoal),
-          shabbosLabel: formatShabbosDate(shabbosOfWeek(campaign, nextWeek)),
-          checkedIn: !!upcomingGoal.checkedInAt,
-        }
-      : null;
-
-    const nextGoalWeek = nextWeek <= campaign.weeks ? nextWeek : null;
-
-    const sorted = [...m.goals].sort((a, b) => b.week - a.week);
-    const lastTitle = sorted.length ? goalTitle(sorted[0]) : null;
+    // Upcoming + current commitment set (from the latest week with goals)
+    const upcomingGoals = nextWeek <= campaign.weeks ? (byWeek.get(nextWeek) ?? []) : [];
+    const latestWeekWithGoals = Math.max(0, ...[...byWeek.keys()]);
+    const currentGoals = byWeek.get(latestWeekWithGoals) ?? [];
+    const commitments = (upcomingGoals.length ? upcomingGoals : currentGoals).map(goalTitle);
 
     const history: MemberGoalView["history"] = [];
-    for (let w = 1; w <= campaign.weeks; w++) {
-      const g = byWeek.get(w);
-      if (g?.checkedInAt) history.push(onTime(campaign, w, g.checkedInAt) ? "done" : "late");
-      else if (g && w <= lastWeek) history.push("missed");
-      else if (g) history.push("set");
-      else history.push("none");
-    }
+    for (let w = 1; w <= campaign.weeks; w++) history.push(status(w));
 
-    // Personal streak: consecutive on-time weeks counting back from the most
-    // recent closed week. A still-open pending week doesn't break the streak.
+    // Personal streak: consecutive fully on-time weeks from the most recent
+    // closed week; a still-open pending week doesn't break it.
     let streak = 0;
     for (let w = lastWeek; w >= 1; w--) {
-      const g = byWeek.get(w);
-      if (g && onTime(campaign, w, g.checkedInAt)) {
+      const s = status(w);
+      if (s === "done") {
         streak++;
-      } else if (
-        w === lastWeek &&
-        now.getTime() <= checkinDeadline(campaign, w).getTime()
-      ) {
-        continue; // window still open — pending, not broken
+      } else if (w === lastWeek && now.getTime() <= checkinDeadline(campaign, w).getTime()) {
+        continue;
       } else {
         break;
       }
@@ -133,12 +127,25 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       memberId: m.id,
       name: m.name,
       category,
-      isChild: category === "boy" || category === "girl",
+      isChild: isChildCategory(category),
       streak,
+      commitments,
+      currentSuggestionIds: (upcomingGoals.length ? upcomingGoals : currentGoals)
+        .map((g) => g.suggestionId)
+        .filter((id): id is string => !!id),
+      currentCustomTitle:
+        (upcomingGoals.length ? upcomingGoals : currentGoals).find((g) => !g.suggestionId)
+          ?.customTitle ?? null,
       pending,
-      upcoming,
-      nextGoalWeek,
-      lastTitle,
+      upcoming:
+        upcomingGoals.length > 0
+          ? {
+              week: nextWeek,
+              shabbosLabel: formatShabbosDate(shabbosOfWeek(campaign, nextWeek)),
+              titles: upcomingGoals.map(goalTitle),
+            }
+          : null,
+      canAdjust: nextWeek <= campaign.weeks,
       history,
     };
   });

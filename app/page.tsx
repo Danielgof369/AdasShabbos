@@ -41,9 +41,10 @@ export default async function Home() {
             Every week of Elul.
           </h1>
           <p className="text-cream/85 text-lg max-w-xl mb-8">
-            Every man, woman, and kid picks one extra way to honor Shabbos
-            each week. Learn at the table, set it Thursday night, sing the
-            zemiros. Small commitments, taken on together.
+            Every man, woman, and child takes on one extra way to honor
+            Shabbos, held for the four Shabbosos through Shabbos Shuva. Learn
+            at the table, set it Thursday night, sing the zemiros. Small
+            commitments, taken on together.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -101,7 +102,7 @@ export default async function Home() {
               goes silent, the year that follows tends to be extraordinary,
               for blessing or for tragedy. On that day it is not the shofar
               that pleads for Klal Yisroel. It is Shabbos itself that stands
-              as our <strong className="text-navy">meileitz yosher</strong>,
+              as our <strong className="text-navy">meilitz yosher</strong>,
               our advocate. How we hold Shabbos becomes how the year holds us.
             </p>
             <p>
@@ -159,7 +160,7 @@ export default async function Home() {
           <div>
             <div className="font-display text-2xl text-navy">{stats.kids}</div>
             <div className="text-ink-soft text-sm">
-              {stats.kids === 1 ? "kid joining" : "kids joining"}
+              {stats.kids === 1 ? "child joining" : "children joining"}
             </div>
           </div>
           <div>
@@ -190,7 +191,7 @@ export default async function Home() {
               {
                 n: "1",
                 title: "Pick your thing",
-                body: "Sign up with your name and phone or email, and choose one extra Shabbos commitment for the week — for yourself, and for the kids too.",
+                body: "Sign up with your name and email, and choose one or more Shabbos commitments to hold for all four weeks — for yourself, and for the children too.",
               },
               {
                 n: "2",
@@ -219,7 +220,7 @@ export default async function Home() {
           What you can take on
         </h2>
         <p className="text-ink-soft text-center mb-8">
-          When you sign up, everyone gets suggestions matched to them.
+          When you sign up, adults and children each see the options meant for them.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {suggestions.map((s) => (

@@ -50,8 +50,8 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
     }
 
     const withGoal = h.members
-      .map((m) => ({ m, goal: m.goals.find((g) => g.week === week) }))
-      .filter((x) => x.goal);
+      .map((m) => ({ m, goals: m.goals.filter((g) => g.week === week) }))
+      .filter((x) => x.goals.length > 0);
     const withoutGoal = h.members.filter((m) => !m.goals.some((g) => g.week === week));
 
     const link = `${baseUrl()}/c/${h.token}`;
@@ -59,14 +59,14 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
     lines.push(`🕯️ Shabbos is coming — ${shabbosLabel}! Week ${week} of ${campaign.weeks} of the Elul Shabbos Project.`);
     if (withGoal.length > 0) {
       lines.push("");
-      for (const { m, goal } of withGoal) {
-        lines.push(`• ${m.name}: ${goalTitle(goal!)}`);
+      for (const { m, goals } of withGoal) {
+        lines.push(`• ${m.name}: ${goals.map((g) => goalTitle(g)).join(" + ")}`);
       }
     }
     if (withoutGoal.length > 0) {
       lines.push("");
       lines.push(
-        `${withoutGoal.map((m) => m.name).join(" & ")} ${withoutGoal.length === 1 ? "hasn't" : "haven't"} picked this week's commitment yet — tap to choose: ${link}`
+        `${withoutGoal.map((m) => m.name).join(" & ")} ${withoutGoal.length === 1 ? "hasn't" : "haven't"} set commitments yet — tap to choose: ${link}`
       );
     } else {
       lines.push("");
@@ -127,7 +127,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     const text = [
       `✨ Gut voch! How did week ${week} go?`,
       `Check in for ${names} — every check-in sends another $1 to ${campaign.charityName}.`,
-      isLastWeek ? "" : `Then pick next week's commitment while you're there.`,
+      isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
       link,
     ]
       .filter(Boolean)

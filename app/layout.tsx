@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "The Elul Shabbos Project",
     description:
-      "One small thing for Shabbos, every week of Elul. Men, women & kids — sign up, get a weekly reminder, and watch the whole shul's numbers grow.",
+      "One small thing for Shabbos, every week of Elul. Men, women & children — sign up, get a weekly reminder, and watch the whole shul's numbers grow.",
     url: "https://shabboswithadas.com",
     siteName: "The Elul Shabbos Project",
   },

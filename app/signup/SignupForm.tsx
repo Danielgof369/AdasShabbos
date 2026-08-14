@@ -1,31 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, CATEGORY_LABELS, categoriesInclude, type Category } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_LABELS, audienceMatches, type Category } from "@/lib/categories";
 import type { SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
   name: string;
   category: Category | null;
-  suggestionId: string | null;
+  suggestionIds: string[];
   customTitle: string;
-  useCustom: boolean;
 };
 
 const emptyPerson = (): PersonDraft => ({
   name: "",
   category: null,
-  suggestionId: null,
+  suggestionIds: [],
   customTitle: "",
-  useCustom: false,
 });
 
 export default function SignupForm({
   suggestions,
-  week,
 }: {
   suggestions: SuggestionOption[];
-  week: number;
 }) {
   const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
@@ -37,6 +33,20 @@ export default function SignupForm({
 
   const updatePerson = (i: number, patch: Partial<PersonDraft>) =>
     setPeople((ps) => ps.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+
+  const togglePick = (i: number, id: string) =>
+    setPeople((ps) =>
+      ps.map((p, j) => {
+        if (j !== i) return p;
+        const has = p.suggestionIds.includes(id);
+        return {
+          ...p,
+          suggestionIds: has
+            ? p.suggestionIds.filter((x) => x !== id)
+            : [...p.suggestionIds, id],
+        };
+      })
+    );
 
   async function submit() {
     setError(null);
@@ -57,12 +67,8 @@ export default function SignupForm({
         setError(`Choose man, woman, boy, or girl for ${p.name.trim() || "each person"}.`);
         return;
       }
-      if (!p.useCustom && !p.suggestionId) {
-        setError(`Pick a commitment for ${p.name.trim()} — or write your own.`);
-        return;
-      }
-      if (p.useCustom && !p.customTitle.trim()) {
-        setError(`Write in what ${p.name.trim()} is taking on.`);
+      if (p.suggestionIds.length === 0 && !p.customTitle.trim()) {
+        setError(`Pick at least one commitment for ${p.name.trim()} — or write your own.`);
         return;
       }
     }
@@ -78,8 +84,8 @@ export default function SignupForm({
           members: people.map((p) => ({
             name: p.name.trim(),
             category: p.category,
-            suggestionId: p.useCustom ? null : p.suggestionId,
-            customTitle: p.useCustom ? p.customTitle.trim() : null,
+            suggestionIds: p.suggestionIds,
+            customTitle: p.customTitle.trim() || null,
           })),
         }),
       });
@@ -106,9 +112,10 @@ export default function SignupForm({
           You&rsquo;re in — welcome!
         </h2>
         <p className="text-ink-soft mb-6">
-          Your family profile is ready. We&rsquo;ll email you a reminder before
-          Shabbos, and again afterward to check in. Your $5 per person is on
-          its way to Tomchei Shabbos — every check-in adds another $1.
+          Your family profile is ready, and your commitments are set for all
+          four Shabbosos. We&rsquo;ll email you before each Shabbos, and again
+          afterward to check in. Your $5 per person is on its way to Tomchei
+          Shabbos — every check-in adds another $1.
         </p>
         <a
           href={link}
@@ -194,9 +201,7 @@ export default function SignupForm({
               <button
                 key={c}
                 type="button"
-                onClick={() =>
-                  updatePerson(i, { category: c, suggestionId: null, useCustom: false })
-                }
+                onClick={() => updatePerson(i, { category: c, suggestionIds: [] })}
                 className={`rounded-full px-4 py-2 text-sm border transition-colors ${
                   p.category === c
                     ? "border-gold bg-gold-pale text-navy-deep font-semibold"
@@ -211,52 +216,38 @@ export default function SignupForm({
           {p.category ? (
             <>
               <p className="text-sm text-ink-soft mb-2">
-                This week, {p.name.trim() || "they"}&rsquo;ll take on:
+                For all four Shabbosos, {p.name.trim() || "they"}&rsquo;ll take on
+                <span className="text-navy font-medium"> (pick one or more)</span>:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {suggestions
-                  .filter((s) => categoriesInclude(s.categories, p.category!))
+                  .filter((s) => audienceMatches(s.categories, p.category!))
                   .map((s) => {
-                    const selected = !p.useCustom && p.suggestionId === s.id;
+                    const selected = p.suggestionIds.includes(s.id);
                     return (
                       <button
                         key={s.id}
                         type="button"
-                        onClick={() =>
-                          updatePerson(i, { suggestionId: s.id, useCustom: false })
-                        }
+                        onClick={() => togglePick(i, s.id)}
                         className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
                           selected
                             ? "border-gold bg-gold-pale text-navy-deep font-medium"
                             : "border-parchment bg-cream hover:border-gold-soft"
                         }`}
                       >
+                        {selected ? "✓ " : ""}
                         {s.title}
                       </button>
                     );
                   })}
-                <button
-                  type="button"
-                  onClick={() => updatePerson(i, { useCustom: true, suggestionId: null })}
-                  className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
-                    p.useCustom
-                      ? "border-gold bg-gold-pale text-navy-deep font-medium"
-                      : "border-parchment bg-cream hover:border-gold-soft"
-                  }`}
-                >
-                  ✏️ My own idea…
-                </button>
               </div>
-              {p.useCustom && (
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="What will they take on for Shabbos?"
-                  value={p.customTitle}
-                  onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
-                  className="mt-3 w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 outline-none focus:border-gold"
-                />
-              )}
+              <input
+                type="text"
+                placeholder="✏️ …or add your own idea"
+                value={p.customTitle}
+                onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
+                className="mt-3 w-full rounded-lg border border-parchment bg-cream px-4 py-2.5 text-sm outline-none focus:border-gold"
+              />
             </>
           ) : (
             <p className="text-sm text-ink-soft italic">
@@ -286,7 +277,7 @@ export default function SignupForm({
         onClick={submit}
         className="w-full bg-gold text-navy-deep text-lg font-semibold rounded-xl py-4 hover:bg-gold-soft transition-colors disabled:opacity-60"
       >
-        {submitting ? "Signing you up…" : `Sign up for week ${week}`}
+        {submitting ? "Signing you up…" : "Sign up for the four Shabbosos"}
       </button>
       <p className="text-xs text-ink-soft text-center pb-4">
         By signing up you agree to receive weekly reminder emails for this

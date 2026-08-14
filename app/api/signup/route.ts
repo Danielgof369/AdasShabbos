@@ -9,7 +9,7 @@ import { sendToHousehold } from "@/lib/messaging";
 type MemberInput = {
   name?: unknown;
   category?: unknown;
-  suggestionId?: unknown;
+  suggestionIds?: unknown;
   customTitle?: unknown;
 };
 
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
 
   const cleanMembers: {
     name: string;
-    category: string;
-    suggestionId: string | null;
+    category: "man" | "woman" | "boy" | "girl";
+    suggestionIds: string[];
     customTitle: string | null;
   }[] = [];
   for (const m of members) {
@@ -84,21 +84,20 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const suggestionId =
-      typeof m.suggestionId === "string" && validSuggestionIds.has(m.suggestionId)
-        ? m.suggestionId
-        : null;
+    const suggestionIds = (Array.isArray(m.suggestionIds) ? m.suggestionIds : [])
+      .filter((id): id is string => typeof id === "string" && validSuggestionIds.has(id))
+      .slice(0, 6);
     const customTitle =
       typeof m.customTitle === "string" && m.customTitle.trim()
         ? m.customTitle.trim().slice(0, 120)
         : null;
-    if (!suggestionId && !customTitle) {
+    if (suggestionIds.length === 0 && !customTitle) {
       return NextResponse.json(
-        { error: `Pick a commitment for ${name}.` },
+        { error: `Pick at least one commitment for ${name}.` },
         { status: 400 }
       );
     }
-    cleanMembers.push({ name, category: m.category, suggestionId, customTitle });
+    cleanMembers.push({ name, category: m.category, suggestionIds, customTitle });
   }
 
   // Reuse an existing household for the same contact so families can add
@@ -134,23 +133,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // One commitment set, held for the whole campaign: a goal row per
+  // commitment for the current week and every remaining week.
   for (const m of cleanMembers) {
     const member = await prisma.member.create({
       data: {
         householdId: household.id,
         name: m.name,
         gender: m.category,
-        isChild: isChildCategory(m.category as "boy" | "girl" | "man" | "woman"),
+        isChild: isChildCategory(m.category),
       },
     });
-    await prisma.goal.create({
-      data: {
-        memberId: member.id,
-        week,
-        suggestionId: m.suggestionId,
-        customTitle: m.customTitle,
-      },
-    });
+    for (let w = week; w <= campaign.weeks; w++) {
+      for (const suggestionId of m.suggestionIds) {
+        await prisma.goal.create({ data: { memberId: member.id, week: w, suggestionId } });
+      }
+      if (m.customTitle) {
+        await prisma.goal.create({
+          data: { memberId: member.id, week: w, customTitle: m.customTitle },
+        });
+      }
+    }
   }
 
   // Welcome email with the family's permanent link (first signup only).
@@ -166,11 +169,17 @@ export async function POST(req: NextRequest) {
     });
     const lines = memberGoals
       .filter((m) => m.goals.length)
-      .map((m) => `• ${m.name}: ${m.goals[0].suggestion?.title ?? m.goals[0].customTitle}`);
+      .map(
+        (m) =>
+          `• ${m.name}: ${m.goals
+            .map((g) => g.suggestion?.title ?? g.customTitle)
+            .filter(Boolean)
+            .join(" + ")}`
+      );
     const text = [
       `Welcome to the Elul Shabbos Project! 🕯️`,
       ``,
-      `The ${familyName} family is signed up for Shabbos ${formatShabbosDate(shabbosOfWeek(campaign, week))}:`,
+      `The ${familyName} family has taken on their commitments for the four Shabbosos of the campaign — starting Shabbos ${formatShabbosDate(shabbosOfWeek(campaign, week))}, through Shabbos Shuva:`,
       ...lines,
       ``,
       `Your family page — there's no password, this link IS your login:`,
@@ -178,9 +187,8 @@ export async function POST(req: NextRequest) {
       ``,
       `Lost the link? Tap "Sign in" at shabboswithadas.com and enter this email address — that's it.`,
       ``,
-      `We'll remind you before Shabbos, and after Shabbos to check in. Every signup sent $5 to Tomchei Shabbos, and every check-in adds $1 more.`,
+      `We'll remind you before each Shabbos, and after Shabbos to check in. Every signup sent $5 to Tomchei Shabbos, and every check-in adds $1 more.`,
     ].join("\n");
-    // Fire-and-forget: never block or fail the signup on email trouble.
     sendToHousehold(
       household,
       { subject: `Your family page — The Elul Shabbos Project`, text },

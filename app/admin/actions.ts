@@ -44,7 +44,7 @@ export async function saveCampaignAction(formData: FormData) {
 export async function saveSuggestionAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
-  const pickedCategories = ["man", "woman", "boy", "girl"].filter(
+  const pickedCategories = ["adult", "child"].filter(
     (c) => formData.get(`cat_${c}`) === "on"
   );
   const data = {
@@ -52,7 +52,7 @@ export async function saveSuggestionAction(formData: FormData) {
     detail: String(formData.get("detail") ?? "").trim().slice(0, 300) || null,
     unitLabel: String(formData.get("unitLabel") ?? "").trim().slice(0, 80),
     unitValue: Math.max(1, Number(formData.get("unitValue")) || 1),
-    categories: (pickedCategories.length ? pickedCategories : ["man", "woman", "boy", "girl"]).join(","),
+    categories: pickedCategories.length === 1 ? pickedCategories[0] : "both",
     active: formData.get("active") === "on",
     sortOrder: Number(formData.get("sortOrder")) || 0,
   };

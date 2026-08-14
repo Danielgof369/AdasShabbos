@@ -13,40 +13,52 @@ export type CampaignInfo = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * The campaign's Shabbos dates (LA time). Week 4 is Shabbos Shuva;
+ * Rosh Hashanah (Sept 12) is deliberately skipped, so week 3 -> week 4
+ * spans two calendar weeks.
+ */
+export const SHABBOS_DATES = [
+  new Date("2026-08-22T00:00:00-07:00"),
+  new Date("2026-08-29T00:00:00-07:00"),
+  new Date("2026-09-05T00:00:00-07:00"),
+  new Date("2026-09-19T00:00:00-07:00"),
+];
+
 export async function getCampaign(): Promise<CampaignInfo> {
   const c = await prisma.campaign.findUnique({ where: { id: "campaign" } });
-  if (c) return c;
-  return prisma.campaign.create({
-    data: { id: "campaign", startDate: new Date("2026-08-09T00:00:00-07:00") },
+  if (c) return { ...c, weeks: SHABBOS_DATES.length };
+  const created = await prisma.campaign.create({
+    data: { id: "campaign", startDate: new Date("2026-08-16T00:00:00-07:00") },
   });
+  return { ...created, weeks: SHABBOS_DATES.length };
 }
 
 /**
- * Campaign weeks run Sunday → Shabbos. Week 1 starts on campaign.startDate.
- * Returns the 1-based week number for `now`, clamped to [0, weeks + 1]:
- * 0 = before the campaign, weeks + 1 = after it ended.
+ * The 1-based week number for `now`: week n ends with its Shabbos.
+ * 0 = before the campaign window, weeks + 1 = after the last Shabbos.
  */
-export function weekNumber(campaign: CampaignInfo, now = new Date()): number {
-  const diff = now.getTime() - campaign.startDate.getTime();
-  if (diff < 0) return 0;
-  const week = Math.floor(diff / (7 * DAY_MS)) + 1;
-  return week > campaign.weeks ? campaign.weeks + 1 : week;
+export function weekNumber(_campaign: CampaignInfo, now = new Date()): number {
+  const first = SHABBOS_DATES[0].getTime() - 6 * DAY_MS; // Sunday before Shabbos 1
+  if (now.getTime() < first) return 0;
+  for (let i = 0; i < SHABBOS_DATES.length; i++) {
+    // week i+1 runs through the end of its Shabbos day
+    if (now.getTime() <= SHABBOS_DATES[i].getTime() + DAY_MS) return i + 1;
+  }
+  return SHABBOS_DATES.length + 1;
 }
 
 /** The Shabbos (Saturday) that ends the given campaign week. */
-export function shabbosOfWeek(campaign: CampaignInfo, week: number): Date {
-  const start = new Date(campaign.startDate.getTime() + (week - 1) * 7 * DAY_MS);
-  // Advance to the Saturday within [start, start + 6 days]
-  const d = new Date(start);
-  while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
-  return d;
+export function shabbosOfWeek(_campaign: CampaignInfo, week: number): Date {
+  const clamped = Math.min(Math.max(week, 1), SHABBOS_DATES.length);
+  return SHABBOS_DATES[clamped - 1];
 }
 
-/** Which week people should currently be setting goals / checking in for. */
+/** Which week people should currently be checking in for. */
 export function activeWeek(campaign: CampaignInfo, now = new Date()): number {
   const w = weekNumber(campaign, now);
   if (w < 1) return 1;
-  if (w > campaign.weeks) return campaign.weeks;
+  if (w > SHABBOS_DATES.length) return SHABBOS_DATES.length;
   return w;
 }
 

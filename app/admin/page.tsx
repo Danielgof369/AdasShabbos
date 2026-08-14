@@ -106,7 +106,7 @@ export default async function AdminPage() {
         {[
           ["Households", stats.households],
           ["People", stats.members],
-          ["Kids", stats.kids],
+          ["Children", stats.kids],
           ["Check-ins", stats.checkins],
           [`$ to ${stats.charityName}`, `$${stats.pledgeTotal}`],
         ].map(([label, value]) => (
@@ -319,12 +319,12 @@ export default async function AdminPage() {
                 <div className="text-xs text-ink-soft sm:col-span-2">
                   Shown to
                   <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink">
-                    {(["man", "woman", "boy", "girl"] as const).map((c) => (
+                    {(["adult", "child"] as const).map((c) => (
                       <label key={c} className="flex items-center gap-1.5 capitalize">
                         <input
                           type="checkbox"
                           name={`cat_${c}`}
-                          defaultChecked={s.categories.includes(c)}
+                          defaultChecked={s.categories.includes(c) || s.categories.includes("both") || ["man","woman","boy","girl"].some((x) => s.categories.includes(x) && ((c === "adult" && (x === "man" || x === "woman")) || (c === "child" && (x === "boy" || x === "girl"))))}
                         />
                         {c}
                       </label>
@@ -380,7 +380,7 @@ export default async function AdminPage() {
             <div className="text-xs text-ink-soft sm:col-span-2">
               Shown to
               <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink">
-                {(["man", "woman", "boy", "girl"] as const).map((c) => (
+                {(["adult", "child"] as const).map((c) => (
                   <label key={c} className="flex items-center gap-1.5 capitalize">
                     <input type="checkbox" name={`cat_${c}`} defaultChecked />
                     {c}

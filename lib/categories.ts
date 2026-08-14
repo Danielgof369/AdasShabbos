@@ -16,17 +16,34 @@ export function isChildCategory(c: Category): boolean {
   return c === "boy" || c === "girl";
 }
 
-/** Parse a Suggestion.categories CSV into a clean list. */
-export function parseCategories(csv: string): Category[] {
-  const parts = csv
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(isCategory);
-  return parts.length ? parts : [...CATEGORIES];
+/** Suggestion audiences (per the Rav: just adult / child / both). */
+export type Audience = "adult" | "child" | "both";
+
+/**
+ * Parse a Suggestion.categories value into an audience.
+ * Backward-compatible with older values ("man,woman", "boy,girl", 4-way CSVs).
+ */
+export function parseAudience(csv: string): Audience {
+  const parts = new Set(
+    csv.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+  );
+  if (parts.has("both") || parts.has("all")) return "both";
+  const adult = parts.has("adult") || parts.has("man") || parts.has("woman");
+  const child = parts.has("child") || parts.has("kid") || parts.has("boy") || parts.has("girl");
+  if (adult && child) return "both";
+  if (child) return "child";
+  return "adult";
 }
 
-export function categoriesInclude(csv: string, category: Category): boolean {
-  return parseCategories(csv).includes(category);
+/** Does a suggestion apply to a member of this category? */
+export function audienceMatches(csv: string, memberCategory: Category | boolean): boolean {
+  const audience = parseAudience(csv);
+  if (audience === "both") return true;
+  const isChild =
+    typeof memberCategory === "boolean"
+      ? memberCategory
+      : isChildCategory(memberCategory);
+  return audience === (isChild ? "child" : "adult");
 }
 
 /**

@@ -76,7 +76,7 @@ model Goal {
   member     Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
   suggestion Suggestion? @relation(fields: [suggestionId], references: [id], onDelete: SetNull)
 
-  @@unique([memberId, week])
+  @@index([memberId, week])
   @@index([week])
 }
 

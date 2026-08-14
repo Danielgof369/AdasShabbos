@@ -34,8 +34,8 @@ const suggestions = [
   },
   {
     id: "sug_a04",
-    title: "Come 20 minutes early Shabbos morning to learn or join the shiur",
-    detail: "Start Shabbos morning with learning before davening.",
+    title: "Come 20 minutes early Shabbos morning to learn or join the Michtav M'Eliyahu shiur",
+    detail: "Learn on your own or join the shiur in Michtav M'Eliyahu before davening.",
     unitLabel: "minutes of extra learning",
     unitValue: 20,
     categories: "both",
@@ -61,8 +61,8 @@ const suggestions = [
   },
   {
     id: "sug_a07",
-    title: "Be fully dressed in bigdei Shabbos by hadlakas neiros",
-    detail: "Fully ready, dressed b'kavod, before candle lighting.",
+    title: "Be fully dressed in bigdei Shabbos by zman hadlakas neiros",
+    detail: "Fully ready, dressed b'kavod, by the zman of candle lighting.",
     unitLabel: "times ready before candle lighting",
     unitValue: 1,
     categories: "both",
@@ -97,8 +97,8 @@ const suggestions = [
   },
   {
     id: "sug_a11",
-    title: "Wear bigdei Shabbos the whole Shabbos",
-    detail: "Stay in your Shabbos best from candle lighting to havdalah.",
+    title: "Wear bigdei Shabbos outside the house, all of Shabbos",
+    detail: "Your Shabbos best whenever you're out, from candle lighting to havdalah.",
     unitLabel: "Shabbosos in full bigdei Shabbos",
     unitValue: 1,
     categories: "both",
@@ -124,7 +124,7 @@ const suggestions = [
   },
   {
     id: "sug_k04",
-    title: "Come to shul and stay through Kabbalas Shabbos",
+    title: "Children: come to shul and stay through Kabbalas Shabbos",
     detail: "Be there from Lecha Dodi through the end.",
     unitLabel: "Kabbalas Shabbos davened in shul",
     unitValue: 1,

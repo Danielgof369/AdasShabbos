@@ -248,6 +248,19 @@ export default function SignupForm({
                 onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
                 className="mt-3 w-full rounded-lg border border-parchment bg-cream px-4 py-2.5 text-sm outline-none focus:border-gold"
               />
+              {(p.category === "boy" || p.category === "girl") && (
+                <p className="mt-2 text-xs text-ink-soft">
+                  🖍️ Need ideas for helping at home? See the{" "}
+                  <a
+                    href="/shabbos-helpers-guide.pdf"
+                    target="_blank"
+                    className="underline font-medium hover:text-navy"
+                  >
+                    Shabbos Helpers Guide
+                  </a>
+                  .
+                </p>
+              )}
             </>
           ) : (
             <p className="text-sm text-ink-soft italic">

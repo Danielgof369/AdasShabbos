@@ -21,3 +21,9 @@ UPDATE "Suggestion" SET "unitLabel" = 'minutes children helped for Shabbos' WHER
 
 -- 5. Campaign window (weeks are now fixed in code: Aug 22 / 29, Sep 5 / 19)
 UPDATE "Campaign" SET "startDate" = '2026-08-16T07:00:00Z', "signupDeadline" = '2026-08-22T02:00:00Z' WHERE "id" = 'campaign';
+
+-- Round 2: suggestion text clarifications
+UPDATE "Suggestion" SET "title" = 'Come 20 minutes early Shabbos morning to learn or join the Michtav M''Eliyahu shiur', "detail" = 'Learn on your own or join the shiur in Michtav M''Eliyahu before davening.' WHERE "id" = 'sug_a04';
+UPDATE "Suggestion" SET "title" = 'Be fully dressed in bigdei Shabbos by zman hadlakas neiros', "detail" = 'Fully ready, dressed b''kavod, by the zman of candle lighting.' WHERE "id" = 'sug_a07';
+UPDATE "Suggestion" SET "title" = 'Wear bigdei Shabbos outside the house, all of Shabbos', "detail" = 'Your Shabbos best whenever you''re out, from candle lighting to havdalah.' WHERE "id" = 'sug_a11';
+UPDATE "Suggestion" SET "title" = 'Children: come to shul and stay through Kabbalas Shabbos' WHERE "id" = 'sug_k04';

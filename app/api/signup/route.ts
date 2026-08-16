@@ -139,18 +139,29 @@ export async function POST(req: NextRequest) {
     return `${base}${Date.now()}`;
   }
 
-  const household =
-    existing ??
-    (await prisma.household.create({
-      data: {
-        token: await slugToken(familyName),
-        familyName,
-        phone,
-        email,
-        email2: emails[1] ?? null,
-        email3: emails[2] ?? null,
-      },
-    }));
+  async function createHousehold() {
+    // Retry on the rare launch-night race where two same-named families
+    // submit simultaneously and collide on the slug.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await prisma.household.create({
+          data: {
+            token: await slugToken(familyName),
+            familyName,
+            phone,
+            email,
+            email2: emails[1] ?? null,
+            email3: emails[2] ?? null,
+          },
+        });
+      } catch (e) {
+        if (attempt === 2) throw e;
+      }
+    }
+    throw new Error("unreachable");
+  }
+
+  const household = existing ?? (await createHousehold());
 
   if (existing) {
     // Fill in any newly provided contact details without overwriting old ones.

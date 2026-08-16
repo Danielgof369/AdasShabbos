@@ -16,6 +16,7 @@ import {
   logoutAction,
   deleteHouseholdAction,
   deleteMemberAction,
+  mergeHouseholdsAction,
   saveCampaignAction,
   saveSuggestionAction,
   deleteSuggestionAction,
@@ -192,6 +193,50 @@ export default async function AdminPage() {
         <h2 className="font-semibold text-navy mb-3">
           Signups ({households.length} households)
         </h2>
+        {households.length > 1 && (
+          <details className="mb-4 rounded-lg border border-parchment bg-cream/60">
+            <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-navy">
+              Merge duplicate families
+            </summary>
+            <form
+              action={mergeHouseholdsAction}
+              className="px-4 pb-4 pt-2 flex flex-col sm:flex-row gap-3 sm:items-end"
+            >
+              <label className="text-xs text-ink-soft flex-1">
+                Keep this family (link &amp; name survive)
+                <select name="keepId" className={inputCls}>
+                  {households.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.familyName ?? "(no name)"} · {h.email ?? h.phone ?? ""} ·{" "}
+                      {h.members.length} {h.members.length === 1 ? "person" : "people"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-ink-soft flex-1">
+                Fold this duplicate into it (everything moves over)
+                <select name="absorbId" className={inputCls}>
+                  {households.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.familyName ?? "(no name)"} · {h.email ?? h.phone ?? ""} ·{" "}
+                      {h.members.length} {h.members.length === 1 ? "person" : "people"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <ConfirmSubmit
+                message="Merge these two families? All people, check-ins, and emails move into the first family; the duplicate is removed. This cannot be undone."
+                className={btnCls + " whitespace-nowrap"}
+              >
+                Merge
+              </ConfirmSubmit>
+            </form>
+            <p className="px-4 pb-3 text-xs text-ink-soft">
+              If the same person now appears twice after merging, remove the extra
+              one with the ✕ next to their name.
+            </p>
+          </details>
+        )}
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-ink-soft border-b border-parchment">

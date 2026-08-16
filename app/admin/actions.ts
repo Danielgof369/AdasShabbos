@@ -125,3 +125,49 @@ export async function deleteMemberAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/families");
 }
+
+export async function mergeHouseholdsAction(formData: FormData) {
+  await requireAdmin();
+  const keepId = String(formData.get("keepId") ?? "");
+  const absorbId = String(formData.get("absorbId") ?? "");
+  if (!keepId || !absorbId || keepId === absorbId) return;
+
+  const [keep, absorb] = await Promise.all([
+    prisma.household.findUnique({ where: { id: keepId } }),
+    prisma.household.findUnique({ where: { id: absorbId } }),
+  ]);
+  if (!keep || !absorb) return;
+
+  // Move people (and with them, all goals/check-ins) to the kept family.
+  await prisma.member.updateMany({
+    where: { householdId: absorbId },
+    data: { householdId: keepId },
+  });
+  await prisma.messageLog.updateMany({
+    where: { householdId: absorbId },
+    data: { householdId: keepId },
+  });
+
+  // Combine contact details: fill the kept family's empty slots.
+  const knownEmails = new Set(
+    [keep.email, keep.email2, keep.email3].filter(Boolean) as string[]
+  );
+  const incoming = [absorb.email, absorb.email2, absorb.email3].filter(
+    (e): e is string => !!e && !knownEmails.has(e)
+  );
+  await prisma.household.update({
+    where: { id: keepId },
+    data: {
+      phone: keep.phone ?? absorb.phone,
+      email: keep.email ?? incoming.shift() ?? null,
+      email2: keep.email2 ?? incoming.shift() ?? null,
+      email3: keep.email3 ?? incoming.shift() ?? null,
+      familyName: keep.familyName ?? absorb.familyName,
+    },
+  });
+
+  await prisma.household.delete({ where: { id: absorbId } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/families");
+}

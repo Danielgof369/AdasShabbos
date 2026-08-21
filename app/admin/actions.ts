@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { isAdmin, grantAdmin, revokeAdmin } from "@/lib/adminAuth";
 import { runThursdayReminders, runCheckinReminders } from "@/lib/reminders";
+import { raffleEligible } from "@/lib/raffle";
 
 export async function loginAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -124,6 +125,30 @@ export async function deleteMemberAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/");
   revalidatePath("/families");
+}
+
+export async function drawRaffleAction(formData: FormData) {
+  await requireAdmin();
+  const week = Number(formData.get("week"));
+  if (!Number.isInteger(week) || week < 1 || week > 12) return;
+  const eligible = await raffleEligible(week);
+  if (eligible.length === 0) return;
+  const winner = eligible[Math.floor(Math.random() * eligible.length)];
+  await prisma.raffleDraw.upsert({
+    where: { week },
+    update: {
+      householdId: winner.id,
+      familyName: winner.familyName ?? winner.token,
+      drawnAt: new Date(),
+    },
+    create: {
+      week,
+      householdId: winner.id,
+      familyName: winner.familyName ?? winner.token,
+    },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
 }
 
 export async function mergeHouseholdsAction(formData: FormData) {

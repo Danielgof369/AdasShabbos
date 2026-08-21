@@ -9,7 +9,12 @@ import { nextShabbosWeek } from "@/lib/household";
  * every remaining week of the campaign.
  */
 export async function POST(req: NextRequest) {
-  let body: { token?: unknown; memberId?: unknown; suggestionIds?: unknown };
+  let body: {
+    token?: unknown;
+    memberId?: unknown;
+    suggestionIds?: unknown;
+    customTitle?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -38,7 +43,11 @@ export async function POST(req: NextRequest) {
   const suggestionIds = (Array.isArray(body.suggestionIds) ? body.suggestionIds : [])
     .filter((id): id is string => typeof id === "string" && validIds.has(id))
     .slice(0, 6);
-  if (suggestionIds.length === 0) {
+  const customTitle =
+    typeof body.customTitle === "string" && body.customTitle.trim()
+      ? body.customTitle.trim().slice(0, 120)
+      : null;
+  if (suggestionIds.length === 0 && !customTitle) {
     return NextResponse.json({ error: "Pick at least one commitment to add." }, { status: 400 });
   }
 
@@ -56,11 +65,20 @@ export async function POST(req: NextRequest) {
       .filter((g) => g.suggestionId)
       .map((g) => `${g.week}:${g.suggestionId}`)
   );
+  const existingCustom = new Set(
+    member.goals
+      .filter((g) => !g.suggestionId && g.customTitle)
+      .map((g) => `${g.week}:${g.customTitle!.trim().toLowerCase()}`)
+  );
   let added = 0;
   for (let w = fromWeek; w <= campaign.weeks; w++) {
     for (const suggestionId of suggestionIds) {
       if (existing.has(`${w}:${suggestionId}`)) continue;
       await prisma.goal.create({ data: { memberId, week: w, suggestionId } });
+      added++;
+    }
+    if (customTitle && !existingCustom.has(`${w}:${customTitle.toLowerCase()}`)) {
+      await prisma.goal.create({ data: { memberId, week: w, customTitle } });
       added++;
     }
   }

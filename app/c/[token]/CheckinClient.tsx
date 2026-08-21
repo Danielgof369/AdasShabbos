@@ -49,11 +49,13 @@ function AddPicker({
 }: {
   suggestions: SuggestionOption[];
   member: MemberGoalView;
-  onSave: (suggestionIds: string[]) => void;
+  onSave: (suggestionIds: string[], customTitle: string | null) => void;
   onCancel: () => void;
   busy: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [useCustom, setUseCustom] = useState(false);
+  const [customTitle, setCustomTitle] = useState("");
   const held = new Set(member.currentSuggestionIds);
   const toggle = (id: string) =>
     setSelected((s) => {
@@ -73,38 +75,60 @@ function AddPicker({
         <span className="font-medium text-navy">add</span> more, but not remove.
         Pick what to add:
       </p>
-      {available.length === 0 ? (
-        <p className="text-sm text-ink-soft italic mb-3">
-          {member.name} has already taken on every available option — amazing!
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-          {available.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              disabled={busy}
-              onClick={() => toggle(s.id)}
-              className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors disabled:opacity-60 ${
-                selected.has(s.id)
-                  ? "border-gold bg-gold-pale text-navy-deep font-medium"
-                  : "border-parchment bg-cream hover:border-gold-soft"
-              }`}
-            >
-              {selected.has(s.id) ? "✓ " : ""}
-              {s.title}
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        {available.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            disabled={busy}
+            onClick={() => toggle(s.id)}
+            className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors disabled:opacity-60 ${
+              selected.has(s.id)
+                ? "border-gold bg-gold-pale text-navy-deep font-medium"
+                : "border-parchment bg-cream hover:border-gold-soft"
+            }`}
+          >
+            {selected.has(s.id) ? "✓ " : ""}
+            {s.title}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setUseCustom((v) => !v)}
+          className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors disabled:opacity-60 ${
+            useCustom
+              ? "border-gold bg-gold-pale text-navy-deep font-medium"
+              : "border-parchment bg-cream hover:border-gold-soft"
+          }`}
+        >
+          {useCustom ? "✓ " : ""}✏️ My own idea…
+        </button>
+      </div>
+      {useCustom && (
+        <input
+          type="text"
+          autoFocus
+          maxLength={120}
+          placeholder={`What will ${member.name} take on for Shabbos?`}
+          value={customTitle}
+          onChange={(e) => setCustomTitle(e.target.value)}
+          className="mb-3 w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 text-sm outline-none focus:border-gold"
+        />
       )}
       <div className="flex gap-3">
         <button
           type="button"
-          disabled={busy || selected.size === 0}
-          onClick={() => onSave([...selected])}
+          disabled={busy || (selected.size === 0 && !(useCustom && customTitle.trim()))}
+          onClick={() =>
+            onSave([...selected], useCustom && customTitle.trim() ? customTitle.trim() : null)
+          }
           className="bg-navy text-cream rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-navy-soft transition-colors disabled:opacity-60"
         >
-          Add {selected.size > 0 ? `${selected.size} ` : ""}commitment{selected.size === 1 ? "" : "s"}
+          {(() => {
+            const n = selected.size + (useCustom && customTitle.trim() ? 1 : 0);
+            return `Add ${n > 0 ? `${n} ` : ""}commitment${n === 1 ? "" : "s"}`;
+          })()}
         </button>
         <button type="button" onClick={onCancel} className="text-sm text-ink-soft underline hover:text-navy">
           Cancel
@@ -166,8 +190,17 @@ export default function CheckinClient({
     if (ok) setCelebrating((c) => ({ ...c, [m.memberId]: true }));
   }
 
-  async function addCommitments(m: MemberGoalView, suggestionIds: string[]) {
-    const ok = await post("/api/goal", { token, memberId: m.memberId, suggestionIds });
+  async function addCommitments(
+    m: MemberGoalView,
+    suggestionIds: string[],
+    customTitle: string | null
+  ) {
+    const ok = await post("/api/goal", {
+      token,
+      memberId: m.memberId,
+      suggestionIds,
+      customTitle,
+    });
     if (ok) setAdjusting((a) => ({ ...a, [m.memberId]: false }));
   }
 
@@ -255,7 +288,7 @@ export default function CheckinClient({
                 suggestions={suggestions}
                 member={m}
                 busy={busy}
-                onSave={(ids) => addCommitments(m, ids)}
+                onSave={(ids, custom) => addCommitments(m, ids, custom)}
                 onCancel={() => setAdjusting((a) => ({ ...a, [m.memberId]: false }))}
               />
             </div>
@@ -284,7 +317,7 @@ export default function CheckinClient({
                 suggestions={suggestions}
                 member={m}
                 busy={busy}
-                onSave={(ids) => addCommitments(m, ids)}
+                onSave={(ids, custom) => addCommitments(m, ids, custom)}
                 onCancel={() => {}}
               />
             </div>

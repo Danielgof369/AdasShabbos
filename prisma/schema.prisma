@@ -94,6 +94,16 @@ model Campaign {
   charityName   String   @default("Tomchei Shabbos")
 }
 
+// One pizza-raffle winner per campaign week, drawn (in admin) from the
+// families where everyone checked in.
+model RaffleDraw {
+  id          String   @id @default(cuid())
+  week        Int      @unique
+  householdId String
+  familyName  String
+  drawnAt     DateTime @default(now())
+}
+
 // Log of every reminder sent, for admin visibility and dedupe.
 model MessageLog {
   id          String   @id @default(cuid())

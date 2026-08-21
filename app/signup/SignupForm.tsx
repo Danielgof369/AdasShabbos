@@ -10,6 +10,8 @@ type PersonDraft = {
   audience: "adult" | "child" | null;
   avatar: Category | null;
   suggestionIds: string[];
+  useCustom: boolean;
+  customTitle: string;
 };
 
 const emptyPerson = (): PersonDraft => ({
@@ -17,6 +19,8 @@ const emptyPerson = (): PersonDraft => ({
   audience: null,
   avatar: null,
   suggestionIds: [],
+  useCustom: false,
+  customTitle: "",
 });
 
 export default function SignupForm({
@@ -72,8 +76,12 @@ export default function SignupForm({
         setError(`Pick an avatar for ${p.name.trim() || "each person"}.`);
         return;
       }
-      if (p.suggestionIds.length === 0) {
-        setError(`Pick at least one commitment for ${p.name.trim()}.`);
+      if (p.suggestionIds.length === 0 && !(p.useCustom && p.customTitle.trim())) {
+        setError(`Pick at least one commitment for ${p.name.trim()} — or write in your own.`);
+        return;
+      }
+      if (p.useCustom && !p.customTitle.trim()) {
+        setError(`Write in what ${p.name.trim()} is taking on — or unselect "My own idea".`);
         return;
       }
     }
@@ -90,6 +98,7 @@ export default function SignupForm({
             name: p.name.trim(),
             category: p.avatar,
             suggestionIds: p.suggestionIds,
+            customTitle: p.useCustom && p.customTitle.trim() ? p.customTitle.trim() : null,
           })),
         }),
       });
@@ -230,7 +239,13 @@ export default function SignupForm({
                 key={a}
                 type="button"
                 onClick={() =>
-                  updatePerson(i, { audience: a, avatar: null, suggestionIds: [] })
+                  updatePerson(i, {
+                    audience: a,
+                    avatar: null,
+                    suggestionIds: [],
+                    useCustom: false,
+                    customTitle: "",
+                  })
                 }
                 className={`rounded-full px-5 py-2 text-sm border transition-colors capitalize ${
                   p.audience === a
@@ -295,7 +310,29 @@ export default function SignupForm({
                       </button>
                     );
                   })}
+                <button
+                  type="button"
+                  onClick={() => updatePerson(i, { useCustom: !p.useCustom })}
+                  className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
+                    p.useCustom
+                      ? "border-gold bg-gold-pale text-navy-deep font-medium"
+                      : "border-parchment bg-cream hover:border-gold-soft"
+                  }`}
+                >
+                  {p.useCustom ? "✓ " : ""}✏️ My own idea…
+                </button>
               </div>
+              {p.useCustom && (
+                <input
+                  type="text"
+                  autoFocus
+                  maxLength={120}
+                  placeholder={`What will ${p.name.trim() || "they"} take on for Shabbos?`}
+                  value={p.customTitle}
+                  onChange={(e) => updatePerson(i, { customTitle: e.target.value })}
+                  className="mt-2 w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 outline-none focus:border-gold"
+                />
+              )}
               {p.audience === "child" && (
                 <p className="mt-2 text-xs text-ink-soft">
                   🖍️ Need ideas for helping at home? See the{" "}

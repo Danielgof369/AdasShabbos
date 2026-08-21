@@ -8,6 +8,7 @@ import {
 import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
+import { raffleEligible, raffleDraws } from "@/lib/raffle";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -22,6 +23,7 @@ import {
   deleteSuggestionAction,
   sendThursdayAction,
   sendCheckinAction,
+  drawRaffleAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -91,8 +93,30 @@ export default async function AdminPage() {
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
     `https://shabboswithadas.com/find`,
     ``,
-    `Then pick your commitment for next Shabbos while you're there. 🔥`,
+    `🍕 Every family where *everyone* checks in is entered into this week's pizza raffle!`,
   ].join("\n");
+
+  // Pizza raffle: one draw per week whose Shabbos has passed.
+  const draws = await raffleDraws();
+  const raffleWeeks = await Promise.all(
+    Array.from({ length: doneWeek }, (_, i) => i + 1).map(async (w) => ({
+      week: w,
+      shabbos: formatShabbosDate(shabbosOfWeek(campaign, w)),
+      eligible: await raffleEligible(w),
+      winner: draws.find((d) => d.week === w) ?? null,
+    }))
+  );
+  const latestWin = draws.find((d) => d.week === doneWeek);
+  const winnerBlast = latestWin
+    ? [
+        `🍕 *Pizza raffle — week ${latestWin.week}!*`,
+        ``,
+        `Mazel tov to *The ${latestWin.familyName} Family* — everyone checked in, and they've won this week's family pizza party! 🎉`,
+        ``,
+        `Want in next week? Everyone in the family checks in after Shabbos, and you're automatically entered:`,
+        `https://shabboswithadas.com`,
+      ].join("\n")
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-10">
@@ -186,6 +210,82 @@ export default async function AdminPage() {
             />
           </div>
         </div>
+      </section>
+
+      {/* Pizza raffle */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">🍕 Pizza raffle</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          One winner per week, drawn from the families where{" "}
+          <strong>everyone</strong> checked in for that Shabbos (late check-ins
+          count). Best drawn Monday night or later, after the check-in window
+          closes. Redrawing replaces the saved winner.
+        </p>
+        {raffleWeeks.length === 0 ? (
+          <p className="text-sm text-ink-soft italic">
+            The raffle opens after the first Shabbos — come back Motzei Shabbos.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {raffleWeeks.map((rw) => (
+              <div key={rw.week} className="rounded-lg border border-parchment bg-cream/50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <p className="font-medium text-navy">
+                    Week {rw.week} · Shabbos {rw.shabbos}
+                  </p>
+                  {rw.winner ? (
+                    <p className="text-sm bg-gold-pale text-navy-deep rounded-full px-3 py-1 font-medium">
+                      🏆 The {rw.winner.familyName} Family
+                    </p>
+                  ) : (
+                    <p className="text-sm text-ink-soft">no winner drawn yet</p>
+                  )}
+                </div>
+                <p className="text-sm text-ink-soft mb-3">
+                  {rw.eligible.length === 0 ? (
+                    <em>No fully-checked-in families yet for this week.</em>
+                  ) : (
+                    <>
+                      {rw.eligible.length}{" "}
+                      {rw.eligible.length === 1 ? "family" : "families"} in the hat:{" "}
+                      {rw.eligible
+                        .map((f) => f.familyName ?? f.token)
+                        .join(", ")}
+                    </>
+                  )}
+                </p>
+                {rw.eligible.length > 0 && (
+                  <form action={drawRaffleAction}>
+                    <input type="hidden" name="week" value={rw.week} />
+                    {rw.winner ? (
+                      <ConfirmSubmit
+                        message={`Redraw week ${rw.week}? This replaces The ${rw.winner.familyName} Family as the saved winner.`}
+                        className={btnCls}
+                      >
+                        Redraw winner
+                      </ConfirmSubmit>
+                    ) : (
+                      <button className={btnCls}>🎲 Draw the winner</button>
+                    )}
+                  </form>
+                )}
+              </div>
+            ))}
+            {winnerBlast && (
+              <div>
+                <p className="text-xs font-medium text-navy mb-1">
+                  Winner announcement (paste into the shul WhatsApp):
+                </p>
+                <textarea
+                  readOnly
+                  rows={7}
+                  className="w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm"
+                  defaultValue={winnerBlast}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Households */}

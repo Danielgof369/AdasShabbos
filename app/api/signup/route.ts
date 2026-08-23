@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
+import {
+  getCampaign,
+  activeWeek,
+  shabbosOfWeek,
+  formatShabbosDate,
+  checkinDeadline,
+} from "@/lib/campaign";
+import { lastShabbosWeek } from "@/lib/household";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
 import { sendToHousehold } from "@/lib/messaging";
@@ -75,7 +82,17 @@ export async function POST(req: NextRequest) {
   }
 
   const campaign = await getCampaign();
-  const week = activeWeek(campaign);
+  // Families joining off the Motzei Shabbos/Sunday blast still get the
+  // just-passed Shabbos while its check-in window is open (through Monday
+  // night) — otherwise their page has nothing to check in for.
+  const nowWeek = activeWeek(campaign);
+  const lastWeek = lastShabbosWeek(campaign);
+  const week =
+    lastWeek >= 1 &&
+    lastWeek < nowWeek &&
+    Date.now() <= checkinDeadline(campaign, lastWeek).getTime()
+      ? lastWeek
+      : nowWeek;
 
   const validSuggestionIds = new Set(
     (await prisma.suggestion.findMany({ where: { active: true }, select: { id: true } })).map(

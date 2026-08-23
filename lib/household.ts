@@ -75,7 +75,11 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       if (allChecked) {
         return goals.every((g) => onTime(campaign, w, g.checkedInAt)) ? "done" : "late";
       }
-      return w <= lastWeek ? "missed" : "set";
+      if (w > lastWeek) return "set";
+      // A past week stays "open" (not missed) while late check-ins are
+      // still being accepted — same grace as the pending card.
+      const age = now.getTime() - shabbosOfWeek(campaign, w).getTime();
+      return age <= 8 * DAY_MS ? "set" : "missed";
     };
 
     // Pending: most recent past week with any unchecked goal, ~8 day grace.

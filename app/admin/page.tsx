@@ -27,6 +27,8 @@ import {
 } from "./actions";
 
 export const dynamic = "force-dynamic";
+// Give the reminder-blast server actions room to finish a full send.
+export const maxDuration = 60;
 
 function laDateInput(d: Date | null): string {
   if (!d) return "";

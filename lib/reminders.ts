@@ -19,6 +19,20 @@ export type ReminderRunResult = {
 };
 
 /**
+ * Run send jobs in parallel batches so a big shul fits inside one
+ * serverless invocation instead of timing out partway through the list.
+ */
+async function inBatches<T>(
+  items: T[],
+  size: number,
+  job: (item: T) => Promise<void>
+): Promise<void> {
+  for (let i = 0; i < items.length; i += size) {
+    await Promise.allSettled(items.slice(i, i + size).map(job));
+  }
+}
+
+/**
  * Thursday reminder: tells each household what everyone committed to for the
  * upcoming Shabbos, and nudges anyone who hasn't set a goal yet.
  */
@@ -38,17 +52,24 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
   let skipped = 0;
   const details: string[] = [];
 
-  for (const h of households) {
-    if (h.members.length === 0) continue;
-
-    const already = await prisma.messageLog.findFirst({
-      where: { householdId: h.id, kind: "thursday_reminder", week },
-    });
-    if (already) {
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind: "thursday_reminder", week },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  const targets = households.filter((h) => {
+    if (h.members.length === 0) return false;
+    if (alreadySent.has(h.id)) {
       skipped++;
-      continue;
+      return false;
     }
+    return true;
+  });
 
+  await inBatches(targets, 8, async (h) => {
     const withGoal = h.members
       .map((m) => ({ m, goals: m.goals.filter((g) => g.week === week) }))
       .filter((x) => x.goals.length > 0);
@@ -83,7 +104,7 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
       sent++;
       details.push(`household ${h.id} via ${channel}`);
     }
-  }
+  });
 
   return { week, sent, skipped, details };
 }
@@ -107,20 +128,30 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
   let skipped = 0;
   const details: string[] = [];
 
-  for (const h of households) {
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind: "checkin_reminder", week },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  const targets = households.filter((h) => {
+    const pending = h.members.some((m) =>
+      m.goals.some((g) => g.week === week && !g.checkedInAt)
+    );
+    if (!pending) return false;
+    if (alreadySent.has(h.id)) {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  await inBatches(targets, 8, async (h) => {
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
-    if (pending.length === 0) continue;
-
-    const already = await prisma.messageLog.findFirst({
-      where: { householdId: h.id, kind: "checkin_reminder", week },
-    });
-    if (already) {
-      skipped++;
-      continue;
-    }
-
     const link = `${baseUrl()}/c/${h.token}`;
     const names = pending.map((m) => m.name).join(" & ");
     const isLastWeek = week >= campaign.weeks;
@@ -143,7 +174,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
       sent++;
       details.push(`household ${h.id} via ${channel}`);
     }
-  }
+  });
 
   return { week, sent, skipped, details };
 }

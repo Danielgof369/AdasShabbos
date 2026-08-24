@@ -26,6 +26,48 @@ export function LogoOnDark({ className = "h-10 w-auto" }: { className?: string }
   );
 }
 
+/**
+ * LINK Kollel mark on dark navy. Drop public/link-logo-white.png (or .svg /
+ * link-logo.png) in and it replaces the text wordmark automatically.
+ */
+export function LinkLogoOnDark({ className = "h-9 w-auto" }: { className?: string }) {
+  const src = logoFile(
+    "link-logo-white.svg",
+    "link-logo-white.png",
+    "link-logo.svg",
+    "link-logo.png"
+  );
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt="LINK Kollel" className={className} />;
+  }
+  return (
+    <span className="flex flex-col items-center leading-none text-gold-soft">
+      <span className="font-display font-semibold tracking-[0.3em] text-base">LINK</span>
+      <span className="tracking-[0.32em] uppercase text-[0.55rem] text-cream/70 mt-1">
+        Kollel
+      </span>
+    </span>
+  );
+}
+
+/** LINK Kollel mark on light/cream backgrounds. */
+export function LinkLogoOnLight({ className = "h-10 w-auto" }: { className?: string }) {
+  const src = logoFile("link-logo.svg", "link-logo.png");
+  if (src) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt="LINK Kollel" className={className} />;
+  }
+  return (
+    <span className="flex flex-col items-center leading-none text-navy">
+      <span className="font-display font-semibold tracking-[0.3em] text-base">LINK</span>
+      <span className="tracking-[0.32em] uppercase text-[0.55rem] text-ink-soft mt-1">
+        Kollel
+      </span>
+    </span>
+  );
+}
+
 /** Mark on light/cream backgrounds. */
 export function LogoOnLight({ className = "h-12 w-auto" }: { className?: string }) {
   const src = logoFile("logo.svg", "logo.png");

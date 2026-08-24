@@ -4,8 +4,9 @@ import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber }
 import { getCampaignStats } from "@/lib/stats";
 import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
-import { LogoOnDark } from "@/components/Logo";
+import { LogoOnDark, LinkLogoOnDark } from "@/components/Logo";
 import JoinNudge from "@/components/JoinNudge";
+import LinkWelcome from "@/components/LinkWelcome";
 
 export const dynamic = "force-dynamic";
 
@@ -32,11 +33,13 @@ export default async function Home() {
       <section className="bg-navy text-cream relative overflow-hidden">
         <div className="glow-dot absolute -top-24 right-0 h-96 w-96 rounded-full" />
         <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20 relative">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-5">
             <LogoOnDark className="h-14 w-auto" />
+            <span className="h-12 w-px bg-cream/25" aria-hidden />
+            <LinkLogoOnDark className="h-12 w-auto" />
           </div>
           <p className="text-gold-soft font-display tracking-widest uppercase text-sm mb-4">
-            Elul 5786 &middot; A whole-shul campaign of Adas Torah
+            Elul 5786 &middot; A campaign of Adas Torah &amp; LINK Kollel
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
             One small thing for Shabbos.
@@ -322,6 +325,7 @@ export default async function Home() {
       {/* breathing room above the sticky join bar */}
       <div className="h-20" />
       <JoinNudge />
+      <LinkWelcome />
     </div>
   );
 }

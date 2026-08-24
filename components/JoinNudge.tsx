@@ -15,7 +15,14 @@ export default function JoinNudge() {
     try {
       if (sessionStorage.getItem("joinNudge") === "1") return;
     } catch {}
-    const t = setTimeout(() => setShowPopup(true), 6000);
+    const t = setTimeout(() => {
+      // Re-check: another popup (e.g. the LINK welcome) may have claimed
+      // this visit after we mounted.
+      try {
+        if (sessionStorage.getItem("joinNudge") === "1") return;
+      } catch {}
+      setShowPopup(true);
+    }, 6000);
     return () => clearTimeout(t);
   }, []);
 

@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getCampaign, activeWeek, shabbosOfWeek, formatShabbosDate, weekNumber } from "@/lib/campaign";
+import {
+  getCampaign,
+  activeWeek,
+  shabbosOfWeek,
+  formatShabbosDate,
+  weekNumber,
+} from "@/lib/campaign";
+import { lastShabbosWeek } from "@/lib/household";
 import { getCampaignStats } from "@/lib/stats";
 import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
@@ -26,6 +33,32 @@ export default async function Home() {
   const latestDraw = draws.length > 0 ? draws[draws.length - 1] : null;
   const myToken = (await cookies()).get("elul_token")?.value;
   const checkinHref = myToken ? `/c/${encodeURIComponent(myToken)}` : "/find";
+
+  // Is a check-in window open (last Shabbos still accepting check-ins)?
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const lastWeek = lastShabbosWeek(campaign);
+  const checkinOpen =
+    lastWeek >= 1 &&
+    Date.now() - shabbosOfWeek(campaign, lastWeek).getTime() <= 8 * DAY_MS;
+  const lastLabel = lastWeek >= 1 ? formatShabbosDate(shabbosOfWeek(campaign, lastWeek)) : "";
+
+  // Known family with check-ins still waiting? Make it personal.
+  let familyNudge: { name: string; waiting: number } | null = null;
+  if (checkinOpen && myToken) {
+    const hh = await prisma.household.findUnique({
+      where: { token: myToken },
+      include: { members: { include: { goals: { where: { week: lastWeek } } } } },
+    });
+    if (hh) {
+      const waiting = hh.members.reduce(
+        (n, m) => n + m.goals.filter((g) => !g.checkedInAt).length,
+        0
+      );
+      if (waiting > 0) {
+        familyNudge = { name: hh.familyName ?? "Your", waiting };
+      }
+    }
+  }
 
   return (
     <div>
@@ -53,18 +86,37 @@ export default async function Home() {
             commitments, taken on together.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              href="/signup"
-              className="bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-center text-lg hover:bg-gold-soft transition-colors"
-            >
-              Sign up to join
-            </Link>
-            <Link
-              href={checkinHref}
-              className="border border-cream/40 rounded-lg px-8 py-3.5 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors"
-            >
-              Check in for this week
-            </Link>
+            {checkinOpen ? (
+              <>
+                <Link
+                  href={checkinHref}
+                  className="bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-center text-lg hover:bg-gold-soft transition-colors"
+                >
+                  ✓ Check in for Shabbos {lastLabel}
+                </Link>
+                <Link
+                  href="/signup"
+                  className="border border-cream/40 rounded-lg px-8 py-3.5 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors"
+                >
+                  Sign up to join
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-center text-lg hover:bg-gold-soft transition-colors"
+                >
+                  Sign up to join
+                </Link>
+                <Link
+                  href={checkinHref}
+                  className="border border-cream/40 rounded-lg px-8 py-3.5 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors"
+                >
+                  Check in for this week
+                </Link>
+              </>
+            )}
           </div>
           <p className="mt-6 text-cream/60 text-sm">
             {started ? (
@@ -75,6 +127,25 @@ export default async function Home() {
           </p>
         </div>
       </section>
+
+      {/* Personal check-in nudge */}
+      {familyNudge && (
+        <section className="bg-gold border-b border-gold-soft">
+          <Link
+            href={checkinHref}
+            className="block mx-auto max-w-3xl px-4 py-4 text-navy-deep hover:opacity-90 transition-opacity"
+          >
+            <p className="text-center font-medium">
+              🔔 <span className="font-bold">The {familyNudge.name} Family:</span>{" "}
+              {familyNudge.waiting} check-in{familyNudge.waiting === 1 ? "" : "s"} still
+              waiting for Shabbos {lastLabel} —{" "}
+              <span className="underline underline-offset-2 font-bold">
+                tap here, it takes 10 seconds →
+              </span>
+            </p>
+          </Link>
+        </section>
+      )}
 
       {/* Pledge banner */}
       <section className="bg-gold-pale border-y border-gold/30">
@@ -324,7 +395,11 @@ export default async function Home() {
 
       {/* breathing room above the sticky join bar */}
       <div className="h-20" />
-      <JoinNudge />
+      <JoinNudge
+        checkinOpen={checkinOpen}
+        checkinHref={checkinHref}
+        checkinLabel={lastLabel}
+      />
       <LinkWelcome />
     </div>
   );

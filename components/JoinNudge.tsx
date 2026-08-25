@@ -8,7 +8,15 @@ import Link from "next/link";
  * - always-visible sticky "Join" bar at the bottom
  * - one-time popup a few seconds in (dismissed = remembered for the session)
  */
-export default function JoinNudge() {
+export default function JoinNudge({
+  checkinOpen = false,
+  checkinHref = "/find",
+  checkinLabel = "",
+}: {
+  checkinOpen?: boolean;
+  checkinHref?: string;
+  checkinLabel?: string;
+}) {
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
@@ -35,18 +43,41 @@ export default function JoinNudge() {
 
   return (
     <>
-      {/* Sticky join bar */}
+      {/* Sticky action bar: check-in first while a window is open */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-navy-deep/95 border-t border-gold/40 px-4 py-3">
         <div className="mx-auto max-w-3xl flex items-center gap-3">
-          <span className="hidden sm:block text-cream/85 text-sm flex-1">
-            One small thing for Shabbos. Every family that joins sends $5 to Tomchei Shabbos.
-          </span>
-          <Link
-            href="/signup"
-            className="flex-1 sm:flex-none bg-gold text-navy-deep text-center font-bold rounded-lg px-8 py-3 text-lg hover:bg-gold-soft transition-colors"
-          >
-            Join the campaign
-          </Link>
+          {checkinOpen ? (
+            <>
+              <span className="hidden sm:block text-cream/85 text-sm flex-1">
+                Did your family do it this Shabbos{checkinLabel ? ` (${checkinLabel})` : ""}?
+                One tap keeps the streak.
+              </span>
+              <Link
+                href={checkinHref}
+                className="flex-1 sm:flex-none bg-gold text-navy-deep text-center font-bold rounded-lg px-8 py-3 text-lg hover:bg-gold-soft transition-colors"
+              >
+                ✓ Check in now
+              </Link>
+              <Link
+                href="/signup"
+                className="hidden sm:block text-cream/85 text-sm underline underline-offset-2 hover:text-gold-soft whitespace-nowrap"
+              >
+                Not signed up?
+              </Link>
+            </>
+          ) : (
+            <>
+              <span className="hidden sm:block text-cream/85 text-sm flex-1">
+                One small thing for Shabbos. Every family that joins sends $5 to Tomchei Shabbos.
+              </span>
+              <Link
+                href="/signup"
+                className="flex-1 sm:flex-none bg-gold text-navy-deep text-center font-bold rounded-lg px-8 py-3 text-lg hover:bg-gold-soft transition-colors"
+              >
+                Join the campaign
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

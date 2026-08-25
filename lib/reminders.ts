@@ -11,6 +11,8 @@ function baseUrl() {
   return (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export type ReminderRunResult = {
   week: number;
   sent: number;
@@ -75,6 +77,13 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
       .filter((x) => x.goals.length > 0);
     const withoutGoal = h.members.filter((m) => !m.goals.some((g) => g.week === week));
 
+    // Still-open check-ins from last Shabbos get one more nudge here.
+    const prevWeek = week - 1;
+    const prevUnchecked =
+      prevWeek >= 1 &&
+      Date.now() - shabbosOfWeek(campaign, prevWeek).getTime() <= 8 * DAY_MS &&
+      h.members.some((m) => m.goals.some((g) => g.week === prevWeek && !g.checkedInAt));
+
     const link = `${baseUrl()}/c/${h.token}`;
     const lines: string[] = [];
     lines.push(`🕯️ Shabbos is coming — ${shabbosLabel}! Week ${week} of ${campaign.weeks} of the Elul Shabbos Project.`);
@@ -92,6 +101,12 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
     } else {
       lines.push("");
       lines.push(`You've got this! Your page: ${link}`);
+    }
+    if (prevUnchecked) {
+      lines.push("");
+      lines.push(
+        `P.S. Your family still has check-ins waiting from last Shabbos — it's not too late, they still count: ${link}`
+      );
     }
 
     const channel = await sendToHousehold(
@@ -120,18 +135,30 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
   }
 
+  // Chaser waves: families that haven't checked in hear from us again every
+  // ~2 days (Sunday, Tuesday, and the Thursday email's P.S.) until the late
+  // window closes. Each wave dedupes independently via its own log kind.
+  const daysSince = Math.floor(
+    (Date.now() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS
+  );
+  if (daysSince > 8) {
+    return { week, sent: 0, skipped: 0, details: ["Check-in window has closed."] };
+  }
+  const wave = daysSince <= 2 ? 1 : daysSince <= 4 ? 2 : 3;
+  const kind = wave === 1 ? "checkin_reminder" : `checkin_reminder${wave}`;
+
   const households = await prisma.household.findMany({
     include: { members: { include: { goals: true } } },
   });
 
   let sent = 0;
   let skipped = 0;
-  const details: string[] = [];
+  const details: string[] = [`wave ${wave} (day ${daysSince} after Shabbos)`];
 
   const alreadySent = new Set(
     (
       await prisma.messageLog.findMany({
-        where: { kind: "checkin_reminder", week },
+        where: { kind, week },
         select: { householdId: true },
       })
     ).map((r) => r.householdId)
@@ -155,21 +182,27 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     const link = `${baseUrl()}/c/${h.token}`;
     const names = pending.map((m) => m.name).join(" & ");
     const isLastWeek = week >= campaign.weeks;
-    const text = [
-      `✨ Gut voch! How did week ${week} go?`,
-      `Check in for ${names} — every check-in grows your streak and the whole shul's numbers.`,
-      isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
-      link,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const text =
+      wave === 1
+        ? [
+            `✨ Gut voch! How did week ${week} go?`,
+            `Check in for ${names} — every check-in grows your streak and the whole shul's numbers.`,
+            isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
+            link,
+          ]
+            .filter(Boolean)
+            .join("\n")
+        : [
+            `👋 Quick nudge — ${names} ${pending.length === 1 ? "hasn't" : "haven't"} checked in yet for Shabbos week ${week}.`,
+            `It takes 10 seconds, and late check-ins still count toward the shul-wide totals:`,
+            link,
+          ].join("\n");
+    const subject =
+      wave === 1
+        ? `How did Shabbos go? Check in — week ${week}`
+        : `Still time to check in — week ${week} of the Elul Shabbos Project`;
 
-    const channel = await sendToHousehold(
-      h,
-      { subject: `How did Shabbos go? Check in — week ${week}`, text },
-      "checkin_reminder",
-      week
-    );
+    const channel = await sendToHousehold(h, { subject, text }, kind, week);
     if (channel) {
       sent++;
       details.push(`household ${h.id} via ${channel}`);

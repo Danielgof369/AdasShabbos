@@ -211,3 +211,76 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
 
   return { week, sent, skipped, details };
 }
+
+/**
+ * One-off: nudge everyone who hasn't checked in yet for the most recent
+ * Shabbos, with a custom deadline message (e.g. "raffle draws tomorrow at
+ * 5pm"). Dedupes per household/week under its own log kind, so pressing
+ * the admin button twice never double-sends.
+ */
+export async function runRaffleDeadlineReminder(
+  deadlineText: string
+): Promise<ReminderRunResult> {
+  const campaign = await getCampaign();
+  const week = lastShabbosWeek(campaign);
+  if (week < 1) {
+    return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
+  }
+
+  const kind = `raffle_deadline_reminder`;
+  const households = await prisma.household.findMany({
+    include: { members: { include: { goals: true } } },
+  });
+
+  let sent = 0;
+  let skipped = 0;
+  const details: string[] = [];
+
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind, week },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  const targets = households.filter((h) => {
+    const pending = h.members.some((m) =>
+      m.goals.some((g) => g.week === week && !g.checkedInAt)
+    );
+    if (!pending) return false;
+    if (alreadySent.has(h.id)) {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  await inBatches(targets, 8, async (h) => {
+    const pending = h.members.filter((m) =>
+      m.goals.some((g) => g.week === week && !g.checkedInAt)
+    );
+    const link = `${baseUrl()}/c/${h.token}`;
+    const names = pending.map((m) => m.name).join(" & ");
+    const text = [
+      `🍕 Don't forget to check in!`,
+      `${names} ${pending.length === 1 ? "hasn't" : "haven't"} checked in yet for Shabbos week ${week}.`,
+      deadlineText,
+      `Check in here — it takes 10 seconds:`,
+      link,
+    ].join("\n");
+
+    const channel = await sendToHousehold(
+      h,
+      { subject: `Don't forget to check in — pizza raffle deadline`, text },
+      kind,
+      week
+    );
+    if (channel) {
+      sent++;
+      details.push(`household ${h.id} via ${channel}`);
+    }
+  });
+
+  return { week, sent, skipped, details };
+}

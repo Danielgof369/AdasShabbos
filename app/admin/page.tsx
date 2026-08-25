@@ -23,6 +23,7 @@ import {
   deleteSuggestionAction,
   sendThursdayAction,
   sendCheckinAction,
+  sendRaffleDeadlineAction,
   drawRaffleAction,
 } from "./actions";
 
@@ -179,6 +180,27 @@ export default async function AdminPage() {
               .join(" · ")}
           </p>
         )}
+      </section>
+
+      {/* One-off deadline nudge */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">
+          One-off reminder to whoever hasn&rsquo;t checked in
+        </h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Sends only to households still missing a check-in for the most
+          recent Shabbos — good for a raffle-deadline push. Safe to press
+          once; re-pressing only reaches anyone still missed.
+        </p>
+        <form action={sendRaffleDeadlineAction} className="space-y-3">
+          <textarea
+            name="deadlineText"
+            rows={2}
+            className="w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm"
+            defaultValue="The raffle for the Motzei Shabbos pizza party is tomorrow at 5pm — you must be checked in to qualify!"
+          />
+          <button className={btnCls}>Send reminder now</button>
+        </form>
       </section>
 
       {/* WhatsApp blast texts */}

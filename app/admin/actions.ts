@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { isAdmin, grantAdmin, revokeAdmin } from "@/lib/adminAuth";
-import { runThursdayReminders, runCheckinReminders } from "@/lib/reminders";
+import {
+  runThursdayReminders,
+  runCheckinReminders,
+  runRaffleDeadlineReminder,
+} from "@/lib/reminders";
 import { raffleEligible } from "@/lib/raffle";
 
 export async function loginAction(formData: FormData) {
@@ -92,6 +96,14 @@ export async function sendThursdayAction() {
 export async function sendCheckinAction() {
   await requireAdmin();
   await runCheckinReminders();
+  revalidatePath("/admin");
+}
+
+export async function sendRaffleDeadlineAction(formData: FormData) {
+  await requireAdmin();
+  const deadlineText = String(formData.get("deadlineText") ?? "").trim().slice(0, 300);
+  if (!deadlineText) return;
+  await runRaffleDeadlineReminder(deadlineText);
   revalidatePath("/admin");
 }
 

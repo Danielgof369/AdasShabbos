@@ -263,11 +263,11 @@ export async function runRaffleDeadlineReminder(
     const link = `${baseUrl()}/c/${h.token}`;
     const names = pending.map((m) => m.name).join(" & ");
     const text = [
-      `🍕 Don't forget to check in!`,
+      `Don't forget to check in!`,
       `${names} ${pending.length === 1 ? "hasn't" : "haven't"} checked in yet for Shabbos week ${week}.`,
       deadlineText,
-      `Check in here — it takes 10 seconds:`,
-      link,
+      ``,
+      `Check in here — it takes 10 seconds: ${link}`,
     ].join("\n");
 
     const channel = await sendToHousehold(

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
-  getCampaign,
+  campaignOf,
   activeWeek,
   shabbosOfWeek,
   formatShabbosDate,
   checkinDeadline,
 } from "@/lib/campaign";
+import { findShulByHost, shulBaseUrl } from "@/lib/tenant";
 import { lastShabbosWeek } from "@/lib/household";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
@@ -81,7 +82,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Please add at least one person." }, { status: 400 });
   }
 
-  const campaign = await getCampaign();
+  const shul = await findShulByHost(req.headers.get("host"));
+  if (!shul) {
+    return NextResponse.json({ error: "This campaign isn't set up yet." }, { status: 404 });
+  }
+  const campaign = campaignOf(shul);
   // Families joining off the Motzei Shabbos/Sunday blast still get the
   // just-passed Shabbos while its check-in window is open (through Monday
   // night) — otherwise their page has nothing to check in for.
@@ -95,9 +100,12 @@ export async function POST(req: NextRequest) {
       : nowWeek;
 
   const validSuggestionIds = new Set(
-    (await prisma.suggestion.findMany({ where: { active: true }, select: { id: true } })).map(
-      (s) => s.id
-    )
+    (
+      await prisma.suggestion.findMany({
+        where: { shulId: shul.id, active: true },
+        select: { id: true },
+      })
+    ).map((s) => s.id)
   );
 
   const cleanMembers: {
@@ -137,6 +145,7 @@ export async function POST(req: NextRequest) {
   // people later without splitting their check-in link.
   const existing = await prisma.household.findFirst({
     where: {
+      shulId: shul.id,
       OR: [
         ...emails.flatMap((e) => [{ email: e }, { email2: e }, { email3: e }]),
         ...(phone ? [{ phone }] : []),
@@ -150,7 +159,9 @@ export async function POST(req: NextRequest) {
     const base = name.toLowerCase().replace(/[^a-z0-9]/g, "") || "family";
     for (let n = 1; n < 100; n++) {
       const candidate = n === 1 ? base : `${base}${n}`;
-      const taken = await prisma.household.findUnique({ where: { token: candidate } });
+      const taken = await prisma.household.findUnique({
+        where: { shulId_token: { shulId: shul!.id, token: candidate } },
+      });
       if (!taken) return candidate;
     }
     return `${base}${Date.now()}`;
@@ -163,6 +174,7 @@ export async function POST(req: NextRequest) {
       try {
         return await prisma.household.create({
           data: {
+            shulId: shul!.id,
             token: await slugToken(familyName),
             familyName,
             phone,
@@ -226,7 +238,7 @@ export async function POST(req: NextRequest) {
     where: { householdId: household.id, kind: "welcome" },
   });
   if (!welcomed) {
-    const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const base = shulBaseUrl(shul);
     const link = `${base}/c/${household.token}`;
     const memberGoals = await prisma.member.findMany({
       where: { householdId: household.id },
@@ -244,7 +256,7 @@ export async function POST(req: NextRequest) {
     const text = [
       `Welcome to the Elul Shabbos Project! 🕯️`,
       ``,
-      `The ${familyName} family has taken on their commitments for the four Shabbosos of the campaign — starting Shabbos ${formatShabbosDate(shabbosOfWeek(campaign, week))}, through Shabbos Shuva:`,
+      `The ${familyName} family has taken on their commitments for the four Shabbosos of the campaign — starting Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, week))}, through Shabbos Shuva:`,
       ...lines,
       ``,
       `Your family page — there's no password, this link IS your login:`,

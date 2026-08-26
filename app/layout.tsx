@@ -1,28 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { LogoOnDark, LinkLogoOnDark } from "@/components/Logo";
-import { shul } from "@/lib/shul";
+import { BrandMark } from "@/components/Logo";
+import { getShul, shulBaseUrl } from "@/lib/tenant";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(shul.siteUrl),
-  title: `The Elul Shabbos Project | ${shul.name}`,
-  description: `One small thing for Shabbos, every week of Elul. Join the ${shul.name} community campaign.`,
-  openGraph: {
-    title: "The Elul Shabbos Project",
-    description:
-      "One small thing for Shabbos, every week of Elul. Men, women & children — sign up, get a weekly reminder, and watch the whole shul's numbers grow.",
-    url: shul.siteUrl,
-    siteName: "The Elul Shabbos Project",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const shul = await getShul();
+  return {
+    metadataBase: new URL(shulBaseUrl(shul)),
+    title: `${shul.campaignName} | ${shul.name}`,
+    description: `One small thing for Shabbos, every week of Elul. Join the ${shul.name} community campaign.`,
+    openGraph: {
+      title: shul.campaignName,
+      description:
+        "One small thing for Shabbos, every week of Elul. Men, women & children — sign up, get a weekly reminder, and watch the whole shul's numbers grow.",
+      url: shulBaseUrl(shul),
+      siteName: shul.campaignName,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const shul = await getShul();
   const token = (await cookies()).get("elul_token")?.value;
   const familyHref = token ? `/c/${encodeURIComponent(token)}` : "/find";
 
@@ -33,7 +37,7 @@ export default async function RootLayout({
           <div className="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3 min-w-0">
               <span className="font-display text-xl tracking-wide truncate">
-                The Elul Shabbos Project
+                {shul.campaignName}
               </span>
             </Link>
             <div className="flex items-center gap-4 shrink-0">
@@ -44,12 +48,17 @@ export default async function RootLayout({
                 {token ? "My family" : "Sign in"}
               </Link>
               <Link href="/" className="shrink-0 flex items-center gap-3">
-                <LogoOnDark className="h-9 w-auto" />
+                <BrandMark src={shul.logoDark} label={shul.name} tone="dark" className="h-9 w-auto" />
                 {shul.partnerName && (
                   <>
                     <span className="hidden sm:block h-8 w-px bg-cream/25" aria-hidden />
                     <span className="hidden sm:block">
-                      <LinkLogoOnDark className="h-8 w-auto" />
+                      <BrandMark
+                        src={shul.partnerLogoDark}
+                        label={shul.partnerName}
+                        tone="dark"
+                        className="h-8 w-auto"
+                      />
                     </span>
                   </>
                 )}
@@ -61,11 +70,16 @@ export default async function RootLayout({
         <footer className="bg-navy-deep text-cream/70 text-sm">
           <div className="mx-auto max-w-3xl px-4 py-8 flex flex-col items-center gap-4">
             <div className="flex items-center gap-5">
-              <LogoOnDark className="h-12 w-auto" />
+              <BrandMark src={shul.logoDark} label={shul.name} tone="dark" className="h-12 w-auto" />
               {shul.partnerName && (
                 <>
                   <span className="h-10 w-px bg-cream/25" aria-hidden />
-                  <LinkLogoOnDark className="h-10 w-auto" />
+                  <BrandMark
+                    src={shul.partnerLogoDark}
+                    label={shul.partnerName}
+                    tone="dark"
+                    className="h-10 w-auto"
+                  />
                 </>
               )}
             </div>

@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/db";
-import { getCampaign, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
+import { campaignOf, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
+import { getShul } from "@/lib/tenant";
 import SignupForm from "./SignupForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
-  const campaign = await getCampaign();
+  const shul = await getShul();
+  const campaign = campaignOf(shul);
   const suggestions = await prisma.suggestion.findMany({
-    where: { active: true },
+    where: { shulId: shul.id, active: true },
     orderBy: { sortOrder: "asc" },
     select: { id: true, title: true, detail: true, categories: true },
   });
@@ -18,8 +20,8 @@ export default async function SignupPage() {
       <p className="text-ink-soft mb-8">
         Sign up your whole household — each person takes on one or more
         commitments and holds them for the four Shabbosos of the campaign,
-        {" "}{formatShabbosDate(shabbosOfWeek(campaign, 1))} through Shabbos
-        Shuva, {formatShabbosDate(shabbosOfWeek(campaign, campaign.weeks))} —
+        {" "}{formatShabbosDate(campaign, shabbosOfWeek(campaign, 1))} through Shabbos
+        Shuva, {formatShabbosDate(campaign, shabbosOfWeek(campaign, campaign.weeks))} —
         with the hope that they become permanent.
       </p>
       <SignupForm

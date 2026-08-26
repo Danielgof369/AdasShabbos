@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCampaign } from "@/lib/campaign";
+import { campaignOf } from "@/lib/campaign";
+import { findShulByHost } from "@/lib/tenant";
 import { nextShabbosWeek } from "@/lib/household";
 
 /**
@@ -27,18 +28,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  const shul = await findShulByHost(req.headers.get("host"));
   const member = await prisma.member.findUnique({
     where: { id: memberId },
     include: { household: true, goals: true },
   });
-  if (!member || member.household.token !== token) {
+  if (
+    !shul ||
+    !member ||
+    member.household.token !== token ||
+    member.household.shulId !== shul.id
+  ) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   const validIds = new Set(
-    (await prisma.suggestion.findMany({ where: { active: true }, select: { id: true } })).map(
-      (s) => s.id
-    )
+    (
+      await prisma.suggestion.findMany({
+        where: { shulId: shul.id, active: true },
+        select: { id: true },
+      })
+    ).map((s) => s.id)
   );
   const suggestionIds = (Array.isArray(body.suggestionIds) ? body.suggestionIds : [])
     .filter((id): id is string => typeof id === "string" && validIds.has(id))
@@ -51,7 +61,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pick at least one commitment to add." }, { status: 400 });
   }
 
-  const campaign = await getCampaign();
+  const campaign = campaignOf(shul);
   const fromWeek = nextShabbosWeek(campaign);
   if (fromWeek > campaign.weeks) {
     return NextResponse.json(

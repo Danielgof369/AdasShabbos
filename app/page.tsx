@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
-  getCampaign,
+  campaignOf,
   activeWeek,
   shabbosOfWeek,
   formatShabbosDate,
@@ -11,26 +11,28 @@ import { lastShabbosWeek } from "@/lib/household";
 import { getCampaignStats } from "@/lib/stats";
 import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
-import { LogoOnDark, LinkLogoOnDark } from "@/components/Logo";
-import { shul, isAdasDeployment } from "@/lib/shul";
+import { BrandMark } from "@/components/Logo";
+import { getShul } from "@/lib/tenant";
 import JoinNudge from "@/components/JoinNudge";
 import LinkWelcome from "@/components/LinkWelcome";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const campaign = await getCampaign();
+  const shul = await getShul();
+  const isAdas = shul.slug === "adas";
+  const campaign = campaignOf(shul);
   const week = activeWeek(campaign);
   const rawWeek = weekNumber(campaign);
-  const stats = await getCampaignStats(week);
+  const stats = await getCampaignStats(campaign, week);
   const suggestions = await prisma.suggestion.findMany({
-    where: { active: true },
+    where: { shulId: shul.id, active: true },
     orderBy: { sortOrder: "asc" },
   });
 
   const started = rawWeek >= 1;
   const nextShabbos = shabbosOfWeek(campaign, week);
-  const draws = await raffleDraws();
+  const draws = await raffleDraws(shul.id);
   const latestDraw = draws.length > 0 ? draws[draws.length - 1] : null;
   const myToken = (await cookies()).get("elul_token")?.value;
   const checkinHref = myToken ? `/c/${encodeURIComponent(myToken)}` : "/find";
@@ -41,13 +43,13 @@ export default async function Home() {
   const checkinOpen =
     lastWeek >= 1 &&
     Date.now() - shabbosOfWeek(campaign, lastWeek).getTime() <= 8 * DAY_MS;
-  const lastLabel = lastWeek >= 1 ? formatShabbosDate(shabbosOfWeek(campaign, lastWeek)) : "";
+  const lastLabel = lastWeek >= 1 ? formatShabbosDate(campaign, shabbosOfWeek(campaign, lastWeek)) : "";
 
   // Known family with check-ins still waiting? Make it personal.
   let familyNudge: { name: string; waiting: number } | null = null;
   if (checkinOpen && myToken) {
     const hh = await prisma.household.findUnique({
-      where: { token: myToken },
+      where: { shulId_token: { shulId: shul.id, token: myToken } },
       include: { members: { include: { goals: { where: { week: lastWeek } } } } },
     });
     if (hh) {
@@ -68,11 +70,16 @@ export default async function Home() {
         <div className="glow-dot absolute -top-24 right-0 h-96 w-96 rounded-full" />
         <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20 relative">
           <div className="mb-6 flex items-center gap-5">
-            <LogoOnDark className="h-14 w-auto" />
+            <BrandMark src={shul.logoDark} label={shul.name} tone="dark" className="h-14 w-auto" />
             {shul.partnerName && (
               <>
                 <span className="h-12 w-px bg-cream/25" aria-hidden />
-                <LinkLogoOnDark className="h-12 w-auto" />
+                <BrandMark
+                  src={shul.partnerLogoDark}
+                  label={shul.partnerName}
+                  tone="dark"
+                  className="h-12 w-auto"
+                />
               </>
             )}
           </div>
@@ -126,9 +133,9 @@ export default async function Home() {
           </div>
           <p className="mt-6 text-cream/60 text-sm">
             {started ? (
-              <>Week {week} of {campaign.weeks} &middot; Shabbos {formatShabbosDate(nextShabbos)}</>
+              <>Week {week} of {campaign.weeks} &middot; Shabbos {formatShabbosDate(campaign, nextShabbos)}</>
             ) : (
-              <>Campaign begins the week of {formatShabbosDate(shabbosOfWeek(campaign, 1))}</>
+              <>Campaign begins the week of {formatShabbosDate(campaign, shabbosOfWeek(campaign, 1))}</>
             )}
           </p>
         </div>
@@ -196,7 +203,7 @@ export default async function Home() {
           </summary>
           <div className="px-6 pb-6 text-ink-soft leading-relaxed space-y-4 border-t border-parchment pt-5">
             <p>
-              Before Rosh Hashanah 5784, {isAdasDeployment()
+              Before Rosh Hashanah 5784, {isAdas
                 ? "Rabbi Revah shared"
                 : "our community learned"} a teaching of the
               Aruch LaNer: when Rosh Hashanah falls on Shabbos and the shofar

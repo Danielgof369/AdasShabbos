@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/adminAuth";
-import { getCampaign } from "@/lib/campaign";
+import { campaignOf } from "@/lib/campaign";
+import { getShul } from "@/lib/tenant";
 import { goalTitle } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 
@@ -13,12 +14,14 @@ function csvCell(v: string | null | undefined): string {
 }
 
 export async function GET() {
-  if (!(await isAdmin())) {
+  const shul = await getShul();
+  if (!(await isAdmin(shul))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const campaign = await getCampaign();
+  const campaign = campaignOf(shul);
   const members = await prisma.member.findMany({
+    where: { household: { shulId: shul.id } },
     include: {
       household: true,
       goals: { include: { suggestion: true } },

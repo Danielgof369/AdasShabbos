@@ -8,13 +8,13 @@ export type EligibleFamily = {
 };
 
 /**
- * Families eligible for a week's pizza raffle: every member who has
+ * Families eligible for a shul's weekly pizza raffle: every member who has
  * commitments for that week has checked in on ALL of them (late check-ins
- * count — the raffle rewards doing it and reporting, not the streak window).
- * Members who joined after that week (no goals for it) don't block the family.
+ * count). Members who joined after that week don't block the family.
  */
-export async function raffleEligible(week: number): Promise<EligibleFamily[]> {
+export async function raffleEligible(shulId: string, week: number): Promise<EligibleFamily[]> {
   const households = await prisma.household.findMany({
+    where: { shulId },
     include: { members: { include: { goals: { where: { week } } } } },
     orderBy: { familyName: "asc" },
   });
@@ -32,14 +32,13 @@ export async function raffleEligible(week: number): Promise<EligibleFamily[]> {
     }));
 }
 
-/**
- * All raffle draws so far, oldest week first. Returns [] if the RaffleDraw
- * table hasn't been created in the database yet (deploy/raffle.sql), so the
- * public pages never break on a missing table.
- */
-export async function raffleDraws() {
+/** A shul's raffle draws so far, oldest week first. */
+export async function raffleDraws(shulId: string) {
   try {
-    return await prisma.raffleDraw.findMany({ orderBy: { week: "asc" } });
+    return await prisma.raffleDraw.findMany({
+      where: { shulId },
+      orderBy: { week: "asc" },
+    });
   } catch {
     return [];
   }

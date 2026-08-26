@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { findShulByHost } from "@/lib/tenant";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 
 export async function POST(req: NextRequest) {
@@ -16,9 +17,11 @@ export async function POST(req: NextRequest) {
 
   const phone = normalizePhone(raw);
   const email = normalizeEmail(raw);
+  const shul = await findShulByHost(req.headers.get("host"));
 
   const household = await prisma.household.findFirst({
     where: {
+      shulId: shul?.id ?? "none",
       OR: [
         ...(phone ? [{ phone }] : []),
         ...(email ? [{ email }, { email2: email }, { email3: email }] : []),

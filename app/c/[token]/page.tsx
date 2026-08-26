@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getCampaign } from "@/lib/campaign";
+import { campaignOf } from "@/lib/campaign";
+import { getShul } from "@/lib/tenant";
 import { getHouseholdView } from "@/lib/household";
 import CheckinClient from "./CheckinClient";
 
@@ -12,14 +13,15 @@ export default async function HouseholdPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const campaign = await getCampaign();
+  const shul = await getShul();
+  const campaign = campaignOf(shul);
   const view =
     (await getHouseholdView(token, campaign)) ??
     (await getHouseholdView(decodeURIComponent(token).toLowerCase(), campaign));
   if (!view) notFound();
 
   const suggestions = await prisma.suggestion.findMany({
-    where: { active: true },
+    where: { shulId: shul.id, active: true },
     orderBy: { sortOrder: "asc" },
     select: { id: true, title: true, detail: true, categories: true },
   });

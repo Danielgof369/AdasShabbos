@@ -2,17 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { getShul } from "@/lib/tenant";
 import { isAdmin, grantAdmin, revokeAdmin } from "@/lib/adminAuth";
 import {
-  runThursdayReminders,
-  runCheckinReminders,
-  runRaffleDeadlineReminder,
+  runThursdayForShul,
+  runCheckinForShul,
+  runRaffleDeadlineForShul,
 } from "@/lib/reminders";
 import { raffleEligible } from "@/lib/raffle";
+import type { Shul } from "@prisma/client";
 
 export async function loginAction(formData: FormData) {
+  const shul = await getShul();
   const password = String(formData.get("password") ?? "");
-  await grantAdmin(password);
+  await grantAdmin(shul, password);
   revalidatePath("/admin");
 }
 
@@ -21,25 +24,22 @@ export async function logoutAction() {
   revalidatePath("/admin");
 }
 
-async function requireAdmin() {
-  if (!(await isAdmin())) throw new Error("Not authorized");
+async function requireAdmin(): Promise<Shul> {
+  const shul = await getShul();
+  if (!(await isAdmin(shul))) throw new Error("Not authorized");
+  return shul;
 }
 
 export async function saveCampaignAction(formData: FormData) {
-  await requireAdmin();
-  const startDateStr = String(formData.get("startDate") ?? "");
-  const deadlineStr = String(formData.get("signupDeadline") ?? "");
-  await prisma.campaign.update({
-    where: { id: "campaign" },
+  const shul = await requireAdmin();
+  await prisma.shul.update({
+    where: { id: shul.id },
     data: {
-      name: String(formData.get("name") ?? "The Elul Shabbos Project").slice(0, 100),
-      weeks: Math.max(1, Math.min(12, Number(formData.get("weeks")) || 4)),
-      // Dates entered in LA time (campaign is LA-based; August offset is -07:00)
-      startDate: startDateStr ? new Date(`${startDateStr}T00:00:00-07:00`) : undefined,
-      signupDeadline: deadlineStr ? new Date(`${deadlineStr}T19:00:00-07:00`) : null,
+      campaignName: String(formData.get("name") ?? shul.campaignName).slice(0, 100),
+      charityName: String(formData.get("charityName") ?? shul.charityName).slice(0, 100),
       pledgePerSignup: Math.max(0, Number(formData.get("pledgePerSignup")) || 0),
-      pledgePerCheckin: Math.max(0, Number(formData.get("pledgePerCheckin")) || 0),
-      charityName: String(formData.get("charityName") ?? "Tomchei Shabbos").slice(0, 100),
+      partnerName:
+        String(formData.get("partnerName") ?? "").trim().slice(0, 100) || null,
     },
   });
   revalidatePath("/admin");
@@ -47,7 +47,7 @@ export async function saveCampaignAction(formData: FormData) {
 }
 
 export async function saveSuggestionAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const pickedCategories = ["adult", "child"].filter(
     (c) => formData.get(`cat_${c}`) === "on"
@@ -63,9 +63,10 @@ export async function saveSuggestionAction(formData: FormData) {
   };
   if (!data.title || !data.unitLabel) throw new Error("Title and unit label are required");
   if (id) {
-    await prisma.suggestion.update({ where: { id }, data });
+    // updateMany so the shulId filter guarantees tenant isolation
+    await prisma.suggestion.updateMany({ where: { id, shulId: shul.id }, data });
   } else {
-    await prisma.suggestion.create({ data });
+    await prisma.suggestion.create({ data: { ...data, shulId: shul.id } });
   }
   revalidatePath("/admin");
   revalidatePath("/");
@@ -73,9 +74,13 @@ export async function saveSuggestionAction(formData: FormData) {
 }
 
 export async function deleteSuggestionAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+  const suggestion = await prisma.suggestion.findFirst({
+    where: { id, shulId: shul.id },
+  });
+  if (!suggestion) return;
   const used = await prisma.goal.count({ where: { suggestionId: id } });
   if (used > 0) {
     // Keep history intact — just hide it from pickers.
@@ -88,30 +93,31 @@ export async function deleteSuggestionAction(formData: FormData) {
 }
 
 export async function sendThursdayAction() {
-  await requireAdmin();
-  await runThursdayReminders();
+  const shul = await requireAdmin();
+  await runThursdayForShul(shul);
   revalidatePath("/admin");
 }
 
 export async function sendCheckinAction() {
-  await requireAdmin();
-  await runCheckinReminders();
+  const shul = await requireAdmin();
+  await runCheckinForShul(shul);
   revalidatePath("/admin");
 }
 
 export async function sendRaffleDeadlineAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const deadlineText = String(formData.get("deadlineText") ?? "").trim().slice(0, 300);
   if (!deadlineText) return;
-  await runRaffleDeadlineReminder(deadlineText);
+  await runRaffleDeadlineForShul(shul, deadlineText);
   revalidatePath("/admin");
 }
 
 export async function deleteHouseholdAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  // Cascades to members and goals; message log rows are cleaned up explicitly.
+  const household = await prisma.household.findFirst({ where: { id, shulId: shul.id } });
+  if (!household) return;
   await prisma.messageLog.deleteMany({ where: { householdId: id } });
   await prisma.household.delete({ where: { id } }).catch(() => {});
   revalidatePath("/admin");
@@ -120,14 +126,14 @@ export async function deleteHouseholdAction(formData: FormData) {
 }
 
 export async function deleteMemberAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const member = await prisma.member.findUnique({
     where: { id },
     include: { household: { include: { members: true } } },
   });
-  if (!member) return;
+  if (!member || member.household.shulId !== shul.id) return;
   await prisma.member.delete({ where: { id } });
   // If that was the household's last member, remove the empty household too.
   if (member.household.members.length <= 1) {
@@ -140,20 +146,21 @@ export async function deleteMemberAction(formData: FormData) {
 }
 
 export async function drawRaffleAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const week = Number(formData.get("week"));
   if (!Number.isInteger(week) || week < 1 || week > 12) return;
-  const eligible = await raffleEligible(week);
+  const eligible = await raffleEligible(shul.id, week);
   if (eligible.length === 0) return;
   const winner = eligible[Math.floor(Math.random() * eligible.length)];
   await prisma.raffleDraw.upsert({
-    where: { week },
+    where: { shulId_week: { shulId: shul.id, week } },
     update: {
       householdId: winner.id,
       familyName: winner.familyName ?? winner.token,
       drawnAt: new Date(),
     },
     create: {
+      shulId: shul.id,
       week,
       householdId: winner.id,
       familyName: winner.familyName ?? winner.token,
@@ -164,14 +171,14 @@ export async function drawRaffleAction(formData: FormData) {
 }
 
 export async function mergeHouseholdsAction(formData: FormData) {
-  await requireAdmin();
+  const shul = await requireAdmin();
   const keepId = String(formData.get("keepId") ?? "");
   const absorbId = String(formData.get("absorbId") ?? "");
   if (!keepId || !absorbId || keepId === absorbId) return;
 
   const [keep, absorb] = await Promise.all([
-    prisma.household.findUnique({ where: { id: keepId } }),
-    prisma.household.findUnique({ where: { id: absorbId } }),
+    prisma.household.findFirst({ where: { id: keepId, shulId: shul.id } }),
+    prisma.household.findFirst({ where: { id: absorbId, shulId: shul.id } }),
   ]);
   if (!keep || !absorb) return;
 

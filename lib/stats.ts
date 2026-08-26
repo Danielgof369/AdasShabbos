@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getCampaign } from "@/lib/campaign";
+import type { CampaignInfo } from "@/lib/campaign";
 
 export type HighlightStat = { label: string; value: number };
 
@@ -14,18 +14,22 @@ export type CampaignStats = {
   highlights: HighlightStat[];
 };
 
-export async function getCampaignStats(activeWeek: number): Promise<CampaignStats> {
-  const campaign = await getCampaign();
+export async function getCampaignStats(
+  campaign: CampaignInfo,
+  activeWeek: number
+): Promise<CampaignStats> {
+  const shulId = campaign.shulId;
+  const inShul = { member: { household: { shulId } } };
 
   const [households, members, kids, checkins, goalsThisWeek, doneGoals] =
     await Promise.all([
-      prisma.household.count(),
-      prisma.member.count(),
-      prisma.member.count({ where: { isChild: true } }),
-      prisma.goal.count({ where: { checkedInAt: { not: null } } }),
-      prisma.goal.count({ where: { week: activeWeek } }),
+      prisma.household.count({ where: { shulId } }),
+      prisma.member.count({ where: { household: { shulId } } }),
+      prisma.member.count({ where: { isChild: true, household: { shulId } } }),
+      prisma.goal.count({ where: { checkedInAt: { not: null }, ...inShul } }),
+      prisma.goal.count({ where: { week: activeWeek, ...inShul } }),
       prisma.goal.findMany({
-        where: { checkedInAt: { not: null }, suggestionId: { not: null } },
+        where: { checkedInAt: { not: null }, suggestionId: { not: null }, ...inShul },
         include: { suggestion: true },
       }),
     ]);
@@ -41,15 +45,13 @@ export async function getCampaignStats(activeWeek: number): Promise<CampaignStat
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
-  const pledgeTotal = households * campaign.pledgePerSignup;
-
   return {
     households,
     members,
     kids,
     checkins,
     goalsThisWeek,
-    pledgeTotal,
+    pledgeTotal: households * campaign.pledgePerSignup,
     charityName: campaign.charityName,
     highlights,
   };

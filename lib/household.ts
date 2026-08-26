@@ -44,7 +44,7 @@ function onTime(campaign: CampaignInfo, week: number, checkedInAt: Date | null):
 
 export async function getHouseholdView(token: string, campaign: CampaignInfo) {
   const household = await prisma.household.findUnique({
-    where: { token },
+    where: { shulId_token: { shulId: campaign.shulId, token } },
     include: {
       members: {
         include: { goals: { include: { suggestion: true } } },
@@ -92,7 +92,7 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       if (goals.some((g) => !g.checkedInAt) && age <= 8 * DAY_MS) {
         pending = {
           week: w,
-          shabbosLabel: formatShabbosDate(shabbos),
+          shabbosLabel: formatShabbosDate(campaign, shabbos),
           late: now.getTime() > checkinDeadline(campaign, w).getTime(),
           items: goals.map((g) => ({
             goalId: g.id,
@@ -145,7 +145,7 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
         upcomingGoals.length > 0
           ? {
               week: nextWeek,
-              shabbosLabel: formatShabbosDate(shabbosOfWeek(campaign, nextWeek)),
+              shabbosLabel: formatShabbosDate(campaign, shabbosOfWeek(campaign, nextWeek)),
               titles: upcomingGoals.map(goalTitle),
             }
           : null,

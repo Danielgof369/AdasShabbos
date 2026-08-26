@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getCampaign } from "@/lib/campaign";
+import { campaignOf } from "@/lib/campaign";
+import { getShul } from "@/lib/tenant";
 import { familyStreakFromGoals } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import Avatar from "@/components/Avatar";
@@ -12,9 +13,10 @@ export const metadata = {
 };
 
 export default async function FamiliesPage() {
-  const campaign = await getCampaign();
+  const shul = await getShul();
+  const campaign = campaignOf(shul);
   const households = await prisma.household.findMany({
-    where: { familyName: { not: null } },
+    where: { shulId: shul.id, familyName: { not: null } },
     include: {
       members: { include: { goals: { select: { week: true, checkedInAt: true } } } },
     },

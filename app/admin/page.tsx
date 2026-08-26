@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db";
 import {
-  getCampaign,
+  campaignOf,
   activeWeek,
   shabbosOfWeek,
   formatShabbosDate,
 } from "@/lib/campaign";
+import { getShul, shulBaseUrl } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
@@ -12,7 +13,6 @@ import { raffleEligible, raffleDraws } from "@/lib/raffle";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
-import { shul } from "@/lib/shul";
 import {
   loginAction,
   logoutAction,
@@ -32,18 +32,14 @@ export const dynamic = "force-dynamic";
 // Give the reminder-blast server actions room to finish a full send.
 export const maxDuration = 60;
 
-function laDateInput(d: Date | null): string {
-  if (!d) return "";
-  return d.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
-}
-
 const inputCls =
   "w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm outline-none focus:border-gold";
 const btnCls =
   "bg-navy text-cream rounded-lg px-4 py-2 text-sm font-medium hover:bg-navy-soft transition-colors";
 
 export default async function AdminPage() {
-  if (!(await isAdmin())) {
+  const shul = await getShul();
+  if (!(await isAdmin(shul))) {
     return (
       <div className="mx-auto max-w-sm px-4 py-16">
         <h1 className="font-display text-2xl text-navy mb-4">Admin</h1>
@@ -62,11 +58,15 @@ export default async function AdminPage() {
     );
   }
 
-  const campaign = await getCampaign();
+  const campaign = campaignOf(shul);
   const week = activeWeek(campaign);
-  const stats = await getCampaignStats(week);
-  const suggestions = await prisma.suggestion.findMany({ orderBy: { sortOrder: "asc" } });
+  const stats = await getCampaignStats(campaign, week);
+  const suggestions = await prisma.suggestion.findMany({
+    where: { shulId: shul.id },
+    orderBy: { sortOrder: "asc" },
+  });
   const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
     include: {
       members: { include: { goals: { include: { suggestion: true } } } },
     },
@@ -74,20 +74,22 @@ export default async function AdminPage() {
   });
   const messageCounts = await prisma.messageLog.groupBy({
     by: ["kind", "week"],
+    where: { householdId: { in: households.map((h) => h.id) } },
     _count: { _all: true },
     orderBy: [{ week: "asc" }],
   });
+  const siteUrl = shulBaseUrl(shul);
 
   const upWeek = Math.min(nextShabbosWeek(campaign), campaign.weeks);
   const doneWeek = lastShabbosWeek(campaign);
-  const upShabbos = formatShabbosDate(shabbosOfWeek(campaign, upWeek));
+  const upShabbos = formatShabbosDate(campaign, shabbosOfWeek(campaign, upWeek));
   const preShabbosBlast = [
     `🕯️ *The Elul Shabbos Project — Week ${upWeek} of ${campaign.weeks}*`,
     ``,
     `Shabbos ${upShabbos} is coming! Whatever you signed up for this week — this is your Shabbos to do it. 💪`,
     ``,
     `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $${campaign.pledgePerSignup} to ${campaign.charityName}:`,
-    shul.siteUrl,
+    siteUrl,
   ].join("\n");
   const checkinBlast = [
     `✨ *Gut voch, ${shul.name}!*`,
@@ -95,18 +97,18 @@ export default async function AdminPage() {
     doneWeek >= 1
       ? `How did week ${doneWeek} go? Take 10 seconds to check in — keep your family's streak alive and move the whole shul's numbers:`
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
-    `${shul.siteUrl}/find`,
+    `${siteUrl}/find`,
     ``,
     `🍕 Every family where *everyone* checks in is entered into this week's pizza raffle!`,
   ].join("\n");
 
   // Pizza raffle: one draw per week whose Shabbos has passed.
-  const draws = await raffleDraws();
+  const draws = await raffleDraws(shul.id);
   const raffleWeeks = await Promise.all(
     Array.from({ length: doneWeek }, (_, i) => i + 1).map(async (w) => ({
       week: w,
-      shabbos: formatShabbosDate(shabbosOfWeek(campaign, w)),
-      eligible: await raffleEligible(w),
+      shabbos: formatShabbosDate(campaign, shabbosOfWeek(campaign, w)),
+      eligible: await raffleEligible(shul.id, w),
       winner: draws.find((d) => d.week === w) ?? null,
     }))
   );
@@ -118,7 +120,7 @@ export default async function AdminPage() {
         `Mazel tov to *The ${latestWin.familyName} Family* — everyone checked in, and they've won this week's family pizza party! 🎉`,
         ``,
         `Want in next week? Everyone in the family checks in after Shabbos, and you're automatically entered:`,
-        shul.siteUrl,
+        siteUrl,
       ].join("\n")
     : null;
 
@@ -601,6 +603,10 @@ export default async function AdminPage() {
       {/* Campaign settings */}
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">Campaign settings</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Campaign Shabbos dates, your web address, and logos are managed by
+          the platform admin — email them for changes there.
+        </p>
         <form
           action={saveCampaignAction}
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl"
@@ -608,33 +614,6 @@ export default async function AdminPage() {
           <label className="text-xs text-ink-soft sm:col-span-2">
             Campaign name
             <input name="name" defaultValue={campaign.name} className={inputCls} />
-          </label>
-          <label className="text-xs text-ink-soft">
-            Week 1 starts (Sunday)
-            <input
-              name="startDate"
-              type="date"
-              defaultValue={laDateInput(campaign.startDate)}
-              className={inputCls}
-            />
-          </label>
-          <label className="text-xs text-ink-soft">
-            Number of weeks
-            <input
-              name="weeks"
-              type="number"
-              defaultValue={campaign.weeks}
-              className={inputCls}
-            />
-          </label>
-          <label className="text-xs text-ink-soft">
-            Signup deadline (for the ${campaign.pledgePerSignup} pledge)
-            <input
-              name="signupDeadline"
-              type="date"
-              defaultValue={laDateInput(campaign.signupDeadline)}
-              className={inputCls}
-            />
           </label>
           <label className="text-xs text-ink-soft">
             Charity name
@@ -646,6 +625,15 @@ export default async function AdminPage() {
               name="pledgePerSignup"
               type="number"
               defaultValue={campaign.pledgePerSignup}
+              className={inputCls}
+            />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Partner community shown next to your name (optional)
+            <input
+              name="partnerName"
+              defaultValue={shul.partnerName ?? ""}
+              placeholder="e.g. LINK Kollel — leave empty for none"
               className={inputCls}
             />
           </label>

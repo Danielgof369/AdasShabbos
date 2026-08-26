@@ -1,15 +1,13 @@
 import { prisma } from "@/lib/db";
 import {
-  getCampaign,
+  campaignOf,
   shabbosOfWeek,
   formatShabbosDate,
+  type CampaignInfo,
 } from "@/lib/campaign";
+import { shulBaseUrl, type Shul } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek, goalTitle } from "@/lib/household";
 import { sendToHousehold } from "@/lib/messaging";
-
-function baseUrl() {
-  return (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,19 +32,41 @@ async function inBatches<T>(
   }
 }
 
+/** Run a per-shul job across every active shul (cron entrypoints). */
+async function forEachShul(
+  job: (shul: Shul) => Promise<ReminderRunResult>
+): Promise<ReminderRunResult> {
+  const shuls = await prisma.shul.findMany({ where: { active: true } });
+  const agg: ReminderRunResult = { week: 0, sent: 0, skipped: 0, details: [] };
+  for (const shul of shuls) {
+    try {
+      const r = await job(shul);
+      agg.week = r.week;
+      agg.sent += r.sent;
+      agg.skipped += r.skipped;
+      agg.details.push(`[${shul.slug}] w${r.week}: sent ${r.sent}, skipped ${r.skipped}`);
+      agg.details.push(...r.details.map((d) => `[${shul.slug}] ${d}`));
+    } catch (e) {
+      agg.details.push(`[${shul.slug}] FAILED: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+  return agg;
+}
+
 /**
- * Thursday reminder: tells each household what everyone committed to for the
- * upcoming Shabbos, and nudges anyone who hasn't set a goal yet.
+ * Thursday reminder for one shul: what everyone committed to for the
+ * upcoming Shabbos, plus a nudge for still-open check-ins from last week.
  */
-export async function runThursdayReminders(): Promise<ReminderRunResult> {
-  const campaign = await getCampaign();
+export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult> {
+  const campaign = campaignOf(shul);
   const week = nextShabbosWeek(campaign);
   if (week > campaign.weeks) {
     return { week, sent: 0, skipped: 0, details: ["Campaign is over — nothing to send."] };
   }
-  const shabbosLabel = formatShabbosDate(shabbosOfWeek(campaign, week));
+  const shabbosLabel = formatShabbosDate(campaign, shabbosOfWeek(campaign, week));
 
   const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
     include: { members: { include: { goals: { include: { suggestion: true } } } } },
   });
 
@@ -57,7 +77,7 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
   const alreadySent = new Set(
     (
       await prisma.messageLog.findMany({
-        where: { kind: "thursday_reminder", week },
+        where: { kind: "thursday_reminder", week, householdId: { in: households.map((h) => h.id) } },
         select: { householdId: true },
       })
     ).map((r) => r.householdId)
@@ -84,9 +104,9 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
       Date.now() - shabbosOfWeek(campaign, prevWeek).getTime() <= 8 * DAY_MS &&
       h.members.some((m) => m.goals.some((g) => g.week === prevWeek && !g.checkedInAt));
 
-    const link = `${baseUrl()}/c/${h.token}`;
+    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
     const lines: string[] = [];
-    lines.push(`🕯️ Shabbos is coming — ${shabbosLabel}! Week ${week} of ${campaign.weeks} of the Elul Shabbos Project.`);
+    lines.push(`🕯️ Shabbos is coming — ${shabbosLabel}! Week ${week} of ${campaign.weeks} of ${campaign.name}.`);
     if (withGoal.length > 0) {
       lines.push("");
       for (const { m, goals } of withGoal) {
@@ -111,7 +131,7 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
 
     const channel = await sendToHousehold(
       h,
-      { subject: `Shabbos is coming — week ${week} of the Elul Shabbos Project`, text: lines.join("\n") },
+      { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") },
       "thursday_reminder",
       week
     );
@@ -125,19 +145,17 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
 }
 
 /**
- * Motzei Shabbos / Sunday reminder: asks households to check in on the week
- * that just ended (and set next week's commitment).
+ * Check-in chaser for one shul. Families that haven't checked in hear from
+ * us every ~2 days (Sunday, Tuesday, and the Thursday email's P.S.) until
+ * the late window closes; each wave dedupes under its own log kind.
  */
-export async function runCheckinReminders(): Promise<ReminderRunResult> {
-  const campaign = await getCampaign();
+export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> {
+  const campaign = campaignOf(shul);
   const week = lastShabbosWeek(campaign);
   if (week < 1) {
     return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
   }
 
-  // Chaser waves: families that haven't checked in hear from us again every
-  // ~2 days (Sunday, Tuesday, and the Thursday email's P.S.) until the late
-  // window closes. Each wave dedupes independently via its own log kind.
   const daysSince = Math.floor(
     (Date.now() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS
   );
@@ -148,6 +166,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
   const kind = wave === 1 ? "checkin_reminder" : `checkin_reminder${wave}`;
 
   const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
     include: { members: { include: { goals: true } } },
   });
 
@@ -158,7 +177,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
   const alreadySent = new Set(
     (
       await prisma.messageLog.findMany({
-        where: { kind, week },
+        where: { kind, week, householdId: { in: households.map((h) => h.id) } },
         select: { householdId: true },
       })
     ).map((r) => r.householdId)
@@ -179,7 +198,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
-    const link = `${baseUrl()}/c/${h.token}`;
+    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
     const names = pending.map((m) => m.name).join(" & ");
     const isLastWeek = week >= campaign.weeks;
     const text =
@@ -200,7 +219,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
     const subject =
       wave === 1
         ? `How did Shabbos go? Check in — week ${week}`
-        : `Still time to check in — week ${week} of the Elul Shabbos Project`;
+        : `Still time to check in — week ${week} of ${campaign.name}`;
 
     const channel = await sendToHousehold(h, { subject, text }, kind, week);
     if (channel) {
@@ -213,22 +232,22 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
 }
 
 /**
- * One-off: nudge everyone who hasn't checked in yet for the most recent
- * Shabbos, with a custom deadline message (e.g. "raffle draws tomorrow at
- * 5pm"). Dedupes per household/week under its own log kind, so pressing
- * the admin button twice never double-sends.
+ * One-off deadline nudge (e.g. pizza-raffle cutoff) for one shul: only
+ * households still missing a check-in for the most recent Shabbos.
  */
-export async function runRaffleDeadlineReminder(
+export async function runRaffleDeadlineForShul(
+  shul: Shul,
   deadlineText: string
 ): Promise<ReminderRunResult> {
-  const campaign = await getCampaign();
+  const campaign = campaignOf(shul);
   const week = lastShabbosWeek(campaign);
   if (week < 1) {
     return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
   }
 
-  const kind = `raffle_deadline_reminder`;
+  const kind = "raffle_deadline_reminder";
   const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
     include: { members: { include: { goals: true } } },
   });
 
@@ -239,7 +258,7 @@ export async function runRaffleDeadlineReminder(
   const alreadySent = new Set(
     (
       await prisma.messageLog.findMany({
-        where: { kind, week },
+        where: { kind, week, householdId: { in: households.map((h) => h.id) } },
         select: { householdId: true },
       })
     ).map((r) => r.householdId)
@@ -260,7 +279,7 @@ export async function runRaffleDeadlineReminder(
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
-    const link = `${baseUrl()}/c/${h.token}`;
+    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
     const names = pending.map((m) => m.name).join(" & ");
     const text = [
       `Don't forget to check in!`,
@@ -283,4 +302,13 @@ export async function runRaffleDeadlineReminder(
   });
 
   return { week, sent, skipped, details };
+}
+
+// ---------- cron entrypoints: every active shul ----------
+export async function runThursdayReminders(): Promise<ReminderRunResult> {
+  return forEachShul(runThursdayForShul);
+}
+
+export async function runCheckinReminders(): Promise<ReminderRunResult> {
+  return forEachShul(runCheckinForShul);
 }

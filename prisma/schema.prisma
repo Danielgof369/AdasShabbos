@@ -2,17 +2,53 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Postgres (Neon/Supabase/Vercel Postgres). For laptop-only tinkering without
-// a database, flip provider to "sqlite" and set DATABASE_URL="file:./dev.db".
+// Postgres (Neon). For local testing without a database, flip provider to
+// "sqlite" and set DATABASE_URL="file:./dev.db".
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// A household is the unit that signs up: one phone/email, one or more people.
+// ============ v2: multi-tenant ============
+// One row per community. Each shul lives at <slug>.<ROOT_DOMAIN> (or its own
+// customDomain) and owns its households, commitment list, and raffle draws.
+model Shul {
+  id           String  @id @default(cuid())
+  slug         String  @unique // subdomain, e.g. "adas"
+  customDomain String? @unique // e.g. "shabboswithadas.com"
+  name         String // "Adas Torah"
+  partnerName  String? // co-branded partner, e.g. "LINK Kollel"
+  city         String  @default("Los Angeles")
+
+  campaignName    String @default("The Elul Shabbos Project")
+  charityName     String @default("Tomchei Shabbos")
+  pledgePerSignup Int    @default(5) // dollars per family signup
+
+  // Campaign calendar: comma-separated Shabbos dates + the shul's timezone.
+  shabbosDates String // "2026-08-22,2026-08-29,2026-09-05,2026-09-19"
+  tzOffset     String @default("-07:00") // UTC offset during the campaign
+  timezone     String @default("America/Los_Angeles") // IANA, for labels
+
+  // Branding: paths (files in /public) or absolute URLs. Null = text wordmark.
+  logoLight        String? // shul logo on light backgrounds
+  logoDark         String? // shul logo on the navy header/hero
+  partnerLogoLight String?
+  partnerLogoDark  String?
+
+  adminHash String // sha256("elul:<slug>:<password>") — per-shul admin login
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  households  Household[]
+  suggestions Suggestion[]
+  raffleDraws RaffleDraw[]
+}
+
+// A household is the unit that signs up: one contact set, one or more people.
 model Household {
   id         String   @id @default(cuid())
-  token      String   @unique // personal check-in link token
+  shulId     String
+  token      String // personal check-in link slug, unique within the shul
   familyName String? // "Gofman" -> shown as "The Gofman Family"
   phone      String?
   email      String?
@@ -23,19 +59,21 @@ model Household {
   smsOptIn   Boolean @default(true)
   emailOptIn Boolean @default(true)
 
+  shul    Shul     @relation(fields: [shulId], references: [id], onDelete: Cascade)
   members Member[]
 
-  @@index([phone])
-  @@index([email])
+  @@unique([shulId, token])
+  @@index([shulId, phone])
+  @@index([shulId, email])
 }
 
-// A member is a person taking on commitments (parent, kid, etc.)
+// A member is a person taking on commitments (parent, child, etc.)
 model Member {
   id          String  @id @default(cuid())
   householdId String
   name        String
   isChild     Boolean @default(false)
-  gender      String? // "boy" | "girl" for kids — drives the signup incentives
+  gender      String? // "man" | "woman" | "boy" | "girl" — drives avatars
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   goals     Goal[]
@@ -43,34 +81,33 @@ model Member {
   @@index([householdId])
 }
 
-// The catalog of things people can take on, editable by admins.
+// The catalog of things people can take on — per shul, editable by its admin.
 model Suggestion {
-  id       String  @id @default(cuid())
-  title    String
-  detail   String?
-  // How this counts toward the homepage highlight reel:
-  // unitLabel e.g. "minutes added to Shabbos", "tables set", "challos baked"
-  // unitValue e.g. 15 (minutes) or 1 (table)
+  id        String  @id @default(cuid())
+  shulId    String
+  title     String
+  detail    String?
+  // unitLabel/unitValue drive the homepage highlight reel
   unitLabel String
   unitValue Int     @default(1)
-  // Comma-separated categories this option is offered to:
-  // any of "man","woman","boy","girl" (e.g. "man,woman")
-  categories String @default("man,woman,boy,girl")
-  // Legacy field kept for old rows; categories is authoritative
-  audience  String  @default("both")
-  sortOrder Int     @default(0)
-  active    Boolean @default(true)
+  // audience: "adult" | "child" | "both" (legacy CSVs tolerated)
+  categories String @default("both")
+  sortOrder  Int    @default(0)
+  active     Boolean @default(true)
 
+  shul  Shul   @relation(fields: [shulId], references: [id], onDelete: Cascade)
   goals Goal[]
+
+  @@index([shulId])
 }
 
 // One member's commitment for one week of the campaign.
 model Goal {
-  id           String  @id @default(cuid())
+  id           String   @id @default(cuid())
   memberId     String
   week         Int // 1-based campaign week
   suggestionId String?
-  customTitle  String? // if they typed their own thing
+  customTitle  String? // if they wrote in their own commitment
   createdAt    DateTime @default(now())
 
   checkedInAt DateTime? // set when they confirm they did it
@@ -82,33 +119,26 @@ model Goal {
   @@index([week])
 }
 
-// Singleton campaign configuration (id is always "campaign").
-model Campaign {
-  id            String   @id @default("campaign")
-  name          String   @default("The Elul Shabbos Project")
-  startDate     DateTime // first day of week 1
-  weeks         Int      @default(4)
-  signupDeadline DateTime? // for the $5-per-signup pledge
-  pledgePerSignup  Int @default(5) // dollars
-  pledgePerCheckin Int @default(1) // dollars
-  charityName   String   @default("Tomchei Shabbos")
-}
-
-// One pizza-raffle winner per campaign week, drawn (in admin) from the
-// families where everyone checked in.
+// One pizza-raffle winner per shul per week.
 model RaffleDraw {
   id          String   @id @default(cuid())
-  week        Int      @unique
+  shulId      String
+  week        Int
   householdId String
   familyName  String
   drawnAt     DateTime @default(now())
+
+  shul Shul @relation(fields: [shulId], references: [id], onDelete: Cascade)
+
+  @@unique([shulId, week])
 }
 
 // Log of every reminder sent, for admin visibility and dedupe.
+// Household ids are globally unique, so this needs no shul column.
 model MessageLog {
   id          String   @id @default(cuid())
   householdId String
-  kind        String // "thursday_reminder" | "checkin_reminder" | "manual"
+  kind        String // "thursday_reminder" | "checkin_reminder" | ...
   channel     String // "sms" | "email" | "whatsapp" | "console"
   week        Int
   sentAt      DateTime @default(now())

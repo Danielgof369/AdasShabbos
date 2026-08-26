@@ -12,6 +12,7 @@ import { raffleEligible, raffleDraws } from "@/lib/raffle";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import { shul } from "@/lib/shul";
 import {
   loginAction,
   logoutAction,
@@ -85,16 +86,16 @@ export default async function AdminPage() {
     ``,
     `Shabbos ${upShabbos} is coming! Whatever you signed up for this week — this is your Shabbos to do it. 💪`,
     ``,
-    `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $5 to ${campaign.charityName}:`,
-    `https://shabboswithadas.com`,
+    `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $${campaign.pledgePerSignup} to ${campaign.charityName}:`,
+    shul.siteUrl,
   ].join("\n");
   const checkinBlast = [
-    `✨ *Gut voch, Adas Torah!*`,
+    `✨ *Gut voch, ${shul.name}!*`,
     ``,
     doneWeek >= 1
       ? `How did week ${doneWeek} go? Take 10 seconds to check in — keep your family's streak alive and move the whole shul's numbers:`
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
-    `https://shabboswithadas.com/find`,
+    `${shul.siteUrl}/find`,
     ``,
     `🍕 Every family where *everyone* checks in is entered into this week's pizza raffle!`,
   ].join("\n");
@@ -117,7 +118,7 @@ export default async function AdminPage() {
         `Mazel tov to *The ${latestWin.familyName} Family* — everyone checked in, and they've won this week's family pizza party! 🎉`,
         ``,
         `Want in next week? Everyone in the family checks in after Shabbos, and you're automatically entered:`,
-        `https://shabboswithadas.com`,
+        shul.siteUrl,
       ].join("\n")
     : null;
 

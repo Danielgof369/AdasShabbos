@@ -14,22 +14,31 @@ export type CampaignInfo = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * The campaign's Shabbos dates (LA time). Week 4 is Shabbos Shuva;
- * Rosh Hashanah (Sept 12) is deliberately skipped, so week 3 -> week 4
- * spans two calendar weeks.
+ * The campaign's Shabbos dates. Defaults are the Adas Torah 5786 campaign
+ * (Rosh Hashanah's Shabbos deliberately skipped, so week 3 -> week 4 spans
+ * two calendar weeks). A fork sets its own via env, e.g.
+ *   CAMPAIGN_SHABBOS_DATES="2026-08-22,2026-08-29,2026-09-05,2026-09-19"
+ *   CAMPAIGN_TZ_OFFSET="-07:00"          (UTC offset of the shul's timezone)
+ *   CAMPAIGN_TIMEZONE="America/Los_Angeles"  (IANA name, for date labels)
  */
-export const SHABBOS_DATES = [
-  new Date("2026-08-22T00:00:00-07:00"),
-  new Date("2026-08-29T00:00:00-07:00"),
-  new Date("2026-09-05T00:00:00-07:00"),
-  new Date("2026-09-19T00:00:00-07:00"),
-];
+const TZ_OFFSET = process.env.CAMPAIGN_TZ_OFFSET?.trim() || "-07:00";
+export const CAMPAIGN_TIMEZONE =
+  process.env.CAMPAIGN_TIMEZONE?.trim() || "America/Los_Angeles";
+
+export const SHABBOS_DATES = (
+  process.env.CAMPAIGN_SHABBOS_DATES?.trim() ||
+  "2026-08-22,2026-08-29,2026-09-05,2026-09-19"
+)
+  .split(",")
+  .map((d) => new Date(`${d.trim()}T00:00:00${TZ_OFFSET}`))
+  .filter((d) => !Number.isNaN(d.getTime()));
 
 export async function getCampaign(): Promise<CampaignInfo> {
   const c = await prisma.campaign.findUnique({ where: { id: "campaign" } });
   if (c) return { ...c, weeks: SHABBOS_DATES.length };
   const created = await prisma.campaign.create({
-    data: { id: "campaign", startDate: new Date("2026-08-16T00:00:00-07:00") },
+    // Week 1 starts the Sunday before the first campaign Shabbos.
+    data: { id: "campaign", startDate: new Date(SHABBOS_DATES[0].getTime() - 6 * DAY_MS) },
   });
   return { ...created, weeks: SHABBOS_DATES.length };
 }
@@ -76,6 +85,6 @@ export function formatShabbosDate(d: Date): string {
   return d.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
-    timeZone: "America/Los_Angeles",
+    timeZone: CAMPAIGN_TIMEZONE,
   });
 }

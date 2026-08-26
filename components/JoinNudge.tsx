@@ -12,10 +12,14 @@ export default function JoinNudge({
   checkinOpen = false,
   checkinHref = "/find",
   checkinLabel = "",
+  charityName = "Tomchei Shabbos",
+  pledge = 5,
 }: {
   checkinOpen?: boolean;
   checkinHref?: string;
   checkinLabel?: string;
+  charityName?: string;
+  pledge?: number;
 }) {
   const [showPopup, setShowPopup] = useState(false);
 
@@ -68,7 +72,7 @@ export default function JoinNudge({
           ) : (
             <>
               <span className="hidden sm:block text-cream/85 text-sm flex-1">
-                One small thing for Shabbos. Every family that joins sends $5 to Tomchei Shabbos.
+                One small thing for Shabbos. Every family that joins sends ${pledge} to {charityName}.
               </span>
               <Link
                 href="/signup"
@@ -96,8 +100,8 @@ export default function JoinNudge({
               Take on one small thing
             </h2>
             <p className="text-ink-soft text-sm mb-5">
-              30 seconds to sign up your whole family — and $5 goes to Tomchei
-              Shabbos the moment you do.
+              30 seconds to sign up your whole family — and ${pledge} goes to{" "}
+              {charityName} the moment you do.
             </p>
             <Link
               href="/signup"

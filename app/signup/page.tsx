@@ -22,7 +22,11 @@ export default async function SignupPage() {
         Shuva, {formatShabbosDate(shabbosOfWeek(campaign, campaign.weeks))} —
         with the hope that they become permanent.
       </p>
-      <SignupForm suggestions={suggestions} />
+      <SignupForm
+        suggestions={suggestions}
+        charityName={campaign.charityName}
+        pledge={campaign.pledgePerSignup}
+      />
     </div>
   );
 }

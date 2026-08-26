@@ -1,5 +1,10 @@
 # The Elul Shabbos Project — Adas Torah
 
+> **Want to run this at YOUR shul?** The whole site is plug-n-play: fork this
+> repo, follow [`deploy/NEW-SHUL-SETUP.md`](deploy/NEW-SHUL-SETUP.md), and
+> you're live in ~45 minutes on free hosting — your own name, dates, logos,
+> and commitment list, no code edits required.
+
 A mobile-first campaign site for the month of Elul: everyone in the shul —
 men, women, and kids — signs up to take on **one extra thing for Shabbos each
 week**, gets a reminder on Thursday, checks in after Shabbos, and picks their

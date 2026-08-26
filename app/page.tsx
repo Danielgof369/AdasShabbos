@@ -12,6 +12,7 @@ import { getCampaignStats } from "@/lib/stats";
 import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
 import { LogoOnDark, LinkLogoOnDark } from "@/components/Logo";
+import { shul, isAdasDeployment } from "@/lib/shul";
 import JoinNudge from "@/components/JoinNudge";
 import LinkWelcome from "@/components/LinkWelcome";
 
@@ -68,11 +69,16 @@ export default async function Home() {
         <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20 relative">
           <div className="mb-6 flex items-center gap-5">
             <LogoOnDark className="h-14 w-auto" />
-            <span className="h-12 w-px bg-cream/25" aria-hidden />
-            <LinkLogoOnDark className="h-12 w-auto" />
+            {shul.partnerName && (
+              <>
+                <span className="h-12 w-px bg-cream/25" aria-hidden />
+                <LinkLogoOnDark className="h-12 w-auto" />
+              </>
+            )}
           </div>
           <p className="text-gold-soft font-display tracking-widest uppercase text-sm mb-4">
-            Elul 5786 &middot; A campaign of Adas Torah &amp; LINK Kollel
+            Elul 5786 &middot; A campaign of {shul.name}
+            {shul.partnerName ? ` & ${shul.partnerName}` : ""}
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
             One small thing for Shabbos.
@@ -190,7 +196,9 @@ export default async function Home() {
           </summary>
           <div className="px-6 pb-6 text-ink-soft leading-relaxed space-y-4 border-t border-parchment pt-5">
             <p>
-              Before Rosh Hashanah 5784, Rabbi Revah shared a teaching of the
+              Before Rosh Hashanah 5784, {isAdasDeployment()
+                ? "Rabbi Revah shared"
+                : "our community learned"} a teaching of the
               Aruch LaNer: when Rosh Hashanah falls on Shabbos and the shofar
               goes silent, the year that follows tends to be extraordinary,
               for blessing or for tragedy. On that day it is not the shofar
@@ -208,7 +216,7 @@ export default async function Home() {
             </p>
             <p>
               So this Elul we are doing our part, every man, woman, and child
-              of Adas Torah, to send Shabbos into the new year as our
+              of {shul.name}, to send Shabbos into the new year as our
               advocate. One small commitment, each week, together.
             </p>
           </div>
@@ -367,9 +375,11 @@ export default async function Home() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5 text-center">
-              <div className="font-display text-4xl text-gold-soft mb-1">$5</div>
+              <div className="font-display text-4xl text-gold-soft mb-1">
+                ${campaign.pledgePerSignup}
+              </div>
               <p className="text-cream/85 text-sm leading-relaxed">
-                to <strong>Tomchei Shabbos</strong> for every family that
+                to <strong>{stats.charityName}</strong> for every family that
                 signs up
               </p>
             </div>
@@ -399,8 +409,10 @@ export default async function Home() {
         checkinOpen={checkinOpen}
         checkinHref={checkinHref}
         checkinLabel={lastLabel}
+        charityName={stats.charityName}
+        pledge={campaign.pledgePerSignup}
       />
-      <LinkWelcome />
+      {shul.partnerName && <LinkWelcome partnerName={shul.partnerName} />}
     </div>
   );
 }

@@ -8,8 +8,9 @@ import Link from "next/link";
  * Shown once per device (localStorage); while it's up, the JoinNudge popup
  * stands down for the session so the two never stack.
  */
-export default function LinkWelcome() {
+export default function LinkWelcome({ partnerName = "LINK Kollel" }: { partnerName?: string }) {
   const [show, setShow] = useState(false);
+  const shortName = partnerName.replace(/\s+Kollel$/i, "");
 
   useEffect(() => {
     try {
@@ -47,10 +48,10 @@ export default function LinkWelcome() {
           The Elul Shabbos Project
         </p>
         <h2 className="font-display text-3xl text-navy mb-3">
-          Welcome, LINK Community!
+          Welcome, {shortName} Community!
         </h2>
         <p className="text-ink-soft mb-5">
-          The LINK Kollel has joined the Elul Shabbos Project — one more
+          {partnerName} has joined the Elul Shabbos Project — one more
           community holding Shabbos together through the Yamim Noraim.
         </p>
         <div className="font-display text-navy-deep text-lg leading-relaxed mb-6">

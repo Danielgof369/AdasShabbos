@@ -171,13 +171,14 @@ export default async function Home() {
         <section className="mx-auto max-w-3xl px-4 pt-10">
           <div className="bg-white rounded-2xl border border-gold/40 shadow-sm px-6 py-5 text-center">
             <p className="text-navy">
-              🍕 <span className="font-semibold">Week {latestDraw.week} pizza
-              raffle:</span> mazel tov to{" "}
+              🍕 Mazeltov to the{" "}
               <span className="font-display text-lg text-navy-deep font-semibold">
-                The {latestDraw.familyName} Family
-              </span>
-              ! Everyone checked in — pizza&rsquo;s on the campaign. Your family
-              could be next: check in after Shabbos, all of you.
+                {latestDraw.familyName}
+              </span>{" "}
+              family on winning this week&rsquo;s pizza raffle! Your family
+              could be next! Check in after Shabbos if you completed what
+              you took on — and be automatically entered into next
+              week&rsquo;s raffle!
             </p>
           </div>
         </section>

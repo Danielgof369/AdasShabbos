@@ -115,9 +115,7 @@ export default async function AdminPage() {
     ? [
         `🍕 *Pizza raffle — week ${latestWin.week}!*`,
         ``,
-        `Mazel tov to *The ${latestWin.familyName} Family* — everyone checked in, and they've won this week's family pizza party! 🎉`,
-        ``,
-        `Want in next week? Everyone in the family checks in after Shabbos, and you're automatically entered:`,
+        `Mazeltov to the *${latestWin.familyName}* family on winning this week's pizza raffle! Your family could be next! Check in after Shabbos if you completed what you took on — and be automatically entered into next week's raffle!`,
         shul.siteUrl,
       ].join("\n")
     : null;

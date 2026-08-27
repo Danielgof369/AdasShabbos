@@ -38,6 +38,12 @@ export default async function RootLayout({
             </Link>
             <div className="flex items-center gap-4 shrink-0">
               <Link
+                href="/resources"
+                className="hidden sm:block text-sm text-gold-soft hover:text-gold underline underline-offset-4 whitespace-nowrap"
+              >
+                Resources
+              </Link>
+              <Link
                 href={familyHref}
                 className="text-sm text-gold-soft hover:text-gold underline underline-offset-4 whitespace-nowrap"
               >
@@ -73,9 +79,14 @@ export default async function RootLayout({
               {shul.name}
               {shul.partnerName ? ` & ${shul.partnerName}` : ""} &middot; {shul.city}
             </span>
-            <Link href="/find" className="underline underline-offset-2 hover:text-gold-soft">
-              Sign in to my family page
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/resources" className="underline underline-offset-2 hover:text-gold-soft">
+                Resources
+              </Link>
+              <Link href="/find" className="underline underline-offset-2 hover:text-gold-soft">
+                Sign in to my family page
+              </Link>
+            </div>
           </div>
         </footer>
       </body>

@@ -431,7 +431,7 @@ export default async function Home() {
         charityName={stats.charityName}
         pledge={campaign.pledgePerSignup}
       />
-      <HomePopups partnerName={shul.partnerName} />
+      <HomePopups />
     </div>
   );
 }

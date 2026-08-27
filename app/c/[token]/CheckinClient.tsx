@@ -143,11 +143,13 @@ export default function CheckinClient({
   members,
   suggestions,
   totalWeeks,
+  viewerIsAdmin = false,
 }: {
   token: string;
   members: MemberGoalView[];
   suggestions: SuggestionOption[];
   totalWeeks: number;
+  viewerIsAdmin?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -155,12 +157,22 @@ export default function CheckinClient({
   const [celebrating, setCelebrating] = useState<Record<string, boolean>>({});
   const [adjusting, setAdjusting] = useState<Record<string, boolean>>({});
 
-  // Remember this family on the device so the header shows "My family".
+  // Remember this family on the device so the header shows "My family" —
+  // but never when an admin is browsing a family's page from /admin, so
+  // checking on a family doesn't silently claim the admin's own device.
   useEffect(() => {
+    if (viewerIsAdmin) return;
     try {
       document.cookie = `elul_token=${encodeURIComponent(token)}; path=/; max-age=15552000; SameSite=Lax`;
     } catch {}
-  }, [token]);
+  }, [token, viewerIsAdmin]);
+
+  function notYou() {
+    try {
+      document.cookie = "elul_token=; path=/; max-age=0; SameSite=Lax";
+    } catch {}
+    window.location.href = "/find";
+  }
 
   async function post(url: string, body: object) {
     setBusy(true);
@@ -206,6 +218,11 @@ export default function CheckinClient({
 
   return (
     <div className="space-y-6">
+      {viewerIsAdmin && (
+        <p className="text-xs text-ink-soft bg-parchment/60 border border-parchment rounded-lg px-4 py-2">
+          Admin view — this device won&rsquo;t be remembered as this family.
+        </p>
+      )}
       {error && (
         <p className="text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm">
           {error}
@@ -331,13 +348,21 @@ export default function CheckinClient({
         </section>
       ))}
 
-      <p className="text-center text-sm text-ink-soft pb-4">
+      <p className="text-center text-sm text-ink-soft">
         Want to add another family member?{" "}
         <a href="/signup" className="underline hover:text-navy">
           Sign them up here
         </a>{" "}
         with the same email.
       </p>
+      {!viewerIsAdmin && (
+        <p className="text-center text-xs text-ink-soft pb-4">
+          Not your family?{" "}
+          <button type="button" onClick={notYou} className="underline hover:text-navy">
+            Clear this device
+          </button>
+        </p>
+      )}
     </div>
   );
 }

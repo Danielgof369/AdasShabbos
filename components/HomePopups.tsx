@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from "react";
 
-const DVAR_SEEN_KEY = "dvarHalachaPopup";
+// One block per weekly edition. To publish a new dvar, update these fields —
+// the id keys the shown-once-per-device memory, so a new id re-arms the
+// popup for every visitor.
+const DVAR = {
+  id: "broken-water-heater",
+  title: "The Broken Water Heater",
+  author: "Rabbi Yisroel Casen",
+  blurb:
+    "A real-life shailah on melacha, maris ayin, and a mid-Shabbos repair call — bring it to your table this week.",
+  pdf: "/dvar-halacha-broken-water-heater.pdf",
+};
+
+const DVAR_SEEN_KEY = `dvarHalachaPopup:${DVAR.id}`;
 
 function seen(key: string): boolean {
   try {
@@ -54,18 +66,13 @@ export default function HomePopups() {
         <p className="font-display tracking-[0.22em] uppercase text-sm text-gold mb-2">
           New This Week
         </p>
-        <h2 className="font-display text-2xl text-navy mb-2">
-          The Broken Water Heater
-        </h2>
+        <h2 className="font-display text-2xl text-navy mb-2">{DVAR.title}</h2>
         <p className="text-sm text-ink-soft mb-1">
-          A Dvar Halacha by <strong className="text-navy">Rabbi Yisroel Casen</strong>
+          A Dvar Halacha by <strong className="text-navy">{DVAR.author}</strong>
         </p>
-        <p className="text-ink-soft mb-6">
-          A real-life shailah on melacha, maris ayin, and a mid-Shabbos
-          repair call — bring it to your table this week.
-        </p>
+        <p className="text-ink-soft mb-6">{DVAR.blurb}</p>
         <a
-          href="/dvar-halacha-broken-water-heater.pdf"
+          href={DVAR.pdf}
           target="_blank"
           onClick={dismiss}
           className="block bg-gold text-navy-deep font-bold rounded-lg py-3.5 text-lg hover:bg-gold-soft transition-colors mb-3"

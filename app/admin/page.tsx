@@ -24,6 +24,7 @@ import {
   deleteSuggestionAction,
   sendThursdayAction,
   sendCheckinAction,
+  sendErevShabbosAction,
   sendRaffleDeadlineAction,
   drawRaffleAction,
 } from "./actions";
@@ -163,6 +164,9 @@ export default async function AdminPage() {
         <div className="flex flex-wrap gap-3 mb-4">
           <form action={sendThursdayAction}>
             <button className={btnCls}>Send Thursday reminder now</button>
+          </form>
+          <form action={sendErevShabbosAction}>
+            <button className={btnCls}>Send Good Erev Shabbos nudge now</button>
           </form>
           <form action={sendCheckinAction}>
             <button className={btnCls}>Send check-in reminder now</button>

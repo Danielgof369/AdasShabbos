@@ -284,3 +284,83 @@ export async function runRaffleDeadlineReminder(
 
   return { week, sent, skipped, details };
 }
+
+/**
+ * Same-day Erev Shabbos nudge: a warm "good Shabbos, don't forget what you
+ * took on" reminder, sent to every household regardless of check-in status
+ * (this isn't a chase — it's a blessing). Lists each person's commitment
+ * for the imminent Shabbos same as the Thursday email. Own log kind, so
+ * pressing the button again only fills in anyone the first pass missed.
+ */
+export async function runErevShabbosReminder(): Promise<ReminderRunResult> {
+  const campaign = await getCampaign();
+  const week = nextShabbosWeek(campaign);
+  if (week > campaign.weeks) {
+    return { week, sent: 0, skipped: 0, details: ["Campaign is over — nothing to send."] };
+  }
+  const shabbosLabel = formatShabbosDate(shabbosOfWeek(campaign, week));
+
+  const kind = "erev_shabbos_nudge";
+  const households = await prisma.household.findMany({
+    include: { members: { include: { goals: { include: { suggestion: true } } } } },
+  });
+
+  let sent = 0;
+  let skipped = 0;
+  const details: string[] = [];
+
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind, week },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  const targets = households.filter((h) => {
+    if (h.members.length === 0) return false;
+    if (alreadySent.has(h.id)) {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  await inBatches(targets, 8, async (h) => {
+    const withGoal = h.members
+      .map((m) => ({ m, goals: m.goals.filter((g) => g.week === week) }))
+      .filter((x) => x.goals.length > 0);
+    const withoutGoal = h.members.filter((m) => !m.goals.some((g) => g.week === week));
+
+    const link = `${baseUrl()}/c/${h.token}`;
+    const lines: string[] = [`🕯️ Good Erev Shabbos!`];
+    if (withGoal.length > 0) {
+      lines.push("");
+      lines.push(`Don't forget what you took on for Shabbos ${shabbosLabel}:`);
+      for (const { m, goals } of withGoal) {
+        lines.push(`• ${m.name}: ${goals.map((g) => goalTitle(g)).join(" + ")}`);
+      }
+    }
+    if (withoutGoal.length > 0) {
+      lines.push("");
+      lines.push(
+        `${withoutGoal.map((m) => m.name).join(" & ")} ${withoutGoal.length === 1 ? "hasn't" : "haven't"} picked a commitment yet — still time: ${link}`
+      );
+    }
+    lines.push("");
+    lines.push(`Wishing you and your family a beautiful, meaningful Shabbos! ${link}`);
+
+    const channel = await sendToHousehold(
+      h,
+      { subject: `Good Erev Shabbos! 🕯️`, text: lines.join("\n") },
+      kind,
+      week
+    );
+    if (channel) {
+      sent++;
+      details.push(`household ${h.id} via ${channel}`);
+    }
+  });
+
+  return { week, sent, skipped, details };
+}

@@ -7,6 +7,7 @@ import {
   runThursdayReminders,
   runCheckinReminders,
   runRaffleDeadlineReminder,
+  runErevShabbosReminder,
 } from "@/lib/reminders";
 import { raffleEligible } from "@/lib/raffle";
 
@@ -96,6 +97,12 @@ export async function sendThursdayAction() {
 export async function sendCheckinAction() {
   await requireAdmin();
   await runCheckinReminders();
+  revalidatePath("/admin");
+}
+
+export async function sendErevShabbosAction() {
+  await requireAdmin();
+  await runErevShabbosReminder();
   revalidatePath("/admin");
 }
 

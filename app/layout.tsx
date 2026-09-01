@@ -52,17 +52,18 @@ export default async function RootLayout({
             <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-3">
               <Link href="/" className="flex items-center gap-2.5 min-w-0">
                 <span className="text-gold-soft text-xl" aria-hidden>🕯️</span>
-                <span className="font-display text-xl tracking-wide truncate">{PLATFORM.name}</span>
+                <span className="font-display text-lg sm:text-xl tracking-wide truncate">{PLATFORM.name}</span>
               </Link>
               <nav className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
-                <Link href="/shuls" className="text-cream/85 hover:text-gold-soft whitespace-nowrap">
+                <Link href="/shuls" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
                   Find your shul
                 </Link>
                 <Link
                   href="/start"
                   className="bg-gold text-navy-deep font-semibold rounded-lg px-4 py-2 hover:bg-gold-soft transition-colors whitespace-nowrap"
                 >
-                  Bring it to your shul
+                  <span className="sm:hidden">Start</span>
+                  <span className="hidden sm:inline">Bring it to your shul</span>
                 </Link>
               </nav>
             </div>

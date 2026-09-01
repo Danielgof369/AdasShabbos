@@ -370,6 +370,40 @@ export async function sendCustomBlastAction(formData: FormData) {
   revalidatePath("/admin");
 }
 
+// ---------- housekeeping ----------
+import { auditShul, auditReport } from "@/lib/housekeeping";
+
+/** Removes the safe leftovers: families with nobody in them, and people
+ * who never chose a commitment (a signup abandoned halfway). */
+export async function cleanupAbandonedAction() {
+  const shul = await requireAdmin();
+  const audit = await auditShul(shul.id);
+  for (const h of audit.emptyHouseholds) {
+    await prisma.messageLog.deleteMany({ where: { householdId: h.id } });
+    await prisma.household.delete({ where: { id: h.id } }).catch(() => {});
+  }
+  for (const { household, member } of audit.membersWithoutGoals) {
+    await prisma.member.delete({ where: { id: member.id } }).catch(() => {});
+    const left = await prisma.member.count({ where: { householdId: household.id } });
+    if (left === 0) {
+      await prisma.messageLog.deleteMany({ where: { householdId: household.id } });
+      await prisma.household.delete({ where: { id: household.id } }).catch(() => {});
+    }
+  }
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/families");
+}
+
+export async function emailAuditAction() {
+  const shul = await requireAdmin();
+  const to = shul.contactEmail;
+  if (!to) throw new Error("Set your organizer email in Campaign settings first");
+  const audit = await auditShul(shul.id);
+  await sendPlatformEmail([to], `Housekeeping report — ${shul.name}`, auditReport(audit, shulBaseUrl(shul)));
+  revalidatePath("/admin");
+}
+
 export async function requestChangeAction(formData: FormData) {
   const shul = await requireAdmin();
   const message = text(formData, "message", 4000);

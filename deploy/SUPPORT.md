@@ -44,11 +44,13 @@ Routine's prompt once the pipeline has earned trust.
 2. **Resend**: `EMAIL_REPLY_TO=support@kabbalasshabbos.com` and
    `PLATFORM_CONTACT_EMAIL=support@kabbalasshabbos.com` in Vercel, so every
    platform email invites replies to the support address.
-3. **Gmail label** `KSI-Handled` exists (created from this session). No
-   filter is needed — the Routine searches by recipient.
-4. **Routine** "KSI support inbox" — hourly, fresh session, Gmail connector.
-   Created from this session; manage it at claude.ai/code → Routines.
-   To change its behavior, edit its prompt there.
+3. **Gmail label** `KSI-Handled`: the Routine creates it on its first run.
+   No filter is needed — the Routine searches by recipient.
+4. **Routine** "KSI support inbox" (id `trig_01KoXSmd6HipJ1kyxKeMw9CD`) —
+   hourly, fresh session. It exists but is **disabled** until the Gmail
+   connector is attached, which can only be done from claude.ai/code →
+   Routines: open it, add the Gmail connector, then enable it. To change
+   its behavior, edit its prompt there.
 
 ## What the Routine is told
 

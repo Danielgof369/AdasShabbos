@@ -11,15 +11,22 @@ export function shulAdminHash(slug: string, password: string): string {
   return createHash("sha256").update(`elul:${slug}:${password}`).digest("hex");
 }
 
+/** What the cookie holds: the shul's hash mixed with a server-only secret,
+ * so a leaked database row alone can't forge an admin session. */
+function cookieValue(shul: Pick<Shul, "adminHash">): string {
+  const secret = process.env.AUTH_SECRET ?? process.env.CRON_SECRET ?? "";
+  return createHash("sha256").update(`elul-cookie:${shul.adminHash}:${secret}`).digest("hex");
+}
+
 export async function isAdmin(shul: Shul): Promise<boolean> {
   const store = await cookies();
-  return store.get(SHUL_COOKIE)?.value === shul.adminHash;
+  return store.get(SHUL_COOKIE)?.value === cookieValue(shul);
 }
 
 export async function grantAdmin(shul: Shul, password: string): Promise<boolean> {
   if (shulAdminHash(shul.slug, password) !== shul.adminHash) return false;
   const store = await cookies();
-  store.set(SHUL_COOKIE, shul.adminHash, {
+  store.set(SHUL_COOKIE, cookieValue(shul), {
     httpOnly: true,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 60,

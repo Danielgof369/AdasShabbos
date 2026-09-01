@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
+import { memo } from "@/lib/memo";
 import type { DirectoryShul } from "@/components/national/ShulDirectory";
 
-/** Every live, listed shul with its headline counts. */
-export async function listDirectoryShuls(): Promise<DirectoryShul[]> {
+/** Every live, listed shul with its headline counts (cached a minute). */
+export const listDirectoryShuls = memo("directory", 60_000, async (): Promise<DirectoryShul[]> => {
   const shuls = await prisma.shul.findMany({
     where: { active: true, listed: true },
     orderBy: [{ state: "asc" }, { city: "asc" }, { name: "asc" }],
@@ -12,22 +13,12 @@ export async function listDirectoryShuls(): Promise<DirectoryShul[]> {
       _count: { select: { households: true } },
     },
   });
-  const people = await prisma.member.groupBy({
-    by: ["householdId"],
-    where: { household: { shulId: { in: shuls.map((s) => s.id) } } },
-    _count: { _all: true },
-  });
-  // householdId -> shulId map for the roll-up
-  const hh = await prisma.household.findMany({
-    where: { shulId: { in: shuls.map((s) => s.id) } },
-    select: { id: true, shulId: true },
-  });
-  const shulOfHousehold = new Map(hh.map((h) => [h.id, h.shulId]));
-  const peopleBy = new Map<string, number>();
-  for (const p of people) {
-    const sid = shulOfHousehold.get(p.householdId);
-    if (sid) peopleBy.set(sid, (peopleBy.get(sid) ?? 0) + p._count._all);
-  }
+  // People per shul in one grouped query (works on Postgres and SQLite).
+  const rows = await prisma.$queryRaw<{ shulId: string; people: number | bigint }[]>`
+    SELECT h."shulId" AS "shulId", COUNT(m."id") AS "people"
+    FROM "Member" m JOIN "Household" h ON h."id" = m."householdId"
+    GROUP BY h."shulId"`;
+  const peopleBy = new Map(rows.map((r) => [r.shulId, Number(r.people)]));
   return shuls.map((s) => ({
     id: s.id,
     slug: s.slug,
@@ -39,4 +30,4 @@ export async function listDirectoryShuls(): Promise<DirectoryShul[]> {
     families: s._count.households,
     people: peopleBy.get(s.id) ?? 0,
   }));
-}
+});

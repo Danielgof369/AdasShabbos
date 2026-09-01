@@ -7,7 +7,7 @@ import {
 } from "@/lib/campaign";
 import { shulBaseUrl, type Shul } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek, goalTitle } from "@/lib/household";
-import { sendToHousehold } from "@/lib/messaging";
+import { sendBatch, type OutboundItem } from "@/lib/messaging";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -18,27 +18,22 @@ export type ReminderRunResult = {
   details: string[];
 };
 
-/**
- * Run send jobs in parallel batches so a big shul fits inside one
- * serverless invocation instead of timing out partway through the list.
- */
-async function inBatches<T>(
-  items: T[],
-  size: number,
-  job: (item: T) => Promise<void>
-): Promise<void> {
-  for (let i = 0; i < items.length; i += size) {
-    await Promise.allSettled(items.slice(i, i + size).map(job));
-  }
-}
-
 /** Run a per-shul job across every active shul (cron entrypoints). */
+const CRON_BUDGET_MS = Number(process.env.CRON_BUDGET_MS ?? 240_000);
+
 async function forEachShul(
   job: (shul: Shul) => Promise<ReminderRunResult>
 ): Promise<ReminderRunResult> {
-  const shuls = await prisma.shul.findMany({ where: { active: true } });
+  const started = Date.now();
+  const shuls = await prisma.shul.findMany({ where: { active: true }, orderBy: { createdAt: "asc" } });
   const agg: ReminderRunResult = { week: 0, sent: 0, skipped: 0, details: [] };
   for (const shul of shuls) {
+    // Stay inside the function's time limit; dedupe means the next run
+    // (or an admin button press) picks up whoever was left.
+    if (Date.now() - started > CRON_BUDGET_MS) {
+      agg.details.push(`[${shul.slug}] deferred: time budget reached`);
+      continue;
+    }
     try {
       const r = await job(shul);
       agg.week = r.week;
@@ -91,7 +86,8 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
     return true;
   });
 
-  await inBatches(targets, 8, async (h) => {
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
     const withGoal = h.members
       .map((m) => ({ m, goals: m.goals.filter((g) => g.week === week) }))
       .filter((x) => x.goals.length > 0);
@@ -129,17 +125,12 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
       );
     }
 
-    const channel = await sendToHousehold(
-      h,
-      { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") },
-      "thursday_reminder",
-      week
-    );
-    if (channel) {
-      sent++;
-      details.push(`household ${h.id} via ${channel}`);
-    }
-  });
+    outbox.push({ household: h, message: { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") }, kind: "thursday_reminder", week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
 
   return { week, sent, skipped, details };
 }
@@ -194,7 +185,8 @@ export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> 
     return true;
   });
 
-  await inBatches(targets, 8, async (h) => {
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
@@ -221,12 +213,12 @@ export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> 
         ? `How did Shabbos go? Check in — week ${week}`
         : `Still time to check in — week ${week} of ${campaign.name}`;
 
-    const channel = await sendToHousehold(h, { subject, text }, kind, week);
-    if (channel) {
-      sent++;
-      details.push(`household ${h.id} via ${channel}`);
-    }
-  });
+    outbox.push({ household: h, message: { subject, text }, kind: kind, week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
 
   return { week, sent, skipped, details };
 }
@@ -275,7 +267,8 @@ export async function runRaffleDeadlineForShul(
     return true;
   });
 
-  await inBatches(targets, 8, async (h) => {
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
@@ -289,17 +282,12 @@ export async function runRaffleDeadlineForShul(
       `Check in here — it takes 10 seconds: ${link}`,
     ].join("\n");
 
-    const channel = await sendToHousehold(
-      h,
-      { subject: `Don't forget to check in — ${campaign.raffleEnabled ? `${campaign.rafflePrize} raffle deadline` : "there's still time"}`, text },
-      kind,
-      week
-    );
-    if (channel) {
-      sent++;
-      details.push(`household ${h.id} via ${channel}`);
-    }
-  });
+    outbox.push({ household: h, message: { subject: `Don't forget to check in — ${campaign.raffleEnabled ? `${campaign.rafflePrize} raffle deadline` : "there's still time"}`, text }, kind: kind, week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
 
   return { week, sent, skipped, details };
 }
@@ -346,7 +334,8 @@ export async function runErevShabbosForShul(shul: Shul): Promise<ReminderRunResu
     return true;
   });
 
-  await inBatches(targets, 8, async (h) => {
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
     const withGoal = h.members
       .map((m) => ({ m, goals: m.goals.filter((g) => g.week === week) }))
       .filter((x) => x.goals.length > 0);
@@ -370,17 +359,12 @@ export async function runErevShabbosForShul(shul: Shul): Promise<ReminderRunResu
     lines.push("");
     lines.push(`Wishing you and your family a beautiful, meaningful Shabbos! ${link}`);
 
-    const channel = await sendToHousehold(
-      h,
-      { subject: `Good Erev Shabbos! 🕯️`, text: lines.join("\n") },
-      kind,
-      week
-    );
-    if (channel) {
-      sent++;
-      details.push(`household ${h.id} via ${channel}`);
-    }
-  });
+    outbox.push({ household: h, message: { subject: `Good Erev Shabbos! 🕯️`, text: lines.join("\n") }, kind: kind, week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
 
   return { week, sent, skipped, details };
 }
@@ -438,16 +422,17 @@ export async function runCustomBlastForShul(
     return true;
   });
 
-  await inBatches(targets, 8, async (h) => {
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
     const link = `${shulBaseUrl(shul)}/c/${h.token}`;
     const family = h.familyName ? `The ${h.familyName} Family` : "Your family";
     const body = text.replace(/\{link\}/g, link).replace(/\{family\}/g, family);
     const finalText = body.includes(link) ? body : `${body}\n\nYour family page: ${link}`;
-    const channel = await sendToHousehold(h, { subject, text: finalText }, kind, week);
-    if (channel) {
-      sent++;
-      details.push(`household ${h.id} via ${channel}`);
-    }
-  });
+    outbox.push({ household: h, message: { subject, text: finalText }, kind: kind, week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
   return { week, sent, skipped, details };
 }

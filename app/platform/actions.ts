@@ -9,6 +9,7 @@ import {
   shulAdminHash,
 } from "@/lib/adminAuth";
 import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
+import { forget } from "@/lib/memo";
 import { cleanSlug as platformSlug, slugProblem } from "@/lib/platform";
 
 export async function platformLoginAction(formData: FormData) {
@@ -99,6 +100,8 @@ export async function createShulAction(formData: FormData) {
     },
   });
 
+  forget("directory");
+  forget("national-stats");
   revalidatePath("/platform");
 }
 

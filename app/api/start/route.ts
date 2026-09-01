@@ -4,6 +4,7 @@ import { shulAdminHash } from "@/lib/adminAuth";
 import { normalizeEmail } from "@/lib/contact";
 import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
 import { sendPlatformEmail } from "@/lib/messaging";
+import { forget } from "@/lib/memo";
 import { shulBaseUrl, rootBaseUrl } from "@/lib/tenant";
 import {
   PLATFORM,
@@ -131,6 +132,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  forget("directory");
+  forget("national-stats");
   const url = shulBaseUrl(shul);
   const adminUrl = `${url}/admin`;
   const welcome = [

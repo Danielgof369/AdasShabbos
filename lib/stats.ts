@@ -1,7 +1,30 @@
 import { prisma } from "@/lib/db";
 import type { CampaignInfo } from "@/lib/campaign";
+import { memo } from "@/lib/memo";
 
 export type HighlightStat = { label: string; value: number };
+
+/** Roll completed-goal counts per suggestion up by unit label. */
+async function highlightsFromCounts(
+  rows: { suggestionId: string | null; _count: { _all: number } }[]
+): Promise<HighlightStat[]> {
+  const ids = rows.map((r) => r.suggestionId).filter((id): id is string => !!id);
+  if (ids.length === 0) return [];
+  const suggestions = await prisma.suggestion.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, unitLabel: true, unitValue: true },
+  });
+  const byId = new Map(suggestions.map((s) => [s.id, s]));
+  const byUnit = new Map<string, number>();
+  for (const r of rows) {
+    const s = r.suggestionId ? byId.get(r.suggestionId) : null;
+    if (!s) continue;
+    byUnit.set(s.unitLabel, (byUnit.get(s.unitLabel) ?? 0) + s.unitValue * r._count._all);
+  }
+  return [...byUnit.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
 
 export type CampaignStats = {
   households: number;
@@ -28,22 +51,14 @@ export async function getCampaignStats(
       prisma.member.count({ where: { isChild: true, household: { shulId } } }),
       prisma.goal.count({ where: { checkedInAt: { not: null }, ...inShul } }),
       prisma.goal.count({ where: { week: activeWeek, ...inShul } }),
-      prisma.goal.findMany({
+      prisma.goal.groupBy({
+        by: ["suggestionId"],
         where: { checkedInAt: { not: null }, suggestionId: { not: null }, ...inShul },
-        include: { suggestion: true },
+        _count: { _all: true },
       }),
     ]);
 
-  // Roll completed goals up by their suggestion's unit for the highlight reel.
-  const byUnit = new Map<string, number>();
-  for (const g of doneGoals) {
-    if (!g.suggestion) continue;
-    const { unitLabel, unitValue } = g.suggestion;
-    byUnit.set(unitLabel, (byUnit.get(unitLabel) ?? 0) + unitValue);
-  }
-  const highlights = [...byUnit.entries()]
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+  const highlights = await highlightsFromCounts(doneGoals);
 
   return {
     households,
@@ -67,8 +82,9 @@ export type NationalStats = {
   highlights: HighlightStat[];
 };
 
-/** Roll-up across every active, listed shul for the national landing page. */
-export async function getNationalStats(): Promise<NationalStats> {
+/** Roll-up across every active, listed shul for the national landing page.
+ * Cached for a minute per server instance — it's on the busiest page. */
+export const getNationalStats = memo("national-stats", 60_000, async (): Promise<NationalStats> => {
   const shuls = await prisma.shul.findMany({
     where: { active: true, listed: true },
     select: { id: true, pledgeEnabled: true, pledgePerSignup: true },
@@ -79,9 +95,10 @@ export async function getNationalStats(): Promise<NationalStats> {
     prisma.member.count({ where: { household: { shulId: { in: ids } } } }),
     prisma.member.count({ where: { isChild: true, household: { shulId: { in: ids } } } }),
     prisma.goal.count({ where: { checkedInAt: { not: null }, ...inShuls } }),
-    prisma.goal.findMany({
+    prisma.goal.groupBy({
+      by: ["suggestionId"],
       where: { checkedInAt: { not: null }, suggestionId: { not: null }, ...inShuls },
-      include: { suggestion: { select: { unitLabel: true, unitValue: true } } },
+      _count: { _all: true },
     }),
     prisma.household.groupBy({
       by: ["shulId"],
@@ -97,13 +114,6 @@ export async function getNationalStats(): Promise<NationalStats> {
     households += n;
     if (s.pledgeEnabled) pledgeTotal += n * s.pledgePerSignup;
   }
-  const byUnit = new Map<string, number>();
-  for (const g of doneGoals) {
-    if (!g.suggestion) continue;
-    byUnit.set(g.suggestion.unitLabel, (byUnit.get(g.suggestion.unitLabel) ?? 0) + g.suggestion.unitValue);
-  }
-  const highlights = [...byUnit.entries()]
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+  const highlights = await highlightsFromCounts(doneGoals);
   return { shuls: shuls.length, households, members, kids, checkins, pledgeTotal, highlights };
-}
+});

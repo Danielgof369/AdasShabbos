@@ -7,7 +7,7 @@ export const PLATFORM = {
   tagline: "One small thing for Shabbos. Every week. Every shul.",
   /** Where questions and change requests go. A person (and an agent)
    * reads this inbox — see deploy/SUPPORT.md. */
-  contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabbalasshabbos.com",
+  contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabbolasshabbos.com",
   /** The platform operator, notified on every self-serve signup. */
   notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? null,
   origin: { shul: "Adas Torah", city: "Los Angeles", season: "Elul 5786" },
@@ -18,7 +18,7 @@ export const RESERVED_SLUGS = new Set([
   "www", "app", "api", "admin", "platform", "start", "shuls", "mail", "email",
   "smtp", "imap", "ftp", "cdn", "static", "assets", "img", "images", "blog",
   "docs", "help", "support", "status", "dev", "staging", "test", "demo",
-  "vercel", "kabbalasshabbos", "kabbalas", "kabolas", "kabolasshabbos", "initiative", "shabbos", "shabbat", "national",
+  "vercel", "kabbalasshabbos", "kabbalas", "kabolas", "kabolasshabbos", "kabbolas", "kabbolasshabbos", "initiative", "shabbos", "shabbat", "national",
   "us", "ca", "il", "ny", "nj", "la", "chicago", "root", "null", "undefined",
 ]);
 

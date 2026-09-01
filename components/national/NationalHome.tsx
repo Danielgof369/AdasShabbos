@@ -108,7 +108,7 @@ export default function NationalHome({
             {
               n: "1",
               title: "Set up your shul",
-              body: "Two minutes: your shul's name, your Shabbos dates, a password. You get your own site at yourshul.kabbalasshabbos.com with a ready-made list of commitments you can edit.",
+              body: "Two minutes: your shul's name, your Shabbos dates, a password. You get your own site at yourshul.kabbolasshabbos.com with a ready-made list of commitments you can edit.",
             },
             {
               n: "2",
@@ -138,7 +138,7 @@ export default function NationalHome({
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              ["🕯️", "Your own site", "yourshul.kabbalasshabbos.com, with your logo and your partner's, or your own domain."],
+              ["🕯️", "Your own site", "yourshul.kabbolasshabbos.com, with your logo and your partner's, or your own domain."],
               ["📝", "A commitment list you own", "24 tested ideas for adults and children to start from. Add, hide, or rewrite any of them."],
               ["📬", "Reminders that actually go out", "Thursday what-you-took-on emails, Motzei Shabbos check-in nudges, and chasers every two days until they do."],
               ["✓", "Ten-second check-ins", "Every person taps “I did it.” Streaks, avatars, and a family wall keep the kids coming back."],

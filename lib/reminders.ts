@@ -291,7 +291,7 @@ export async function runRaffleDeadlineForShul(
 
     const channel = await sendToHousehold(
       h,
-      { subject: `Don't forget to check in — pizza raffle deadline`, text },
+      { subject: `Don't forget to check in — ${campaign.raffleEnabled ? `${campaign.rafflePrize} raffle deadline` : "there's still time"}`, text },
       kind,
       week
     );

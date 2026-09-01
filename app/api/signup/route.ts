@@ -12,6 +12,7 @@ import { lastShabbosWeek } from "@/lib/household";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
 import { sendToHousehold } from "@/lib/messaging";
+import { pluralWeeks } from "@/lib/copy";
 
 type MemberInput = {
   name?: unknown;
@@ -254,9 +255,9 @@ export async function POST(req: NextRequest) {
             .join(" + ")}`
       );
     const text = [
-      `Welcome to the Elul Shabbos Project! 🕯️`,
+      `Welcome to ${campaign.name}! 🕯️`,
       ``,
-      `The ${familyName} family has taken on their commitments for the four Shabbosos of the campaign — starting Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, week))}, through Shabbos Shuva:`,
+      `The ${familyName} family has taken on their commitments for the ${pluralWeeks(campaign.weeks)} of the campaign — starting Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, week))}, through Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, campaign.weeks))}:`,
       ...lines,
       ``,
       `Your family page — there's no password, this link IS your login:`,
@@ -264,14 +265,14 @@ export async function POST(req: NextRequest) {
       ``,
       `Lost the link? Tap "Sign in" at ${base.replace(/^https?:\/\//, "")} and enter this email address — that's it.`,
       ``,
-      `We'll remind you before each Shabbos, and after Shabbos to check in. Your family's signup sent $${campaign.pledgePerSignup} to ${campaign.charityName}.`,
+      `We'll remind you before each Shabbos, and after Shabbos to check in.${campaign.pledgeEnabled ? ` Your family's signup sent $${campaign.pledgePerSignup} to ${campaign.charityName}.` : ""}`,
       ...(cleanMembers.some((m) => m.category === "boy" || m.category === "girl")
         ? [``, `P.S. For the children: the Shabbos Helpers Guide, full of jobs worth owning — ${base}/shabbos-helpers-guide.pdf`]
         : []),
     ].join("\n");
     sendToHousehold(
       household,
-      { subject: `Your family page — The Elul Shabbos Project`, text },
+      { subject: `Your family page — ${campaign.name}`, text },
       "welcome",
       week
     ).catch(() => {});

@@ -31,20 +31,79 @@ async function requireAdmin(): Promise<Shul> {
   return shul;
 }
 
+const text = (formData: FormData, key: string, max: number) =>
+  String(formData.get(key) ?? "").trim().slice(0, max);
+
 export async function saveCampaignAction(formData: FormData) {
   const shul = await requireAdmin();
   await prisma.shul.update({
     where: { id: shul.id },
     data: {
-      campaignName: String(formData.get("name") ?? shul.campaignName).slice(0, 100),
-      charityName: String(formData.get("charityName") ?? shul.charityName).slice(0, 100),
-      pledgePerSignup: Math.max(0, Number(formData.get("pledgePerSignup")) || 0),
-      partnerName:
-        String(formData.get("partnerName") ?? "").trim().slice(0, 100) || null,
+      campaignName: text(formData, "name", 100) || shul.campaignName,
+      seasonLabel: text(formData, "seasonLabel", 40) || shul.seasonLabel,
+      partnerName: text(formData, "partnerName", 100) || null,
+      contactEmail: text(formData, "contactEmail", 120) || null,
+      pledgeEnabled: formData.get("pledgeEnabled") === "on",
+      charityName: text(formData, "charityName", 100) || shul.charityName,
+      pledgePerSignup: Math.max(0, Math.min(1000, Number(formData.get("pledgePerSignup")) || 0)),
+      raffleEnabled: formData.get("raffleEnabled") === "on",
+      rafflePrize: text(formData, "rafflePrize", 80) || shul.rafflePrize,
+      listed: formData.get("listed") === "on",
+      whyText: text(formData, "whyText", 4000) || null,
     },
   });
   revalidatePath("/admin");
   revalidatePath("/");
+}
+
+export async function saveAnnouncementAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const title = text(formData, "announcementTitle", 120);
+  await prisma.shul.update({
+    where: { id: shul.id },
+    data: {
+      announcementTitle: title || null,
+      announcementBody: text(formData, "announcementBody", 600) || null,
+      announcementUrl: text(formData, "announcementUrl", 300) || null,
+      announcementUpdatedAt: title ? new Date() : null,
+    },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function saveResourceAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const id = text(formData, "id", 40);
+  const data = {
+    kicker: text(formData, "kicker", 60) || null,
+    title: text(formData, "title", 120),
+    byline: text(formData, "byline", 120) || null,
+    description: text(formData, "description", 400) || null,
+    url: text(formData, "url", 300),
+    emoji: text(formData, "emoji", 8) || "📄",
+    sortOrder: Number(formData.get("sortOrder")) || 0,
+  };
+  if (!data.title || !data.url) throw new Error("Title and link are required");
+  if (!/^(\/|https?:\/\/)/.test(data.url)) throw new Error("Link must start with / or https://");
+  if (id) {
+    await prisma.resource.updateMany({ where: { id, shulId: shul.id }, data });
+  } else {
+    await prisma.resource.create({ data: { ...data, shulId: shul.id } });
+  }
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/resources");
+}
+
+export async function deleteResourceAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const id = text(formData, "id", 40);
+  if (!id) return;
+  await prisma.resource.deleteMany({ where: { id, shulId: shul.id } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/resources");
 }
 
 export async function saveSuggestionAction(formData: FormData) {

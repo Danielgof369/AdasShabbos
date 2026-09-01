@@ -8,9 +8,14 @@ import type { Shul } from "@prisma/client";
 export type CampaignInfo = {
   shulId: string;
   name: string;
+  seasonLabel: string;
   weeks: number;
+  /** 0 when the shul has the pledge switched off. */
   pledgePerSignup: number;
+  pledgeEnabled: boolean;
   charityName: string;
+  raffleEnabled: boolean;
+  rafflePrize: string;
   dates: Date[];
   timezone: string;
 };
@@ -27,12 +32,17 @@ export function shulDates(shul: Shul): Date[] {
 
 export function campaignOf(shul: Shul): CampaignInfo {
   const dates = shulDates(shul);
+  const pledgeEnabled = shul.pledgeEnabled && shul.pledgePerSignup > 0;
   return {
     shulId: shul.id,
     name: shul.campaignName,
+    seasonLabel: shul.seasonLabel,
     weeks: dates.length,
-    pledgePerSignup: shul.pledgePerSignup,
+    pledgePerSignup: pledgeEnabled ? shul.pledgePerSignup : 0,
+    pledgeEnabled,
     charityName: shul.charityName,
+    raffleEnabled: shul.raffleEnabled,
+    rafflePrize: shul.rafflePrize,
     dates,
     timezone: shul.timezone,
   };

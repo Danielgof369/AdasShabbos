@@ -1,20 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-// One block per weekly edition. To publish a new dvar, update these fields —
-// the id keys the shown-once-per-device memory, so a new id re-arms the
-// popup for every visitor.
-const DVAR = {
-  id: "broken-water-heater",
-  title: "The Broken Water Heater",
-  author: "Rabbi Yisroel Casen",
-  blurb:
-    "A real-life shailah on melacha, maris ayin, and a mid-Shabbos repair call — bring it to your table this week.",
-  pdf: "/dvar-halacha-broken-water-heater.pdf",
-};
-
-const DVAR_SEEN_KEY = `dvarHalachaPopup:${DVAR.id}`;
+import type { Announcement } from "@/lib/copy";
 
 function seen(key: string): boolean {
   try {
@@ -30,13 +17,15 @@ function markSeen(key: string) {
 }
 
 /**
- * Homepage popup: the Dvar Halacha announcement, shown once per device.
+ * Homepage announcement popup, shown once per device per edition (the key
+ * changes whenever the shul's admin updates the announcement).
  */
-export default function HomePopups() {
+export default function HomePopups({ announcement }: { announcement: Announcement | null }) {
   const [show, setShow] = useState(false);
+  const storageKey = announcement ? `announcement:${announcement.key}` : null;
 
   useEffect(() => {
-    if (seen(DVAR_SEEN_KEY)) return;
+    if (!storageKey || seen(storageKey)) return;
     const t = setTimeout(() => {
       try {
         sessionStorage.setItem("joinNudge", "1");
@@ -44,14 +33,14 @@ export default function HomePopups() {
       setShow(true);
     }, 1200);
     return () => clearTimeout(t);
-  }, []);
+  }, [storageKey]);
+
+  if (!show || !announcement || !storageKey) return null;
 
   function dismiss() {
-    markSeen(DVAR_SEEN_KEY);
+    markSeen(storageKey!);
     setShow(false);
   }
-
-  if (!show) return null;
 
   return (
     <div
@@ -66,23 +55,21 @@ export default function HomePopups() {
         <p className="font-display tracking-[0.22em] uppercase text-sm text-gold mb-2">
           New This Week
         </p>
-        <h2 className="font-display text-2xl text-navy mb-2">{DVAR.title}</h2>
-        <p className="text-sm text-ink-soft mb-1">
-          A Dvar Halacha by <strong className="text-navy">{DVAR.author}</strong>
-        </p>
-        <p className="text-ink-soft mb-6">{DVAR.blurb}</p>
-        <a
-          href={DVAR.pdf}
-          target="_blank"
-          onClick={dismiss}
-          className="block bg-gold text-navy-deep font-bold rounded-lg py-3.5 text-lg hover:bg-gold-soft transition-colors mb-3"
-        >
-          Download the PDF
-        </a>
-        <button
-          onClick={dismiss}
-          className="text-sm text-ink-soft underline hover:text-navy"
-        >
+        <h2 className="font-display text-2xl text-navy mb-3">{announcement.title}</h2>
+        {announcement.body && (
+          <p className="text-ink-soft mb-6 whitespace-pre-line">{announcement.body}</p>
+        )}
+        {announcement.url && (
+          <a
+            href={announcement.url}
+            target={announcement.url.startsWith("/") && !announcement.url.endsWith(".pdf") ? undefined : "_blank"}
+            onClick={dismiss}
+            className="block bg-gold text-navy-deep font-bold rounded-lg py-3.5 text-lg hover:bg-gold-soft transition-colors mb-3"
+          >
+            {announcement.url.endsWith(".pdf") ? "Download the PDF" : "Open"}
+          </a>
+        )}
+        <button onClick={dismiss} className="text-sm text-ink-soft underline hover:text-navy">
           Continue to the site
         </button>
       </div>

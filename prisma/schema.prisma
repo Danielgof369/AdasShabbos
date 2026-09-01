@@ -19,10 +19,30 @@ model Shul {
   name         String // "Adas Torah"
   partnerName  String? // co-branded partner, e.g. "LINK Kollel"
   city         String  @default("Los Angeles")
+  state        String? // "CA" — groups the national directory
 
-  campaignName    String @default("The Elul Shabbos Project")
-  charityName     String @default("Tomchei Shabbos")
-  pledgePerSignup Int    @default(5) // dollars per family signup
+  // The person who set the shul up (gets the welcome + platform emails).
+  contactName  String?
+  contactEmail String?
+
+  campaignName String @default("Kabbalas Shabbos") // shown in the header
+  seasonLabel  String @default("Elul 5786") // hero kicker, e.g. "Elul 5786"
+
+  // Optional program features — each shul turns these on or off.
+  pledgeEnabled   Boolean @default(true)
+  charityName     String  @default("Tomchei Shabbos")
+  pledgePerSignup Int     @default(5) // dollars per family signup
+  raffleEnabled   Boolean @default(true)
+  rafflePrize     String  @default("pizza party") // "…entered to win a {prize}"
+
+  // Optional custom copy. Blank = the platform's default text.
+  whyText String? // "Why we're doing this" — paragraphs separated by blank lines
+
+  // Homepage announcement popup (shown once per device per update).
+  announcementTitle     String?
+  announcementBody      String?
+  announcementUrl       String?
+  announcementUpdatedAt DateTime?
 
   // Campaign calendar: comma-separated Shabbos dates + the shul's timezone.
   shabbosDates String // "2026-08-22,2026-08-29,2026-09-05,2026-09-19"
@@ -36,12 +56,32 @@ model Shul {
   partnerLogoDark  String?
 
   adminHash String // sha256("elul:<slug>:<password>") — per-shul admin login
-  active    Boolean  @default(true)
+  active    Boolean  @default(true) // false = site off (platform admin switch)
+  listed    Boolean  @default(true) // show in the national directory
   createdAt DateTime @default(now())
 
   households  Household[]
   suggestions Suggestion[]
   raffleDraws RaffleDraw[]
+  resources   Resource[]
+}
+
+// Downloadable/linkable resources a shul offers (PDFs, divrei Torah, guides).
+model Resource {
+  id          String   @id @default(cuid())
+  shulId      String
+  kicker      String? // small label, e.g. "Dvar Halacha" / "For Children"
+  title       String
+  byline      String? // "by Rabbi …"
+  description String?
+  url         String // /file.pdf in /public, or an absolute URL
+  emoji       String   @default("📄")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  shul Shul @relation(fields: [shulId], references: [id], onDelete: Cascade)
+
+  @@index([shulId])
 }
 
 // A household is the unit that signs up: one contact set, one or more people.

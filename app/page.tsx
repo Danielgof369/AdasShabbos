@@ -8,19 +8,59 @@ import {
   weekNumber,
 } from "@/lib/campaign";
 import { lastShabbosWeek } from "@/lib/household";
-import { getCampaignStats } from "@/lib/stats";
+import { getCampaignStats, getNationalStats } from "@/lib/stats";
 import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/Logo";
-import { getShul } from "@/lib/tenant";
+import { currentShul, unknownSubdomain, rootBaseUrl, ROOT_DOMAIN } from "@/lib/tenant";
+import { listDirectoryShuls } from "@/lib/directory";
+import { whyParagraphs, announcementOf, pluralWeeks } from "@/lib/copy";
+import { PLATFORM } from "@/lib/platform";
 import JoinNudge from "@/components/JoinNudge";
 import HomePopups from "@/components/HomePopups";
+import NationalHome from "@/components/national/NationalHome";
 
 export const dynamic = "force-dynamic";
 
+/** A subdomain nobody has claimed yet. */
+function UnclaimedShul({ slug }: { slug: string }) {
+  return (
+    <div className="mx-auto max-w-xl px-4 py-20 text-center">
+      <div className="text-5xl mb-4">🕯️</div>
+      <h1 className="font-display text-3xl text-navy mb-3">
+        No shul at <span className="text-gold">{slug}.{ROOT_DOMAIN}</span> yet
+      </h1>
+      <p className="text-ink-soft mb-8">
+        Either the link has a typo, or this address is still free. Setting up a
+        shul takes two minutes.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <a
+          href={`${rootBaseUrl()}/start?slug=${encodeURIComponent(slug)}`}
+          className="bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 hover:bg-gold-soft transition-colors"
+        >
+          Claim {slug} for your shul
+        </a>
+        <a
+          href={`${rootBaseUrl()}/shuls`}
+          className="border border-navy/30 text-navy font-semibold rounded-lg px-8 py-3.5 hover:border-gold transition-colors"
+        >
+          Find your shul
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default async function Home() {
-  const shul = await getShul();
-  const isAdas = shul.slug === "adas";
+  const shul = await currentShul();
+  if (!shul) {
+    const missing = await unknownSubdomain();
+    if (missing) return <UnclaimedShul slug={missing} />;
+    const [stats, shuls] = await Promise.all([getNationalStats(), listDirectoryShuls()]);
+    return <NationalHome stats={stats} shuls={shuls} />;
+  }
+
   const campaign = campaignOf(shul);
   const week = activeWeek(campaign);
   const rawWeek = weekNumber(campaign);
@@ -29,13 +69,22 @@ export default async function Home() {
     where: { shulId: shul.id, active: true },
     orderBy: { sortOrder: "asc" },
   });
+  const resources = await prisma.resource.findMany({
+    where: { shulId: shul.id },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    take: 2,
+  });
 
   const started = rawWeek >= 1;
   const nextShabbos = shabbosOfWeek(campaign, week);
-  const draws = await raffleDraws(shul.id);
+  const firstShabbos = formatShabbosDate(campaign, shabbosOfWeek(campaign, 1));
+  const lastShabbos = formatShabbosDate(campaign, shabbosOfWeek(campaign, campaign.weeks));
+  const draws = campaign.raffleEnabled ? await raffleDraws(shul.id) : [];
   const latestDraw = draws.length > 0 ? draws[draws.length - 1] : null;
   const myToken = (await cookies()).get("elul_token")?.value;
   const checkinHref = myToken ? `/c/${encodeURIComponent(myToken)}` : "/find";
+  const why = whyParagraphs(shul);
+  const announcement = announcementOf(shul);
 
   // Is a check-in window open (last Shabbos still accepting check-ins)?
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -63,6 +112,8 @@ export default async function Home() {
     }
   }
 
+  const perks = campaign.pledgeEnabled || campaign.raffleEnabled;
+
   return (
     <div>
       {/* Hero */}
@@ -84,18 +135,19 @@ export default async function Home() {
             )}
           </div>
           <p className="text-gold-soft font-display tracking-widest uppercase text-sm mb-4">
-            Elul 5786 &middot; A campaign of {shul.name}
+            {campaign.seasonLabel} &middot; A campaign of {shul.name}
             {shul.partnerName ? ` & ${shul.partnerName}` : ""}
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
             One small thing for Shabbos.
             <br />
-            Every week of Elul.
+            Every week.
           </h1>
           <p className="text-cream/85 text-lg max-w-xl mb-8">
             Every man, woman, and child takes on one extra way to honor
-            Shabbos, held for the four Shabbosos through Shabbos Shuva. Learn
-            at the table, set it Thursday night, sing the zemiros. Small
+            Shabbos, held for {pluralWeeks(campaign.weeks)}
+            {campaign.weeks > 1 ? `, ${firstShabbos} through ${lastShabbos}` : ` on ${firstShabbos}`}.
+            Learn at the table, set it Thursday night, sing the zemiros. Small
             commitments, taken on together.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -135,7 +187,7 @@ export default async function Home() {
             {started ? (
               <>Week {week} of {campaign.weeks} &middot; Shabbos {formatShabbosDate(campaign, nextShabbos)}</>
             ) : (
-              <>Campaign begins the week of {formatShabbosDate(campaign, shabbosOfWeek(campaign, 1))}</>
+              <>Campaign begins the week of {firstShabbos}</>
             )}
           </p>
         </div>
@@ -161,28 +213,30 @@ export default async function Home() {
       )}
 
       {/* Pledge banner */}
-      <section className="bg-gold-pale border-y border-gold/30">
-        <div className="mx-auto max-w-3xl px-4 py-5 text-center">
-          <p className="text-navy-deep">
-            <span className="font-semibold">
-              ${stats.pledgeTotal.toLocaleString()}
-            </span>{" "}
-            pledged so far to <span className="font-semibold">{stats.charityName}</span> —
-            ${campaign.pledgePerSignup} for every family that signs up.
-          </p>
-        </div>
-      </section>
+      {campaign.pledgeEnabled && (
+        <section className="bg-gold-pale border-y border-gold/30">
+          <div className="mx-auto max-w-3xl px-4 py-5 text-center">
+            <p className="text-navy-deep">
+              <span className="font-semibold">
+                ${stats.pledgeTotal.toLocaleString()}
+              </span>{" "}
+              pledged so far to <span className="font-semibold">{stats.charityName}</span> —
+              ${campaign.pledgePerSignup} for every family that signs up.
+            </p>
+          </div>
+        </section>
+      )}
 
-      {/* Pizza raffle winner */}
+      {/* Raffle winner */}
       {latestDraw && (
         <section className="mx-auto max-w-3xl px-4 pt-10">
           <div className="bg-white rounded-2xl border border-gold/40 shadow-sm px-6 py-5 text-center">
             <p className="text-navy">
-              🍕 Mazeltov to the{" "}
+              🎉 Mazeltov to the{" "}
               <span className="font-display text-lg text-navy-deep font-semibold">
                 {latestDraw.familyName}
               </span>{" "}
-              family on winning this week&rsquo;s pizza raffle! Your family
+              family on winning this week&rsquo;s {campaign.rafflePrize} raffle! Your family
               could be next! Check in after Shabbos if you completed what
               you took on — and be automatically entered into next
               week&rsquo;s raffle!
@@ -203,30 +257,11 @@ export default async function Home() {
             </span>
           </summary>
           <div className="px-6 pb-6 text-ink-soft leading-relaxed space-y-4 border-t border-parchment pt-5">
-            <p>
-              Before Rosh Hashanah 5784, {isAdas
-                ? "Rabbi Revah shared"
-                : "our community learned"} a teaching of the
-              Aruch LaNer: when Rosh Hashanah falls on Shabbos and the shofar
-              goes silent, the year that follows tends to be extraordinary,
-              for blessing or for tragedy. On that day it is not the shofar
-              that pleads for Klal Yisroel. It is Shabbos itself that stands
-              as our <strong className="text-navy">meilitz yosher</strong>,
-              our advocate. How we hold Shabbos becomes how the year holds us.
-            </p>
-            <p>
-              We all remember what came one month later. October 7th changed
-              us, and demanded that we re-examine who we are and what we are
-              committed to.
-            </p>
-            <p className="font-medium text-navy">
-              This year, Rosh Hashanah falls on Shabbos again.
-            </p>
-            <p>
-              So this Elul we are doing our part, every man, woman, and child
-              of {shul.name}, to send Shabbos into the new year as our
-              advocate. One small commitment, each week, together.
-            </p>
+            {why.map((p, i) => (
+              <p key={i} className={p.length < 80 ? "font-medium text-navy" : undefined}>
+                {p}
+              </p>
+            ))}
           </div>
         </details>
       </section>
@@ -306,7 +341,7 @@ export default async function Home() {
               {
                 n: "1",
                 title: "Pick your thing",
-                body: "Sign up with your name and email, and choose one or more Shabbos commitments to hold for all four weeks — for yourself, and for the children too.",
+                body: `Sign up with your name and email, and choose one or more Shabbos commitments to hold for all ${campaign.weeks > 1 ? `${campaign.weeks} weeks` : "of it"} — for yourself, and for the children too.`,
               },
               {
                 n: "2",
@@ -316,7 +351,7 @@ export default async function Home() {
               {
                 n: "3",
                 title: "Check in & keep going",
-                body: "Tap “I did it,” watch the shul-wide numbers climb, and pick your commitment for next week — same thing, or something new.",
+                body: "Tap “I did it,” watch the shul-wide numbers climb, and add another commitment whenever you're ready.",
               },
             ].map((s) => (
               <li key={s.n} className="bg-white rounded-xl border border-parchment p-6">
@@ -350,36 +385,30 @@ export default async function Home() {
             </div>
           ))}
         </div>
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
-            <p className="text-navy text-sm">
-              🖍️ <span className="font-semibold">For the children:</span> download the{" "}
-              <a
-                href="/shabbos-helpers-guide.pdf"
-                className="underline underline-offset-2 font-semibold hover:text-navy-deep"
-              >
-                Shabbos Helpers Guide
-              </a>{" "}
-              — fifteen jobs with titles worth owning, and a fridge checklist to go with them.
-            </p>
+        {resources.length > 0 && (
+          <div className={`mt-6 grid grid-cols-1 ${resources.length > 1 ? "sm:grid-cols-2" : ""} gap-3`}>
+            {resources.map((r) => (
+              <div key={r.id} className="bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
+                <p className="text-navy text-sm">
+                  {r.emoji}{" "}
+                  {r.kicker && <span className="font-semibold">{r.kicker}:</span>}{" "}
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    className="underline underline-offset-2 font-semibold hover:text-navy-deep"
+                  >
+                    {r.title}
+                  </a>
+                  {r.byline ? ` ${r.byline}` : ""}
+                  {" "}·{" "}
+                  <Link href="/resources" className="underline underline-offset-2 hover:text-navy-deep">
+                    all resources
+                  </Link>
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
-            <p className="text-navy text-sm">
-              📖 <span className="font-semibold">For the table:</span> download{" "}
-              <a
-                href="/dvar-halacha-broken-water-heater.pdf"
-                className="underline underline-offset-2 font-semibold hover:text-navy-deep"
-              >
-                this week&rsquo;s Dvar Halacha
-              </a>{" "}
-              by Rabbi Yisroel Casen, or see all our{" "}
-              <Link href="/resources" className="underline underline-offset-2 font-semibold hover:text-navy-deep">
-                resources
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
+        )}
         <div className="text-center mt-8">
           <Link
             href="/signup"
@@ -391,43 +420,48 @@ export default async function Home() {
       </section>
 
       {/* What your signup gives */}
-      <section className="bg-navy text-cream">
-        <div className="mx-auto max-w-3xl px-4 py-12">
-          <h2 className="font-display text-3xl mb-2 text-center">
-            Every family that joins, gives.
-          </h2>
-          <p className="text-cream/70 text-center mb-8">
-            Your commitment does more than build your own Shabbos.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5 text-center">
-              <div className="font-display text-4xl text-gold-soft mb-1">
-                ${campaign.pledgePerSignup}
-              </div>
-              <p className="text-cream/85 text-sm leading-relaxed">
-                to <strong>{stats.charityName}</strong> for every family that
-                signs up
-              </p>
+      {perks && (
+        <section className="bg-navy text-cream">
+          <div className="mx-auto max-w-3xl px-4 py-12">
+            <h2 className="font-display text-3xl mb-2 text-center">
+              {campaign.pledgeEnabled ? "Every family that joins, gives." : "Every family that checks in, wins."}
+            </h2>
+            <p className="text-cream/70 text-center mb-8">
+              Your commitment does more than build your own Shabbos.
+            </p>
+            <div className={`grid grid-cols-1 ${campaign.pledgeEnabled && campaign.raffleEnabled ? "sm:grid-cols-2" : ""} gap-4`}>
+              {campaign.pledgeEnabled && (
+                <div className="rounded-xl border border-cream/20 bg-navy-soft/40 p-5 text-center">
+                  <div className="font-display text-4xl text-gold-soft mb-1">
+                    ${campaign.pledgePerSignup}
+                  </div>
+                  <p className="text-cream/85 text-sm leading-relaxed">
+                    to <strong>{stats.charityName}</strong> for every family that
+                    signs up
+                  </p>
+                </div>
+              )}
+              {campaign.raffleEnabled && (
+                <div className="rounded-xl border border-gold/50 bg-navy-soft/40 p-5 text-center">
+                  <div className="text-4xl mb-1">🎟️</div>
+                  <p className="text-cream/85 text-sm leading-relaxed">
+                    <strong className="text-gold-soft">Weekly {campaign.rafflePrize} raffle</strong> —
+                    every family where <em>everyone</em> checks in is entered to win
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="rounded-xl border border-gold/50 bg-navy-soft/40 p-5 text-center">
-              <div className="text-4xl mb-1">🍕</div>
-              <p className="text-cream/85 text-sm leading-relaxed">
-                <strong className="text-gold-soft">Weekly pizza raffle</strong> —
-                every family where <em>everyone</em> checks in is entered to win
-                pizza on Motzei Shabbos
-              </p>
+            <div className="text-center mt-8">
+              <Link
+                href="/signup"
+                className="inline-block bg-gold text-navy-deep font-bold rounded-lg px-10 py-4 text-lg hover:bg-gold-soft transition-colors"
+              >
+                Join the campaign
+              </Link>
             </div>
           </div>
-          <div className="text-center mt-8">
-            <Link
-              href="/signup"
-              className="inline-block bg-gold text-navy-deep font-bold rounded-lg px-10 py-4 text-lg hover:bg-gold-soft transition-colors"
-            >
-              Join the campaign
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* breathing room above the sticky join bar */}
       <div className="h-20" />
@@ -438,7 +472,8 @@ export default async function Home() {
         charityName={stats.charityName}
         pledge={campaign.pledgePerSignup}
       />
-      <HomePopups />
+      <HomePopups announcement={announcement} />
+      <span className="sr-only">{PLATFORM.name}</span>
     </div>
   );
 }

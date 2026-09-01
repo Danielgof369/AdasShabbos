@@ -13,6 +13,7 @@ import { raffleEligible, raffleDraws } from "@/lib/raffle";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import { DEFAULT_WHY } from "@/lib/copy";
 import {
   loginAction,
   logoutAction,
@@ -20,6 +21,9 @@ import {
   deleteMemberAction,
   mergeHouseholdsAction,
   saveCampaignAction,
+  saveAnnouncementAction,
+  saveResourceAction,
+  deleteResourceAction,
   saveSuggestionAction,
   deleteSuggestionAction,
   sendThursdayAction,
@@ -80,16 +84,22 @@ export default async function AdminPage() {
     orderBy: [{ week: "asc" }],
   });
   const siteUrl = shulBaseUrl(shul);
+  const resources = await prisma.resource.findMany({
+    where: { shulId: shul.id },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
 
   const upWeek = Math.min(nextShabbosWeek(campaign), campaign.weeks);
   const doneWeek = lastShabbosWeek(campaign);
   const upShabbos = formatShabbosDate(campaign, shabbosOfWeek(campaign, upWeek));
   const preShabbosBlast = [
-    `🕯️ *The Elul Shabbos Project — Week ${upWeek} of ${campaign.weeks}*`,
+    `🕯️ *${campaign.name} — Week ${upWeek} of ${campaign.weeks}*`,
     ``,
     `Shabbos ${upShabbos} is coming! Whatever you signed up for this week — this is your Shabbos to do it. 💪`,
     ``,
-    `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $${campaign.pledgePerSignup} to ${campaign.charityName}:`,
+    campaign.pledgeEnabled
+      ? `Not signed up yet? It takes 30 seconds, the whole family can join, and every family that signs up sends $${campaign.pledgePerSignup} to ${campaign.charityName}:`
+      : `Not signed up yet? It takes 30 seconds and the whole family can join:`,
     siteUrl,
   ].join("\n");
   const checkinBlast = [
@@ -99,12 +109,13 @@ export default async function AdminPage() {
       ? `How did week ${doneWeek} go? Take 10 seconds to check in — keep your family's streak alive and move the whole shul's numbers:`
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
     `${siteUrl}/find`,
-    ``,
-    `🍕 Every family where *everyone* checks in is entered into this week's pizza raffle!`,
+    ...(campaign.raffleEnabled
+      ? [``, `🎟️ Every family where *everyone* checks in is entered into this week's ${campaign.rafflePrize} raffle!`]
+      : []),
   ].join("\n");
 
-  // Pizza raffle: one draw per week whose Shabbos has passed.
-  const draws = await raffleDraws(shul.id);
+  // Weekly raffle: one draw per week whose Shabbos has passed.
+  const draws = campaign.raffleEnabled ? await raffleDraws(shul.id) : [];
   const raffleWeeks = await Promise.all(
     Array.from({ length: doneWeek }, (_, i) => i + 1).map(async (w) => ({
       week: w,
@@ -116,9 +127,9 @@ export default async function AdminPage() {
   const latestWin = draws.find((d) => d.week === doneWeek);
   const winnerBlast = latestWin
     ? [
-        `🍕 *Pizza raffle — week ${latestWin.week}!*`,
+        `🎉 *${campaign.rafflePrize} raffle — week ${latestWin.week}!*`,
         ``,
-        `Mazeltov to the *${latestWin.familyName}* family on winning this week's pizza raffle! Your family could be next! Check in after Shabbos if you completed what you took on — and be automatically entered into next week's raffle!`,
+        `Mazeltov to the *${latestWin.familyName}* family on winning this week's ${campaign.rafflePrize} raffle! Your family could be next! Check in after Shabbos if you completed what you took on — and be automatically entered into next week's raffle!`,
         siteUrl,
       ].join("\n")
     : null;
@@ -126,7 +137,15 @@ export default async function AdminPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-10">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl text-navy">Campaign admin</h1>
+        <div>
+          <h1 className="font-display text-3xl text-navy">Campaign admin</h1>
+          <p className="text-sm text-ink-soft">
+            {shul.name} ·{" "}
+            <a href={siteUrl} className="underline" target="_blank" rel="noreferrer">
+              {siteUrl.replace(/^https?:\/\//, "")}
+            </a>
+          </p>
+        </div>
         <form action={logoutAction}>
           <button className="text-sm text-ink-soft underline hover:text-navy">
             Log out
@@ -141,7 +160,9 @@ export default async function AdminPage() {
           ["People", stats.members],
           ["Children", stats.kids],
           ["Check-ins", stats.checkins],
-          [`$ to ${stats.charityName}`, `$${stats.pledgeTotal}`],
+          ...(campaign.pledgeEnabled
+            ? [[`$ to ${stats.charityName}`, `$${stats.pledgeTotal}`] as const]
+            : []),
         ].map(([label, value]) => (
           <div
             key={String(label)}
@@ -157,8 +178,8 @@ export default async function AdminPage() {
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">Reminders</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Crons run automatically: Thursday 9am PT (pre-Shabbos), and check-in
-          chasers Sunday &amp; Tuesday 9am PT — families who haven&rsquo;t checked
+          Crons run automatically: Thursday mornings (pre-Shabbos), and check-in
+          chasers Sunday &amp; Tuesday mornings — families who haven&rsquo;t checked
           in keep hearing from us every ~2 days until the window closes. These
           buttons trigger the same runs by hand — already-sent households are
           skipped, so it&rsquo;s safe to press twice.
@@ -202,7 +223,11 @@ export default async function AdminPage() {
             name="deadlineText"
             rows={2}
             className="w-full rounded-lg border border-parchment bg-cream px-3 py-2 text-sm"
-            defaultValue="The raffle for the Motzei Shabbos pizza party is tomorrow at 5pm — you must be checked in to qualify!"
+            defaultValue={
+              campaign.raffleEnabled
+                ? `The raffle for the ${campaign.rafflePrize} is tomorrow at 5pm — you must be checked in to qualify!`
+                : "The check-in window closes tomorrow night — take 10 seconds now!"
+            }
           />
           <button className={btnCls}>Send reminder now</button>
         </form>
@@ -243,9 +268,10 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      {/* Pizza raffle */}
+      {/* Weekly raffle */}
+      {campaign.raffleEnabled && (
       <section className="bg-white rounded-xl border border-parchment p-5">
-        <h2 className="font-semibold text-navy mb-1">🍕 Pizza raffle</h2>
+        <h2 className="font-semibold text-navy mb-1">🎟️ Weekly raffle — {campaign.rafflePrize}</h2>
         <p className="text-sm text-ink-soft mb-4">
           One winner per week, drawn from the families where{" "}
           <strong>everyone</strong> checked in for that Shabbos (late check-ins
@@ -318,6 +344,7 @@ export default async function AdminPage() {
           </div>
         )}
       </section>
+      )}
 
       {/* Households */}
       <section className="bg-white rounded-xl border border-parchment p-5 overflow-x-auto">
@@ -602,21 +629,120 @@ export default async function AdminPage() {
         </details>
       </section>
 
+      {/* Resources */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Resources</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          PDFs and links for your families — a dvar halacha, a kids&rsquo; guide, a
+          shiur recording. They show on your homepage and at /resources. Host
+          files anywhere public (Google Drive share link, Dropbox, your shul
+          site) and paste the link.
+        </p>
+        <div className="space-y-3">
+          {resources.map((r) => (
+            <details key={r.id} className="rounded-lg border border-parchment">
+              <summary className="cursor-pointer px-4 py-2.5 text-sm flex items-center justify-between">
+                <span>{r.emoji} {r.title}</span>
+                <span className="text-xs text-ink-soft">{r.kicker}</span>
+              </summary>
+              <form action={saveResourceAction} className="px-4 pb-4 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="hidden" name="id" value={r.id} />
+                <label className="text-xs text-ink-soft">Small label<input name="kicker" defaultValue={r.kicker ?? ""} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft">Emoji<input name="emoji" defaultValue={r.emoji} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft sm:col-span-2">Title<input name="title" defaultValue={r.title} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft sm:col-span-2">Byline<input name="byline" defaultValue={r.byline ?? ""} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft sm:col-span-2">Description<input name="description" defaultValue={r.description ?? ""} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft">Link<input name="url" defaultValue={r.url} className={inputCls} /></label>
+                <label className="text-xs text-ink-soft">Sort order<input name="sortOrder" type="number" defaultValue={r.sortOrder} className={inputCls} /></label>
+                <div className="sm:col-span-2 flex gap-3">
+                  <button className={btnCls}>Save</button>
+                  <button formAction={deleteResourceAction} className="text-sm text-red-700 underline">Delete</button>
+                </div>
+              </form>
+            </details>
+          ))}
+        </div>
+        <details className="mt-4 rounded-lg border-2 border-dashed border-gold-soft">
+          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-navy">+ Add a resource</summary>
+          <form action={saveResourceAction} className="px-4 pb-4 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="text-xs text-ink-soft">Small label<input name="kicker" placeholder="Dvar Halacha" className={inputCls} /></label>
+            <label className="text-xs text-ink-soft">Emoji<input name="emoji" defaultValue="📖" className={inputCls} /></label>
+            <label className="text-xs text-ink-soft sm:col-span-2">Title<input name="title" placeholder="The Broken Water Heater" className={inputCls} required /></label>
+            <label className="text-xs text-ink-soft sm:col-span-2">Byline<input name="byline" placeholder="by Rabbi …" className={inputCls} /></label>
+            <label className="text-xs text-ink-soft sm:col-span-2">Description<input name="description" className={inputCls} /></label>
+            <label className="text-xs text-ink-soft">Link (https://… or /file.pdf)<input name="url" className={inputCls} required /></label>
+            <label className="text-xs text-ink-soft">Sort order<input name="sortOrder" type="number" defaultValue={resources.length + 1} className={inputCls} /></label>
+            <div className="sm:col-span-2"><button className={btnCls}>Add resource</button></div>
+          </form>
+        </details>
+      </section>
+
+      {/* Announcement popup */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Homepage announcement</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          A popup every visitor sees once (per device) when they open the
+          site — &ldquo;New this week: …&rdquo;. Saving re-shows it to everyone; clear
+          the title to turn it off.
+        </p>
+        <form action={saveAnnouncementAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Title
+            <input name="announcementTitle" defaultValue={shul.announcementTitle ?? ""} placeholder="e.g. This week's Dvar Halacha" className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Text
+            <textarea name="announcementBody" rows={3} defaultValue={shul.announcementBody ?? ""} className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Button link (optional — a PDF link shows &ldquo;Download the PDF&rdquo;)
+            <input name="announcementUrl" defaultValue={shul.announcementUrl ?? ""} className={inputCls} />
+          </label>
+          <div className="sm:col-span-2">
+            <button className={btnCls}>Save announcement</button>
+          </div>
+        </form>
+      </section>
+
       {/* Campaign settings */}
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">Campaign settings</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Campaign Shabbos dates, your web address, and logos are managed by
-          the platform admin — email them for changes there.
+          Shabbos dates, your web address, and logos are managed by the platform
+          — email {process.env.PLATFORM_CONTACT_EMAIL ?? "hello@kabbalasshabbos.com"} for those.
         </p>
         <form
           action={saveCampaignAction}
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl"
         >
-          <label className="text-xs text-ink-soft sm:col-span-2">
-            Campaign name
+          <label className="text-xs text-ink-soft">
+            Campaign name (site header)
             <input name="name" defaultValue={campaign.name} className={inputCls} />
           </label>
+          <label className="text-xs text-ink-soft">
+            Season label (homepage kicker)
+            <input name="seasonLabel" defaultValue={shul.seasonLabel} placeholder="Elul 5786" className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Partner community shown next to your name (optional)
+            <input
+              name="partnerName"
+              defaultValue={shul.partnerName ?? ""}
+              placeholder="e.g. a kollel — leave empty for none"
+              className={inputCls}
+            />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Organizer email (platform notices go here)
+            <input name="contactEmail" defaultValue={shul.contactEmail ?? ""} className={inputCls} />
+          </label>
+
+          <div className="sm:col-span-2 mt-2 border-t border-parchment pt-3">
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" name="pledgeEnabled" defaultChecked={shul.pledgeEnabled} />
+              Tzedakah pledge per family signup
+            </label>
+          </div>
           <label className="text-xs text-ink-soft">
             Charity name
             <input name="charityName" defaultValue={campaign.charityName} className={inputCls} />
@@ -626,18 +752,32 @@ export default async function AdminPage() {
             <input
               name="pledgePerSignup"
               type="number"
-              defaultValue={campaign.pledgePerSignup}
+              defaultValue={shul.pledgePerSignup}
               className={inputCls}
             />
           </label>
+
+          <div className="sm:col-span-2 mt-2 border-t border-parchment pt-3">
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" name="raffleEnabled" defaultChecked={shul.raffleEnabled} />
+              Weekly family raffle (everyone checked in = entered)
+            </label>
+          </div>
           <label className="text-xs text-ink-soft sm:col-span-2">
-            Partner community shown next to your name (optional)
-            <input
-              name="partnerName"
-              defaultValue={shul.partnerName ?? ""}
-              placeholder="e.g. LINK Kollel — leave empty for none"
-              className={inputCls}
-            />
+            Prize
+            <input name="rafflePrize" defaultValue={shul.rafflePrize} placeholder="pizza party" className={inputCls} />
+          </label>
+
+          <div className="sm:col-span-2 mt-2 border-t border-parchment pt-3">
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" name="listed" defaultChecked={shul.listed} />
+              List us in the national shul directory
+            </label>
+          </div>
+
+          <label className="text-xs text-ink-soft sm:col-span-2 mt-2 border-t border-parchment pt-3">
+            &ldquo;Why we&rsquo;re doing this&rdquo; (blank = the standard text; separate paragraphs with a blank line)
+            <textarea name="whyText" rows={8} defaultValue={shul.whyText ?? ""} className={inputCls} placeholder={DEFAULT_WHY} />
           </label>
           <div className="sm:col-span-2">
             <button className={btnCls}>Save settings</button>

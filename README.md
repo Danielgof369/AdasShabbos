@@ -1,9 +1,13 @@
-# The Elul Shabbos Project — Adas Torah
+# Kabbalas Shabbos — national Shabbos campaign platform
 
-> **Want to run this at YOUR shul?** The whole site is plug-n-play: fork this
-> repo, follow [`deploy/NEW-SHUL-SETUP.md`](deploy/NEW-SHUL-SETUP.md), and
-> you're live in ~45 minutes on free hosting — your own name, dates, logos,
-> and commitment list, no code edits required.
+> **Want to run this at YOUR shul?** Go to **kabbalasshabbos.com/start** —
+> two minutes, no code, free. Your shul gets its own site at
+> `yourshul.kabbalasshabbos.com` with reminders, check-ins, a raffle and a
+> live count. (Prefer to self-host a copy? [`deploy/NEW-SHUL-SETUP.md`](deploy/NEW-SHUL-SETUP.md)
+> still works.) Platform architecture, env vars and the cutover plan:
+> [`deploy/PLATFORM.md`](deploy/PLATFORM.md).
+
+Started as **The Elul Shabbos Project** at Adas Torah, Los Angeles (Elul 5786).
 
 A mobile-first campaign site for the month of Elul: everyone in the shul —
 men, women, and kids — signs up to take on **one extra thing for Shabbos each

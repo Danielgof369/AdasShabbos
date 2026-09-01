@@ -40,7 +40,7 @@ async function sendTwilio(to: string, body: string, whatsapp: boolean): Promise<
   }
 }
 
-async function sendResend(to: string[], subject: string, text: string): Promise<void> {
+export async function sendResend(to: string[], subject: string, text: string): Promise<void> {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -48,7 +48,7 @@ async function sendResend(to: string[], subject: string, text: string): Promise<
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "Elul Shabbos Project <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM ?? "Kabbalas Shabbos <onboarding@resend.dev>",
       to,
       subject,
       text,
@@ -129,4 +129,22 @@ export async function sendToHousehold(
     }
   }
   return null;
+}
+
+/**
+ * Platform email (not tied to a household): onboarding welcome, operator
+ * notifications. Falls back to the console when Resend isn't configured.
+ */
+export async function sendPlatformEmail(to: string[], subject: string, text: string): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[platform-email] to=${to.join(",")} subject=${subject}\n${text}`);
+    return false;
+  }
+  try {
+    await sendResend(to, subject, text);
+    return true;
+  } catch (e) {
+    console.error("[platform-email] failed:", e);
+    return false;
+  }
 }

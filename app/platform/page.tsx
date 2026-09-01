@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { isPlatformAdmin } from "@/lib/adminAuth";
-import { shulBaseUrl } from "@/lib/tenant";
+import { shulBaseUrl, ROOT_DOMAIN } from "@/lib/tenant";
 import {
   platformLoginAction,
   platformLogoutAction,
@@ -21,7 +21,7 @@ export default async function PlatformPage() {
       <div className="mx-auto max-w-sm px-4 py-16">
         <h1 className="font-display text-2xl text-navy mb-1">Platform admin</h1>
         <p className="text-sm text-ink-soft mb-4">
-          Creates and manages the shuls running the Elul Shabbos Project.
+          Creates and manages the shuls on Kabbalas Shabbos.
         </p>
         <form action={platformLoginAction} className="space-y-3">
           <input
@@ -73,8 +73,12 @@ export default async function PlatformPage() {
               <summary className="cursor-pointer px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-2">
                 <span>
                   <span className="font-medium text-navy">{s.name}</span>
-                  <span className="text-ink-soft"> · {s.city}</span>
+                  <span className="text-ink-soft"> · {s.city}{s.state ? `, ${s.state}` : ""}</span>
+                  {s.contactEmail && (
+                    <span className="text-ink-soft text-xs"> · {s.contactName ?? ""} &lt;{s.contactEmail}&gt;</span>
+                  )}
                   {!s.active && <span className="ml-2 text-xs text-red-600">(inactive)</span>}
+                  {!s.listed && <span className="ml-2 text-xs text-ink-soft">(unlisted)</span>}
                 </span>
                 <span className="text-xs text-ink-soft">
                   {s._count.households} families · {memberCounts.get(s.id) ?? 0} people ·{" "}
@@ -98,8 +102,23 @@ export default async function PlatformPage() {
                   <input name="name" defaultValue={s.name} className={inputCls} />
                 </label>
                 <label className="text-xs text-ink-soft">
-                  City
-                  <input name="city" defaultValue={s.city} className={inputCls} />
+                  City / state
+                  <span className="flex gap-2">
+                    <input name="city" defaultValue={s.city} className={inputCls} />
+                    <input name="state" defaultValue={s.state ?? ""} placeholder="CA" className={inputCls + " w-20"} />
+                  </span>
+                </label>
+                <label className="text-xs text-ink-soft">
+                  Organizer name
+                  <input name="contactName" defaultValue={s.contactName ?? ""} className={inputCls} />
+                </label>
+                <label className="text-xs text-ink-soft">
+                  Organizer email
+                  <input name="contactEmail" defaultValue={s.contactEmail ?? ""} className={inputCls} />
+                </label>
+                <label className="text-xs text-ink-soft sm:col-span-2">
+                  Partner community (optional)
+                  <input name="partnerName" defaultValue={s.partnerName ?? ""} className={inputCls} />
                 </label>
                 <label className="text-xs text-ink-soft sm:col-span-2">
                   Shabbos dates (YYYY-MM-DD, comma-separated)
@@ -137,10 +156,16 @@ export default async function PlatformPage() {
                   Reset shul admin password (8+ chars, blank = keep)
                   <input name="adminPassword" className={inputCls} />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-ink self-end pb-1">
-                  <input type="checkbox" name="active" defaultChecked={s.active} />
-                  Active
-                </label>
+                <div className="flex items-center gap-5 text-sm text-ink self-end pb-1">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="active" defaultChecked={s.active} />
+                    Active
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="listed" defaultChecked={s.listed} />
+                    Listed in directory
+                  </label>
+                </div>
                 <div className="sm:col-span-2">
                   <button className={btnCls}>Save shul</button>
                 </div>
@@ -155,11 +180,12 @@ export default async function PlatformPage() {
 
       {/* Create shul */}
       <section className="bg-white rounded-xl border border-parchment p-5">
-        <h2 className="font-semibold text-navy mb-1">+ Add a shul</h2>
+        <h2 className="font-semibold text-navy mb-1">+ Add a shul by hand</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Creates their site at <code>slug.theelulshabbosproject.com</code>, loads
-          the standard commitment list (their admin can edit it), and sets their
-          admin password. Reminders and crons pick the new shul up automatically.
+          Shuls normally sign themselves up at <code>/start</code>. This form does the
+          same thing without the welcome email: creates their site at{" "}
+          <code>slug.{ROOT_DOMAIN}</code>, loads the standard commitment list, and
+          sets their admin password.
         </p>
         <form
           action={createShulAction}
@@ -174,8 +200,23 @@ export default async function PlatformPage() {
             <input name="name" placeholder="Young Israel of Example" className={inputCls} required />
           </label>
           <label className="text-xs text-ink-soft">
-            City
-            <input name="city" placeholder="Baltimore" className={inputCls} required />
+            City / state
+            <span className="flex gap-2">
+              <input name="city" placeholder="Baltimore" className={inputCls} required />
+              <input name="state" placeholder="MD" className={inputCls + " w-20"} />
+            </span>
+          </label>
+          <label className="text-xs text-ink-soft">
+            Organizer name
+            <input name="contactName" className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft">
+            Organizer email
+            <input name="contactEmail" className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft">
+            Season label
+            <input name="seasonLabel" placeholder="Elul 5786" className={inputCls} />
           </label>
           <label className="text-xs text-ink-soft">
             Partner community (optional)

@@ -130,3 +130,18 @@ export async function sendToHousehold(
   }
   return null;
 }
+
+/** One-off email not tied to a household (admin reports). */
+export async function sendPlatformEmail(to: string[], subject: string, text: string): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[platform-email] to=${to.join(",")} subject=${subject}\n${text}`);
+    return false;
+  }
+  try {
+    await sendResend(to, subject, text);
+    return true;
+  } catch (e) {
+    console.error("[platform-email] failed:", e);
+    return false;
+  }
+}

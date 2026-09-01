@@ -27,7 +27,10 @@ import {
   sendErevShabbosAction,
   sendRaffleDeadlineAction,
   drawRaffleAction,
+  cleanupAbandonedAction,
+  emailAuditAction,
 } from "./actions";
+import { auditAll } from "@/lib/housekeeping";
 
 export const dynamic = "force-dynamic";
 // Give the reminder-blast server actions room to finish a full send.
@@ -73,6 +76,7 @@ export default async function AdminPage() {
     },
     orderBy: { createdAt: "desc" },
   });
+  const audit = await auditAll();
   const messageCounts = await prisma.messageLog.groupBy({
     by: ["kind", "week"],
     _count: { _all: true },
@@ -313,6 +317,112 @@ export default async function AdminPage() {
                 />
               </div>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Housekeeping */}
+      <section className={`rounded-xl border p-5 ${audit.total > 0 ? "bg-white border-gold/50" : "bg-white border-parchment"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+          <h2 className="font-semibold text-navy">
+            🧹 Housekeeping{" "}
+            {audit.total > 0 ? (
+              <span className="ml-1 text-xs bg-gold-pale text-navy-deep rounded-full px-2.5 py-0.5">{audit.total} to look at</span>
+            ) : (
+              <span className="ml-1 text-xs text-ink-soft">all clean</span>
+            )}
+          </h2>
+          <div className="flex gap-2">
+            <form action={emailAuditAction}>
+              <button className="text-sm text-navy underline underline-offset-2">Email me this report</button>
+            </form>
+          </div>
+        </div>
+        <p className="text-sm text-ink-soft mb-4">
+          Checked every time you open this page: families who quit halfway
+          through signing up, the same family signed up twice, the same person
+          added twice, families we can&rsquo;t reach, and test entries. Nothing
+          is changed until you press a button.
+        </p>
+
+        {(audit.emptyHouseholds.length > 0 || audit.membersWithoutGoals.length > 0) && (
+          <div className="rounded-lg border border-parchment bg-cream/50 p-4 mb-3">
+            <p className="font-medium text-navy text-sm mb-1">Abandoned signups</p>
+            <ul className="text-sm text-ink-soft mb-3 space-y-0.5">
+              {audit.emptyHouseholds.map((h) => (
+                <li key={h.id}>{h.familyName ?? "(no name)"} · {h.email ?? h.phone ?? "no contact"} — signed up, added nobody</li>
+              ))}
+              {audit.membersWithoutGoals.map(({ household, member }) => (
+                <li key={member.id}>{member.name} ({household.familyName ?? "no family name"}) — never chose a commitment</li>
+              ))}
+            </ul>
+            <form action={cleanupAbandonedAction}>
+              <ConfirmSubmit
+                message={`Remove ${audit.emptyHouseholds.length + audit.membersWithoutGoals.length} abandoned signup(s)? Families with people who chose commitments are untouched. This cannot be undone.`}
+                className={btnCls}
+              >
+                Remove abandoned signups
+              </ConfirmSubmit>
+            </form>
+          </div>
+        )}
+
+        {audit.duplicateFamilies.map((g) => (
+          <div key={g.keep.id} className="rounded-lg border border-parchment bg-cream/50 p-4 mb-3">
+            <p className="font-medium text-navy text-sm mb-1">Possible duplicate family — {g.reason}</p>
+            <p className="text-sm text-ink-soft mb-2">
+              Keep <strong>{g.keep.familyName ?? g.keep.token}</strong> ({g.keep.members.map((m) => m.name).join(", ")} · {g.keep.email ?? g.keep.phone})
+            </p>
+            {g.others.map((o) => (
+              <form key={o.id} action={mergeHouseholdsAction} className="flex flex-wrap items-center gap-3 text-sm text-ink-soft mb-1">
+                <input type="hidden" name="keepId" value={g.keep.id} />
+                <input type="hidden" name="absorbId" value={o.id} />
+                <span>Fold in <strong>{o.familyName ?? o.token}</strong> ({o.members.map((m) => m.name).join(", ") || "nobody"} · {o.email ?? o.phone ?? "no contact"})</span>
+                <ConfirmSubmit message={`Merge ${o.familyName ?? o.token} into ${g.keep.familyName ?? g.keep.token}? Everyone and their check-ins move over; the duplicate is removed.`} className={btnCls}>
+                  Merge
+                </ConfirmSubmit>
+                <a href={`/c/${o.token}`} className="underline">view</a>
+              </form>
+            ))}
+            <p className="text-xs text-ink-soft mt-2">If the same person shows up twice after merging, a &ldquo;same person listed twice&rdquo; item appears here to fix.</p>
+          </div>
+        ))}
+
+        {audit.duplicateMembers.map(({ household, keep, extra }) => (
+          <form key={extra.id} action={deleteMemberAction} className="rounded-lg border border-parchment bg-cream/50 p-4 mb-3 flex flex-wrap items-center gap-3 text-sm">
+            <input type="hidden" name="id" value={extra.id} />
+            <span className="text-ink-soft">
+              <strong className="text-navy">{extra.name}</strong> appears twice in the {household.familyName ?? household.token} family — keep the one with {keep.checkins} check-in{keep.checkins === 1 ? "" : "s"}, remove the copy with {extra.checkins}.
+            </span>
+            <ConfirmSubmit message={`Remove the duplicate ${extra.name} (${extra.checkins} check-ins)? The other ${extra.name} stays.`} className={btnCls}>
+              Remove duplicate
+            </ConfirmSubmit>
+          </form>
+        ))}
+
+        {audit.unreachable.length > 0 && (
+          <div className="rounded-lg border border-parchment bg-cream/50 p-4 mb-3">
+            <p className="font-medium text-navy text-sm mb-1">No email or phone on file</p>
+            <ul className="text-sm text-ink-soft space-y-0.5">
+              {audit.unreachable.map((h) => (
+                <li key={h.id}>{h.familyName ?? h.token} ({h.members.map((m) => m.name).join(", ")}) — reminders can&rsquo;t reach them; ask them to sign in at /find with a new email, or delete below.</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {audit.testEntries.length > 0 && (
+          <div className="rounded-lg border border-parchment bg-cream/50 p-4 mb-1">
+            <p className="font-medium text-navy text-sm mb-1">Looks like a test entry</p>
+            {audit.testEntries.map((h) => (
+              <form key={h.id} action={deleteHouseholdAction} className="flex flex-wrap items-center gap-3 text-sm text-ink-soft mb-1">
+                <input type="hidden" name="id" value={h.id} />
+                <span>{h.familyName ?? h.token} · {h.email ?? h.phone ?? "no contact"} · {h.members.map((m) => m.name).join(", ") || "nobody"}</span>
+                <ConfirmSubmit message={`Delete the ${h.familyName ?? h.token} entry entirely?`} className="text-xs text-red-700 underline">
+                  delete
+                </ConfirmSubmit>
+              </form>
+            ))}
           </div>
         )}
       </section>

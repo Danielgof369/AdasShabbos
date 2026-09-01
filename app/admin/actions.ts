@@ -215,3 +215,39 @@ export async function mergeHouseholdsAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/families");
 }
+
+// ---------- housekeeping ----------
+import { auditAll, auditReport } from "@/lib/housekeeping";
+import { sendPlatformEmail } from "@/lib/messaging";
+import { shul as shulConfig } from "@/lib/shul";
+
+/** Removes the safe leftovers: families with nobody in them, and people
+ * who never chose a commitment (a signup abandoned halfway). */
+export async function cleanupAbandonedAction() {
+  await requireAdmin();
+  const audit = await auditAll();
+  for (const h of audit.emptyHouseholds) {
+    await prisma.messageLog.deleteMany({ where: { householdId: h.id } });
+    await prisma.household.delete({ where: { id: h.id } }).catch(() => {});
+  }
+  for (const { household, member } of audit.membersWithoutGoals) {
+    await prisma.member.delete({ where: { id: member.id } }).catch(() => {});
+    const left = await prisma.member.count({ where: { householdId: household.id } });
+    if (left === 0) {
+      await prisma.messageLog.deleteMany({ where: { householdId: household.id } });
+      await prisma.household.delete({ where: { id: household.id } }).catch(() => {});
+    }
+  }
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/families");
+}
+
+export async function emailAuditAction() {
+  await requireAdmin();
+  const to = process.env.ADMIN_NOTIFY_EMAIL ?? process.env.EMAIL_REPLY_TO;
+  if (!to) throw new Error("Set ADMIN_NOTIFY_EMAIL (or EMAIL_REPLY_TO) in Vercel first");
+  const audit = await auditAll();
+  await sendPlatformEmail([to], `Housekeeping report — ${shulConfig.name}`, auditReport(audit, shulConfig.siteUrl));
+  revalidatePath("/admin");
+}

@@ -1,9 +1,9 @@
 /**
- * Platform-wide brand + onboarding rules for Kabbalas Shabbos, the national
+ * Platform-wide brand + onboarding rules for The Kabolas Shabbos Initiative, the national
  * network of shul Shabbos campaigns.
  */
 export const PLATFORM = {
-  name: "Kabbalas Shabbos",
+  name: "The Kabolas Shabbos Initiative",
   tagline: "One small thing for Shabbos. Every week. Every shul.",
   /** Where new shuls' welcome emails come from and questions go to. */
   contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "hello@kabbalasshabbos.com",
@@ -17,7 +17,7 @@ export const RESERVED_SLUGS = new Set([
   "www", "app", "api", "admin", "platform", "start", "shuls", "mail", "email",
   "smtp", "imap", "ftp", "cdn", "static", "assets", "img", "images", "blog",
   "docs", "help", "support", "status", "dev", "staging", "test", "demo",
-  "vercel", "kabbalasshabbos", "kabbalas", "shabbos", "shabbat", "national",
+  "vercel", "kabbalasshabbos", "kabbalas", "kabolas", "kabolasshabbos", "initiative", "shabbos", "shabbat", "national",
   "us", "ca", "il", "ny", "nj", "la", "chicago", "root", "null", "undefined",
 ]);
 

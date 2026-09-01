@@ -48,7 +48,7 @@ export async function sendResend(to: string[], subject: string, text: string): P
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "Kabbalas Shabbos <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM ?? "The Kabolas Shabbos Initiative <onboarding@resend.dev>",
       to,
       subject,
       text,

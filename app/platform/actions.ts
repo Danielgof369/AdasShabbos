@@ -64,7 +64,7 @@ export async function createShulAction(formData: FormData) {
       contactName: String(formData.get("contactName") ?? "").trim().slice(0, 80) || null,
       contactEmail: String(formData.get("contactEmail") ?? "").trim().toLowerCase().slice(0, 120) || null,
       seasonLabel: String(formData.get("seasonLabel") ?? "").trim().slice(0, 40) || "Elul 5786",
-      campaignName: String(formData.get("campaignName") ?? "").trim().slice(0, 80) || "Kabbalas Shabbos",
+      campaignName: String(formData.get("campaignName") ?? "").trim().slice(0, 80) || "The Kabolas Shabbos Initiative",
       partnerName: String(formData.get("partnerName") ?? "").trim().slice(0, 100) || null,
       charityName:
         String(formData.get("charityName") ?? "").trim().slice(0, 100) || "Tomchei Shabbos",

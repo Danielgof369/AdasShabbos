@@ -1,4 +1,4 @@
-# Kabbalas Shabbos — the national platform
+# The Kabolas Shabbos Initiative — the national platform
 
 One deployment, one database, every shul at **`shulname.kabbalasshabbos.com`**
 (plus optional custom domains, like shabboswithadas.com for Adas Torah).
@@ -58,7 +58,7 @@ partner; reset a shul's admin password; add a shul by hand.
 | Var | Purpose | Example |
 | --- | --- | --- |
 | `DATABASE_URL` | Neon Postgres (pooled string) | unchanged |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="Kabbalas Shabbos <hello@kabbalasshabbos.com>"` |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="The Kabolas Shabbos Initiative <hello@kabbalasshabbos.com>"` |
 | `CRON_SECRET` | protects the cron routes | unchanged |
 | `PLATFORM_ADMIN_PASSWORD` | opens `/platform` | strong secret |
 | `PLATFORM_NOTIFY_EMAIL` | gets a note on every new shul | your email |

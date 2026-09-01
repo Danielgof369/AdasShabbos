@@ -6,7 +6,7 @@ import StartForm from "./StartForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Bring it to your shul | The Kabolas Shabbos Initiative",
+  title: "Bring it to your shul | The Kabalas Shabbos Initiative",
 };
 
 export default async function StartPage({

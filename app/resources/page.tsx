@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getShul } from "@/lib/tenant";
+import PendingApproval from "@/components/PendingApproval";
+import { isAdmin } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,7 @@ export const metadata = {
 
 export default async function ResourcesPage() {
   const shul = await getShul();
+  if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
   const resources = await prisma.resource.findMany({
     where: { shulId: shul.id },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],

@@ -48,7 +48,7 @@ export async function sendResend(to: string[], subject: string, text: string): P
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "The Kabolas Shabbos Initiative <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM ?? "The Kabalas Shabbos Initiative <onboarding@resend.dev>",
       to,
       subject,
       text,
@@ -173,7 +173,7 @@ const RESEND_BATCH = 100;
 async function sendResendBatch(
   emails: { to: string[]; subject: string; text: string }[]
 ): Promise<void> {
-  const from = process.env.EMAIL_FROM ?? "The Kabolas Shabbos Initiative <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM ?? "The Kabalas Shabbos Initiative <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails/batch", {
     method: "POST",
     headers: {

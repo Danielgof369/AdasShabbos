@@ -6,6 +6,7 @@ import {
   platformLogoutAction,
   createShulAction,
   updateShulAction,
+  approveShulAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function PlatformPage() {
       <div className="mx-auto max-w-sm px-4 py-16">
         <h1 className="font-display text-2xl text-navy mb-1">Platform admin</h1>
         <p className="text-sm text-ink-soft mb-4">
-          Creates and manages the shuls on The Kabolas Shabbos Initiative.
+          Creates and manages the shuls on The Kabalas Shabbos Initiative.
         </p>
         <form action={platformLoginAction} className="space-y-3">
           <input
@@ -62,6 +63,36 @@ export default async function PlatformPage() {
         </form>
       </div>
 
+      {/* Awaiting approval */}
+      {shuls.some((s) => !s.approved) && (
+        <section className="bg-gold-pale/60 rounded-xl border border-gold/50 p-5">
+          <h2 className="font-semibold text-navy mb-1">
+            Awaiting approval ({shuls.filter((s) => !s.approved).length})
+          </h2>
+          <p className="text-sm text-ink-soft mb-4">
+            Signed up through /start. Their site shows &ldquo;almost ready&rdquo; to
+            visitors and their admin page already works. Approving opens the
+            site, lists it in the directory, and emails the organizer.
+          </p>
+          <div className="space-y-2">
+            {shuls.filter((s) => !s.approved).map((s) => (
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-lg border border-parchment px-4 py-3 text-sm">
+                <span>
+                  <span className="font-medium text-navy">{s.name}</span>
+                  <span className="text-ink-soft"> · {s.city}{s.state ? `, ${s.state}` : ""} · {s.contactName} &lt;{s.contactEmail}&gt; · {s.shabbosDates.split(",").length} weeks from {s.shabbosDates.split(",")[0]}</span>
+                  {" "}
+                  <a className="underline text-ink-soft" href={shulBaseUrl(s) + "/admin"} target="_blank" rel="noreferrer">preview</a>
+                </span>
+                <form action={approveShulAction}>
+                  <input type="hidden" name="id" value={s.id} />
+                  <button className={btnCls}>Approve &amp; open</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Shul list */}
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">
@@ -77,6 +108,7 @@ export default async function PlatformPage() {
                   {s.contactEmail && (
                     <span className="text-ink-soft text-xs"> · {s.contactName ?? ""} &lt;{s.contactEmail}&gt;</span>
                   )}
+                  {!s.approved && <span className="ml-2 text-xs text-gold">(awaiting approval)</span>}
                   {!s.active && <span className="ml-2 text-xs text-red-600">(inactive)</span>}
                   {!s.listed && <span className="ml-2 text-xs text-ink-soft">(unlisted)</span>}
                 </span>

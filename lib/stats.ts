@@ -86,7 +86,7 @@ export type NationalStats = {
  * Cached for a minute per server instance — it's on the busiest page. */
 export const getNationalStats = memo("national-stats", 60_000, async (): Promise<NationalStats> => {
   const shuls = await prisma.shul.findMany({
-    where: { active: true, listed: true },
+    where: { active: true, approved: true, listed: true },
     select: { id: true, pledgeEnabled: true, pledgePerSignup: true },
   });
   const ids = shuls.map((s) => s.id);

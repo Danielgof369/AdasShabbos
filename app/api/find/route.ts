@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
   const phone = normalizePhone(raw);
   const email = normalizeEmail(raw);
   const shul = await findShulByHost(req.headers.get("host"));
+  if (shul && !shul.approved) {
+    return NextResponse.json({ error: "This campaign isn't open yet — check back soon." }, { status: 403 });
+  }
 
   const household = await prisma.household.findFirst({
     where: {

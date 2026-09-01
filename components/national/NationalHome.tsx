@@ -26,9 +26,11 @@ export default function NationalHome({
       <section className="bg-navy text-cream relative overflow-hidden">
         <div className="glow-dot absolute -top-24 right-0 h-[28rem] w-[28rem] rounded-full" />
         <div className="glow-dot absolute -bottom-40 -left-20 h-96 w-96 rounded-full opacity-60" />
-        <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28 relative">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:py-24 relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ksi-logo-white.png" alt={PLATFORM.name} className="h-36 sm:h-48 w-auto mb-8" />
           <p className="text-gold-soft font-display tracking-[0.25em] uppercase text-sm mb-5">
-            {PLATFORM.name} &middot; a national Shabbos campaign
+            A national Shabbos campaign
           </p>
           <h1 className="font-display text-4xl sm:text-6xl leading-[1.08] mb-6 max-w-3xl">
             One small thing for Shabbos.

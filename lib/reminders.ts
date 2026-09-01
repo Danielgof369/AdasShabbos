@@ -25,7 +25,7 @@ async function forEachShul(
   job: (shul: Shul) => Promise<ReminderRunResult>
 ): Promise<ReminderRunResult> {
   const started = Date.now();
-  const shuls = await prisma.shul.findMany({ where: { active: true }, orderBy: { createdAt: "asc" } });
+  const shuls = await prisma.shul.findMany({ where: { active: true, approved: true }, orderBy: { createdAt: "asc" } });
   const agg: ReminderRunResult = { week: 0, sent: 0, skipped: 0, details: [] };
   for (const shul of shuls) {
     // Stay inside the function's time limit; dedupe means the next run

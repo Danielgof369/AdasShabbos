@@ -10,6 +10,9 @@ import {
 } from "@/lib/adminAuth";
 import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
 import { forget } from "@/lib/memo";
+import { sendPlatformEmail } from "@/lib/messaging";
+import { shulBaseUrl } from "@/lib/tenant";
+import { PLATFORM } from "@/lib/platform";
 import { cleanSlug as platformSlug, slugProblem } from "@/lib/platform";
 
 export async function platformLoginAction(formData: FormData) {
@@ -65,7 +68,7 @@ export async function createShulAction(formData: FormData) {
       contactName: String(formData.get("contactName") ?? "").trim().slice(0, 80) || null,
       contactEmail: String(formData.get("contactEmail") ?? "").trim().toLowerCase().slice(0, 120) || null,
       seasonLabel: String(formData.get("seasonLabel") ?? "").trim().slice(0, 40) || "Elul 5786",
-      campaignName: String(formData.get("campaignName") ?? "").trim().slice(0, 80) || "The Kabolas Shabbos Initiative",
+      campaignName: String(formData.get("campaignName") ?? "").trim().slice(0, 80) || "The Kabalas Shabbos Initiative",
       partnerName: String(formData.get("partnerName") ?? "").trim().slice(0, 100) || null,
       charityName:
         String(formData.get("charityName") ?? "").trim().slice(0, 100) || "Tomchei Shabbos",
@@ -80,6 +83,7 @@ export async function createShulAction(formData: FormData) {
           .replace(/^https?:\/\//, "")
           .replace(/\/$/, "") || null,
       adminHash: shulAdminHash(slug, password),
+      approved: true,
     },
   });
 
@@ -102,6 +106,37 @@ export async function createShulAction(formData: FormData) {
 
   forget("directory");
   forget("national-stats");
+  revalidatePath("/platform");
+}
+
+export async function approveShulAction(formData: FormData) {
+  await requirePlatform();
+  const id = String(formData.get("id") ?? "");
+  const shul = await prisma.shul.findUnique({ where: { id } });
+  if (!shul || shul.approved) return;
+  await prisma.shul.update({ where: { id }, data: { approved: true, active: true } });
+  forget("directory");
+  forget("national-stats");
+  if (shul.contactEmail) {
+    const url = shulBaseUrl(shul);
+    await sendPlatformEmail(
+      [shul.contactEmail],
+      `${shul.name} is approved — you're live on ${PLATFORM.name}`,
+      [
+        `Good news${shul.contactName ? `, ${shul.contactName}` : ""}: ${shul.name} is approved and open to your families.`,
+        ``,
+        `Share this link: ${url}`,
+        `Your admin page: ${url}/admin`,
+        ``,
+        `Ready-to-paste announcement for your WhatsApp group:`,
+        `🕯️ *${shul.name} — ${shul.campaignName}*`,
+        `This ${shul.seasonLabel}, every man, woman and child takes on one small thing for Shabbos. Sign up your whole family in 30 seconds: ${url}`,
+        ``,
+        `Questions any time: ${PLATFORM.contactEmail}`,
+        `— ${PLATFORM.name}`,
+      ].join("\n")
+    );
+  }
   revalidatePath("/platform");
 }
 

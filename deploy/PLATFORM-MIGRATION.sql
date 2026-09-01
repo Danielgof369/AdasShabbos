@@ -22,7 +22,7 @@ CREATE TABLE "Shul" (
     "state" TEXT,
     "contactName" TEXT,
     "contactEmail" TEXT,
-    "campaignName" TEXT NOT NULL DEFAULT 'The Kabolas Shabbos Initiative',
+    "campaignName" TEXT NOT NULL DEFAULT 'The Kabalas Shabbos Initiative',
     "seasonLabel" TEXT NOT NULL DEFAULT 'Elul 5786',
     "pledgeEnabled" BOOLEAN NOT NULL DEFAULT true,
     "charityName" TEXT NOT NULL DEFAULT 'Tomchei Shabbos',
@@ -43,6 +43,7 @@ CREATE TABLE "Shul" (
     "partnerLogoDark" TEXT,
     "adminHash" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "approved" BOOLEAN NOT NULL DEFAULT false,
     "listed" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Shul_pkey" PRIMARY KEY ("id")
@@ -87,14 +88,14 @@ ALTER TABLE "ShulAsset" ADD CONSTRAINT "ShulAsset_shulId_fkey"
 -- and replace REPLACE_WITH_ADMIN_HASH below. Charity/pledge/campaign name
 -- are copied from the old Campaign row automatically further down.
 INSERT INTO "Shul"
-  ("id","slug","customDomain","name","partnerName","city","state","contactName","contactEmail",
+  ("id","slug","customDomain","name","partnerName","city","state","contactName","contactEmail","approved",
    "campaignName","seasonLabel","rafflePrize",
    "shabbosDates","tzOffset","timezone",
    "logoLight","logoDark","partnerLogoLight","partnerLogoDark","adminHash",
    "whyText","announcementTitle","announcementBody","announcementUrl","announcementUpdatedAt")
 VALUES
   ('shul_adas','adas','shabboswithadas.com','Adas Torah','LINK Kollel','Los Angeles','CA',
-   'Daniel Gofman','danielsgofman@gmail.com',
+   'Daniel Gofman','danielsgofman@gmail.com',true,
    'The Elul Shabbos Project','Elul 5786','pizza party',
    '2026-08-22,2026-08-29,2026-09-05,2026-09-19','-07:00','America/Los_Angeles',
    '/logo.png','/logo-white.png','/link-logo.png','/link-logo-white.png',

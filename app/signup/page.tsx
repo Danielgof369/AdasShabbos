@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { campaignOf, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
 import { getShul } from "@/lib/tenant";
+import PendingApproval from "@/components/PendingApproval";
+import { isAdmin } from "@/lib/adminAuth";
 import { pluralWeeks } from "@/lib/copy";
 import SignupForm from "./SignupForm";
 
@@ -8,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
   const shul = await getShul();
+  if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
   const campaign = campaignOf(shul);
   const suggestions = await prisma.suggestion.findMany({
     where: { shulId: shul.id, active: true },

@@ -25,7 +25,7 @@ model Shul {
   contactName  String?
   contactEmail String?
 
-  campaignName String @default("The Kabolas Shabbos Initiative") // shown in the header
+  campaignName String @default("The Kabalas Shabbos Initiative") // shown in the header
   seasonLabel  String @default("Elul 5786") // hero kicker, e.g. "Elul 5786"
 
   // Optional program features — each shul turns these on or off.
@@ -57,6 +57,7 @@ model Shul {
 
   adminHash String // sha256("elul:<slug>:<password>") — per-shul admin login
   active    Boolean  @default(true) // false = site off (platform admin switch)
+  approved  Boolean  @default(false) // self-serve shuls wait for the operator's OK
   listed    Boolean  @default(true) // show in the national directory
   createdAt DateTime @default(now())
 

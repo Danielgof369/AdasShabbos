@@ -1,4 +1,4 @@
-# The Kabolas Shabbos Initiative — the national platform
+# The Kabalas Shabbos Initiative — the national platform
 
 One deployment, one database, every shul at **`shulname.kabbolasshabbos.com`**
 (plus optional custom domains, like shabboswithadas.com for Adas Torah).
@@ -29,10 +29,17 @@ tzedakah pledge (amount + charity) and weekly raffle (prize).
 
 On submit (`app/api/start/route.ts`): validates everything (dates must be
 Saturdays), computes the UTC offset from the IANA zone, creates the `Shul`
-row with the 24-item commitment template and the kids' guide resource,
-emails the organizer their site + admin links and a next-steps checklist,
-and emails **`PLATFORM_NOTIFY_EMAIL`** (you) about the new shul. Honeypot
+row **unapproved** with the 24-item commitment template and the kids' guide
+resource, emails the organizer their admin link and a next-steps checklist,
+and emails **`PLATFORM_NOTIFY_EMAIL`** (you) an "APPROVE:" note. Honeypot
 field + per-IP throttle guard against junk.
+
+**Approval**: until you press "Approve & open" at `/platform`, the shul's
+public pages show "almost ready", its signup/find/check-in APIs refuse,
+it's hidden from the directory and national counters, and crons skip it.
+Its `/admin` works immediately so the organizer can prepare. Approving
+emails the organizer their live link and a WhatsApp announcement. Shuls you
+add by hand at `/platform` are approved on creation.
 
 ## Per-shul settings (their `/admin`)
 
@@ -69,7 +76,7 @@ partner; reset a shul's admin password; add a shul by hand.
 | Var | Purpose | Example |
 | --- | --- | --- |
 | `DATABASE_URL` | Neon Postgres (pooled string) | unchanged |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="The Kabolas Shabbos Initiative <hello@kabbolasshabbos.com>"` |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="The Kabalas Shabbos Initiative <hello@kabbolasshabbos.com>"` |
 | `CRON_SECRET` | protects the cron routes | unchanged |
 | `PLATFORM_ADMIN_PASSWORD` | opens `/platform` | strong secret |
 | `AUTH_SECRET` | mixed into admin cookies so a leaked DB row can't forge a session (falls back to `CRON_SECRET`) | random 32+ chars |

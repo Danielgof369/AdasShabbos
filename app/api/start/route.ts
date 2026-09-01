@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
       raffleEnabled,
       rafflePrize,
       adminHash: shulAdminHash(slug, password),
+      approved: false,
       suggestions: {
         createMany: { data: SUGGESTION_TEMPLATE.map((t) => ({ ...t })) },
       },
@@ -139,15 +140,17 @@ export async function POST(req: NextRequest) {
   const welcome = [
     `Welcome to ${PLATFORM.name}, ${contactName}!`,
     ``,
-    `${name} is live:`,
-    url,
+    `${name} is set up. We review every new shul by hand — usually within a day — and you'll get an email the moment it's open to families.`,
     ``,
-    `Your admin page (password: the one you just chose):`,
+    `Your admin page works right now (password: the one you just chose):`,
     adminUrl,
     ``,
-    `What to do next:`,
+    `Your site, once approved:`,
+    url,
+    ``,
+    `What to do while you wait:`,
     `1. Open the admin page and look over the commitment list — hide anything that doesn't fit, add your own.`,
-    `2. Ask the rav to announce it, then paste the site link into the shul WhatsApp. Families sign up in 30 seconds; no app, no passwords.`,
+    `2. Line up the rav's announcement. Once you get the approval email, paste the site link into the shul WhatsApp. Families sign up in 30 seconds; no app, no passwords.`,
     `3. Reminders run themselves: Thursday before Shabbos, Sunday and Tuesday after. The admin page has the WhatsApp texts ready to paste each week.`,
     `4. Send us your logo (PNG) and we'll put it on your site: ${PLATFORM.contactEmail}`,
     ``,
@@ -156,14 +159,14 @@ export async function POST(req: NextRequest) {
     `Questions, ideas, or a shul that wants to join? Reply to this email.`,
     `— ${PLATFORM.name}`,
   ].join("\n");
-  await sendPlatformEmail([contactEmail], `${name} is live on ${PLATFORM.name}`, welcome);
+  await sendPlatformEmail([contactEmail], `${name} is set up on ${PLATFORM.name} — approval pending`, welcome);
 
   if (PLATFORM.notifyEmail) {
     await sendPlatformEmail(
       [PLATFORM.notifyEmail],
-      `New shul: ${name} (${city}${state ? `, ${state}` : ""})`,
+      `APPROVE: ${name} (${city}${state ? `, ${state}` : ""})`,
       [
-        `${contactName} <${contactEmail}> just set up ${name}.`,
+        `${contactName} <${contactEmail}> just set up ${name}. It's waiting for your approval.`,
         url,
         `Season: ${seasonLabel} · ${dates.join(", ")} · ${timezone}`,
         `Pledge: ${pledgeEnabled ? `$${pledgePerSignup} → ${charityName}` : "off"} · Raffle: ${raffleEnabled ? rafflePrize : "off"}`,

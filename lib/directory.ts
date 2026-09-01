@@ -5,7 +5,7 @@ import type { DirectoryShul } from "@/components/national/ShulDirectory";
 /** Every live, listed shul with its headline counts (cached a minute). */
 export const listDirectoryShuls = memo("directory", 60_000, async (): Promise<DirectoryShul[]> => {
   const shuls = await prisma.shul.findMany({
-    where: { active: true, listed: true },
+    where: { active: true, approved: true, listed: true },
     orderBy: [{ state: "asc" }, { city: "asc" }, { name: "asc" }],
     select: {
       id: true, slug: true, customDomain: true, name: true, city: true, state: true,

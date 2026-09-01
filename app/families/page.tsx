@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { campaignOf } from "@/lib/campaign";
 import { getShul } from "@/lib/tenant";
+import PendingApproval from "@/components/PendingApproval";
+import { isAdmin } from "@/lib/adminAuth";
 import { familyStreakFromGoals } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import Avatar from "@/components/Avatar";
@@ -14,6 +16,7 @@ export const metadata = {
 
 export default async function FamiliesPage() {
   const shul = await getShul();
+  if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
   const campaign = campaignOf(shul);
   const households = await prisma.household.findMany({
     where: { shulId: shul.id, familyName: { not: null } },

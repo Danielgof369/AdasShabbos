@@ -87,6 +87,9 @@ export async function POST(req: NextRequest) {
   if (!shul) {
     return NextResponse.json({ error: "This campaign isn't set up yet." }, { status: 404 });
   }
+  if (!shul.approved) {
+    return NextResponse.json({ error: "This campaign isn't open yet — check back soon." }, { status: 403 });
+  }
   const campaign = campaignOf(shul);
   // Families joining off the Motzei Shabbos/Sunday blast still get the
   // just-passed Shabbos while its check-in window is open (through Monday

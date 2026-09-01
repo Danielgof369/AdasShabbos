@@ -19,6 +19,8 @@ import { PLATFORM } from "@/lib/platform";
 import JoinNudge from "@/components/JoinNudge";
 import HomePopups from "@/components/HomePopups";
 import NationalHome from "@/components/national/NationalHome";
+import PendingApproval from "@/components/PendingApproval";
+import { isAdmin } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,7 @@ export default async function Home() {
     const [stats, shuls] = await Promise.all([getNationalStats(), listDirectoryShuls()]);
     return <NationalHome stats={stats} shuls={shuls} />;
   }
+  if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
 
   const campaign = campaignOf(shul);
   const week = activeWeek(campaign);

@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
   }
 
   const shul = await findShulByHost(req.headers.get("host"));
+  if (shul && !shul.approved) {
+    return NextResponse.json({ error: "This campaign isn't open yet — check back soon." }, { status: 403 });
+  }
   const member = await prisma.member.findUnique({
     where: { id: memberId },
     include: { household: true, goals: true },

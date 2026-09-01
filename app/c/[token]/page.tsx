@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { campaignOf } from "@/lib/campaign";
 import { getShul } from "@/lib/tenant";
+import PendingApproval from "@/components/PendingApproval";
 import { getHouseholdView } from "@/lib/household";
 import { isAdmin } from "@/lib/adminAuth";
 import CheckinClient from "./CheckinClient";
@@ -15,6 +16,7 @@ export default async function HouseholdPage({
 }) {
   const { token } = await params;
   const shul = await getShul();
+  if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
   const campaign = campaignOf(shul);
   const view =
     (await getHouseholdView(token, campaign)) ??

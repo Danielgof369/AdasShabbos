@@ -50,8 +50,9 @@ export default async function RootLayout({
         <body className="min-h-full flex flex-col">
           <header className="bg-navy text-cream">
             <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-3">
-              <Link href="/" className="flex items-center gap-2.5 min-w-0">
-                <span className="text-gold-soft text-xl" aria-hidden>🕯️</span>
+              <Link href="/" className="flex items-center gap-3 min-w-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ksi-mark-white.png" alt="" className="h-10 w-auto shrink-0" />
                 <span className="font-display text-lg sm:text-xl tracking-wide truncate">{PLATFORM.name}</span>
               </Link>
               <nav className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
@@ -70,10 +71,11 @@ export default async function RootLayout({
           </header>
           <main className="flex-1">{children}</main>
           <footer className="bg-navy-deep text-cream/70 text-sm">
-            <div className="mx-auto max-w-5xl px-4 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-center sm:text-left">
-                <div className="font-display text-cream text-lg">{PLATFORM.name}</div>
-                <div>{PLATFORM.tagline}</div>
+            <div className="mx-auto max-w-5xl px-4 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ksi-logo-white.png" alt={PLATFORM.name} className="h-20 w-auto" />
+                <div className="hidden sm:block text-cream/70 max-w-xs">{PLATFORM.tagline}</div>
               </div>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="/shuls" className="underline underline-offset-2 hover:text-gold-soft">Shuls</Link>

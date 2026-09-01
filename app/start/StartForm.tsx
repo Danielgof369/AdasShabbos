@@ -183,29 +183,30 @@ export default function StartForm({
       <div className="bg-white rounded-2xl border border-parchment shadow-sm p-7 sm:p-9">
         <div className="text-5xl mb-4 text-center">🎉</div>
         <h2 className="font-display text-2xl sm:text-3xl text-navy mb-2 text-center">
-          {name} is live!
+          {name} is set up!
         </h2>
         <p className="text-ink-soft text-center mb-8">
-          We emailed these links to {contactEmail}. Save this page too.
+          We review every new shul by hand, usually within a day, and email {contactEmail} the
+          moment it&rsquo;s open to families. Your admin page works right now.
         </p>
         <div className="space-y-3 mb-8">
           <a
-            href={done.url}
-            className="block bg-gold text-navy-deep font-bold rounded-lg px-6 py-4 text-center text-lg hover:bg-gold-soft transition-colors"
-          >
-            Open your site → {done.url.replace(/^https?:\/\//, "")}
-          </a>
-          <a
             href={done.adminUrl}
-            className="block bg-navy text-cream font-semibold rounded-lg px-6 py-3.5 text-center hover:bg-navy-soft transition-colors"
+            className="block bg-gold text-navy-deep font-bold rounded-lg px-6 py-4 text-center text-lg hover:bg-gold-soft transition-colors"
           >
             Open your admin page (password: the one you chose)
           </a>
+          <a
+            href={done.url}
+            className="block bg-navy text-cream font-semibold rounded-lg px-6 py-3.5 text-center hover:bg-navy-soft transition-colors"
+          >
+            Your site, once approved → {done.url.replace(/^https?:\/\//, "")}
+          </a>
         </div>
-        <h3 className="font-semibold text-navy mb-2">What to do next</h3>
+        <h3 className="font-semibold text-navy mb-2">What to do while you wait</h3>
         <ol className="list-decimal pl-5 space-y-2 text-sm text-ink-soft mb-8">
           <li>Open the admin page and look over the commitment list. Hide anything that doesn&rsquo;t fit; add your own.</li>
-          <li>Ask the rav to announce it, then paste the message below into the shul WhatsApp.</li>
+          <li>Line up the rav&rsquo;s announcement. When the approval email arrives, paste the message below into the shul WhatsApp.</li>
           <li>Reminders run themselves: Thursday before Shabbos, Sunday and Tuesday after. The admin page has each week&rsquo;s WhatsApp texts ready to paste.</li>
           <li>Reply to the welcome email with your logo (PNG) and we&rsquo;ll put it on your site.</li>
         </ol>

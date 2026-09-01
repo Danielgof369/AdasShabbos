@@ -24,6 +24,7 @@ import {
   deleteSuggestionAction,
   sendThursdayAction,
   sendCheckinAction,
+  sendErevShabbosAction,
   sendRaffleDeadlineAction,
   drawRaffleAction,
 } from "./actions";
@@ -117,9 +118,7 @@ export default async function AdminPage() {
     ? [
         `🍕 *Pizza raffle — week ${latestWin.week}!*`,
         ``,
-        `Mazel tov to *The ${latestWin.familyName} Family* — everyone checked in, and they've won this week's family pizza party! 🎉`,
-        ``,
-        `Want in next week? Everyone in the family checks in after Shabbos, and you're automatically entered:`,
+        `Mazeltov to the *${latestWin.familyName}* family on winning this week's pizza raffle! Your family could be next! Check in after Shabbos if you completed what you took on — and be automatically entered into next week's raffle!`,
         siteUrl,
       ].join("\n")
     : null;
@@ -167,6 +166,9 @@ export default async function AdminPage() {
         <div className="flex flex-wrap gap-3 mb-4">
           <form action={sendThursdayAction}>
             <button className={btnCls}>Send Thursday reminder now</button>
+          </form>
+          <form action={sendErevShabbosAction}>
+            <button className={btnCls}>Send Good Erev Shabbos nudge now</button>
           </form>
           <form action={sendCheckinAction}>
             <button className={btnCls}>Send check-in reminder now</button>

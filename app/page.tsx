@@ -14,7 +14,7 @@ import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/Logo";
 import { getShul } from "@/lib/tenant";
 import JoinNudge from "@/components/JoinNudge";
-import LinkWelcome from "@/components/LinkWelcome";
+import HomePopups from "@/components/HomePopups";
 
 export const dynamic = "force-dynamic";
 
@@ -178,13 +178,14 @@ export default async function Home() {
         <section className="mx-auto max-w-3xl px-4 pt-10">
           <div className="bg-white rounded-2xl border border-gold/40 shadow-sm px-6 py-5 text-center">
             <p className="text-navy">
-              🍕 <span className="font-semibold">Week {latestDraw.week} pizza
-              raffle:</span> mazel tov to{" "}
+              🍕 Mazeltov to the{" "}
               <span className="font-display text-lg text-navy-deep font-semibold">
-                The {latestDraw.familyName} Family
-              </span>
-              ! Everyone checked in — pizza&rsquo;s on the campaign. Your family
-              could be next: check in after Shabbos, all of you.
+                {latestDraw.familyName}
+              </span>{" "}
+              family on winning this week&rsquo;s pizza raffle! Your family
+              could be next! Check in after Shabbos if you completed what
+              you took on — and be automatically entered into next
+              week&rsquo;s raffle!
             </p>
           </div>
         </section>
@@ -349,17 +350,35 @@ export default async function Home() {
             </div>
           ))}
         </div>
-        <div className="mt-6 bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
-          <p className="text-navy text-sm">
-            🖍️ <span className="font-semibold">For the children:</span> download the{" "}
-            <a
-              href="/shabbos-helpers-guide.pdf"
-              className="underline underline-offset-2 font-semibold hover:text-navy-deep"
-            >
-              Shabbos Helpers Guide
-            </a>{" "}
-            — fifteen jobs with titles worth owning, and a fridge checklist to go with them.
-          </p>
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
+            <p className="text-navy text-sm">
+              🖍️ <span className="font-semibold">For the children:</span> download the{" "}
+              <a
+                href="/shabbos-helpers-guide.pdf"
+                className="underline underline-offset-2 font-semibold hover:text-navy-deep"
+              >
+                Shabbos Helpers Guide
+              </a>{" "}
+              — fifteen jobs with titles worth owning, and a fridge checklist to go with them.
+            </p>
+          </div>
+          <div className="bg-gold-pale/60 border border-gold/30 rounded-xl px-5 py-4 text-center">
+            <p className="text-navy text-sm">
+              📖 <span className="font-semibold">For the table:</span> download{" "}
+              <a
+                href="/dvar-halacha-broken-water-heater.pdf"
+                className="underline underline-offset-2 font-semibold hover:text-navy-deep"
+              >
+                this week&rsquo;s Dvar Halacha
+              </a>{" "}
+              by Rabbi Yisroel Casen, or see all our{" "}
+              <Link href="/resources" className="underline underline-offset-2 font-semibold hover:text-navy-deep">
+                resources
+              </Link>
+              .
+            </p>
+          </div>
         </div>
         <div className="text-center mt-8">
           <Link
@@ -419,7 +438,7 @@ export default async function Home() {
         charityName={stats.charityName}
         pledge={campaign.pledgePerSignup}
       />
-      {shul.partnerName && <LinkWelcome partnerName={shul.partnerName} />}
+      <HomePopups />
     </div>
   );
 }

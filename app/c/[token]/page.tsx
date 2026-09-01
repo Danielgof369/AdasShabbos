@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { campaignOf } from "@/lib/campaign";
 import { getShul } from "@/lib/tenant";
 import { getHouseholdView } from "@/lib/household";
+import { isAdmin } from "@/lib/adminAuth";
 import CheckinClient from "./CheckinClient";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function HouseholdPage({
     (await getHouseholdView(token, campaign)) ??
     (await getHouseholdView(decodeURIComponent(token).toLowerCase(), campaign));
   if (!view) notFound();
+  const viewerIsAdmin = await isAdmin(shul);
 
   const suggestions = await prisma.suggestion.findMany({
     where: { shulId: shul.id, active: true },
@@ -46,6 +48,7 @@ export default async function HouseholdPage({
         members={view.members}
         suggestions={suggestions}
         totalWeeks={campaign.weeks}
+        viewerIsAdmin={viewerIsAdmin}
       />
     </div>
   );

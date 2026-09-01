@@ -8,6 +8,7 @@ import {
   runThursdayForShul,
   runCheckinForShul,
   runRaffleDeadlineForShul,
+  runErevShabbosForShul,
 } from "@/lib/reminders";
 import { raffleEligible } from "@/lib/raffle";
 import type { Shul } from "@prisma/client";
@@ -101,6 +102,12 @@ export async function sendThursdayAction() {
 export async function sendCheckinAction() {
   const shul = await requireAdmin();
   await runCheckinForShul(shul);
+  revalidatePath("/admin");
+}
+
+export async function sendErevShabbosAction() {
+  const shul = await requireAdmin();
+  await runErevShabbosForShul(shul);
   revalidatePath("/admin");
 }
 

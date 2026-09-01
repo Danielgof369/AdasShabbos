@@ -31,7 +31,14 @@ import {
   sendErevShabbosAction,
   sendRaffleDeadlineAction,
   drawRaffleAction,
+  saveScheduleAction,
+  uploadLogoAction,
+  removeLogoAction,
+  changePasswordAction,
+  sendCustomBlastAction,
+  requestChangeAction,
 } from "./actions";
+import { PLATFORM, TIMEZONES } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 // Give the reminder-blast server actions room to finish a full send.
@@ -704,13 +711,112 @@ export default async function AdminPage() {
         </form>
       </section>
 
+      {/* Custom message */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Send your own message</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Write anything — a shiur reminder, a thank-you, a Yom Tov note — and
+          it goes to every family (or only those with an open check-in). Each
+          family&rsquo;s own link is added automatically; you can also write{" "}
+          <code>{"{family}"}</code> or <code>{"{link}"}</code> where you want them.
+          Pressing send twice with the same text only reaches anyone missed.
+        </p>
+        <form action={sendCustomBlastAction} className="space-y-3 max-w-2xl">
+          <input name="subject" placeholder="Subject" className={inputCls} required />
+          <textarea
+            name="body"
+            rows={6}
+            className={inputCls}
+            placeholder={"Good Erev Shabbos, {family}!\n\nThis week's dvar halacha is on the site — and don't forget what you took on. Check in after Shabbos: {link}"}
+            required
+          />
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <label className="flex items-center gap-1.5"><input type="radio" name="audience" value="all" defaultChecked /> Every family</label>
+            <label className="flex items-center gap-1.5"><input type="radio" name="audience" value="unchecked" /> Only families with an open check-in</label>
+          </div>
+          <ConfirmSubmit message="Send this message to your families now?" className={btnCls}>
+            Send message
+          </ConfirmSubmit>
+        </form>
+      </section>
+
+      {/* Schedule */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Campaign schedule</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          The Shabbosos of your campaign, one date per line or comma-separated
+          (YYYY-MM-DD, each a Saturday). Skip a week by leaving it out. Changing
+          dates mid-campaign renumbers the weeks, so do it before families check in.
+        </p>
+        <form action={saveScheduleAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
+          <label className="text-xs text-ink-soft">
+            Shabbos dates
+            <textarea name="shabbosDates" rows={4} defaultValue={shul.shabbosDates.split(",").join("\n")} className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft">
+            Timezone
+            <select name="timezone" defaultValue={shul.timezone} className={inputCls}>
+              {TIMEZONES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+              {!TIMEZONES.some((t) => t.value === shul.timezone) && (
+                <option value={shul.timezone}>{shul.timezone}</option>
+              )}
+            </select>
+          </label>
+          <div className="sm:col-span-2">
+            <button className={btnCls}>Save schedule</button>
+          </div>
+        </form>
+      </section>
+
+      {/* Logos */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Logos</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          PNG with a transparent background works best; under 600 KB. The
+          &ldquo;on navy&rdquo; version is what shows in the header and hero, so
+          use a white or light version there if you have one. No logo = your
+          name in text.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(
+            [
+              ["logoDark", "Shul logo — on navy (header, hero)", shul.logoDark, "dark"],
+              ["logoLight", "Shul logo — on light backgrounds", shul.logoLight, "light"],
+              ["partnerLogoDark", `Partner logo — on navy${shul.partnerName ? ` (${shul.partnerName})` : ""}`, shul.partnerLogoDark, "dark"],
+              ["partnerLogoLight", "Partner logo — on light backgrounds", shul.partnerLogoLight, "light"],
+            ] as const
+          ).map(([kind, label, src, tone]) => (
+            <div key={kind} className="rounded-lg border border-parchment p-4">
+              <p className="text-xs text-ink-soft mb-2">{label}</p>
+              <div className={`rounded-lg p-3 mb-3 flex items-center justify-center min-h-16 ${tone === "dark" ? "bg-navy" : "bg-cream"}`}>
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt="" className="h-12 w-auto" />
+                ) : (
+                  <span className={`text-xs ${tone === "dark" ? "text-cream/60" : "text-ink-soft"}`}>none</span>
+                )}
+              </div>
+              <form action={uploadLogoAction} className="flex flex-wrap items-center gap-2">
+                <input type="hidden" name="kind" value={kind} />
+                <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-xs" required />
+                <button className={btnCls}>Upload</button>
+              </form>
+              {src && (
+                <form action={removeLogoAction} className="mt-2">
+                  <input type="hidden" name="kind" value={kind} />
+                  <button className="text-xs text-red-700 underline">Remove</button>
+                </form>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Campaign settings */}
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">Campaign settings</h2>
-        <p className="text-sm text-ink-soft mb-4">
-          Shabbos dates, your web address, and logos are managed by the platform
-          — email {process.env.PLATFORM_CONTACT_EMAIL ?? "hello@kabbalasshabbos.com"} for those.
-        </p>
         <form
           action={saveCampaignAction}
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl"
@@ -782,6 +888,54 @@ export default async function AdminPage() {
           <div className="sm:col-span-2">
             <button className={btnCls}>Save settings</button>
           </div>
+        </form>
+      </section>
+
+      {/* Password */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-3">Admin password</h2>
+        <form action={changePasswordAction} className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+          <label className="text-xs text-ink-soft">
+            Current password
+            <input name="current" type="password" className={inputCls} required />
+          </label>
+          <label className="text-xs text-ink-soft">
+            New password (8+ characters)
+            <input name="next" type="password" className={inputCls} required minLength={8} />
+          </label>
+          <div className="self-end">
+            <button className={btnCls}>Change password</button>
+          </div>
+        </form>
+      </section>
+
+      {/* Support */}
+      <section className="bg-gold-pale/50 rounded-xl border border-gold/40 p-5">
+        <h2 className="font-semibold text-navy mb-1">Need something that isn&rsquo;t here?</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          A custom domain, a new kind of commitment counter, a different email
+          wording, a feature idea — describe it and it lands with the team that
+          builds the platform. Most requests are done within a day or two;
+          you&rsquo;ll get a reply at your organizer email. Or write to{" "}
+          <a href={`mailto:${PLATFORM.contactEmail}`} className="underline">{PLATFORM.contactEmail}</a>{" "}
+          directly.
+        </p>
+        <form action={requestChangeAction} className="space-y-3 max-w-2xl">
+          <input
+            name="email"
+            type="email"
+            defaultValue={shul.contactEmail ?? ""}
+            placeholder="Your email for the reply"
+            className={inputCls}
+          />
+          <textarea
+            name="message"
+            rows={4}
+            className={inputCls}
+            placeholder="What would you like changed or added? The more specific the better — e.g. “Add a counter for ‘pages of Gemara learned’ and show it on the homepage.”"
+            required
+          />
+          <button className={btnCls}>Send request</button>
         </form>
       </section>
     </div>

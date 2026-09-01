@@ -39,13 +39,24 @@ field + per-IP throttle guard against junk.
 Campaign name, season label, partner name, organizer email, **pledge on/off**
 (amount + charity), **raffle on/off** (prize name), directory listing on/off,
 custom "Why we're doing this" text, a homepage **announcement popup**
-(title/text/link — saving re-arms it for every device), and **resources**
-(PDFs/links shown on the homepage and /resources). Everything else they had
-before: commitment list editor, reminders, WhatsApp blast texts, raffle draw,
-merge/delete families, CSV export.
+(title/text/link — saving re-arms it for every device), **resources**
+(PDFs/links shown on the homepage and /resources), **Shabbos dates +
+timezone**, **logo uploads** (stored in the DB, served at `/api/logo/<id>`),
+**their own password**, and a **free-text message** to every family (or only
+those with an open check-in) with `{family}`/`{link}` placeholders.
+Everything else they had before: commitment list editor, reminders, WhatsApp
+blast texts, raffle draw, merge/delete families, CSV export. Only custom
+domains still need the operator (Vercel).
 
 Every piece of pledge/raffle copy on the site, in emails, and in blast texts
 is conditional on those toggles, and the raffle prize is never hardcoded.
+
+## Support
+
+Shuls ask for anything the admin page can't do via the form at the bottom
+of `/admin` (or support@kabbalasshabbos.com). An hourly Routine reads that
+inbox, makes code changes as pull requests, and drafts replies. Full
+description and setup: [`SUPPORT.md`](SUPPORT.md).
 
 ## Operator admin (`/platform`)
 
@@ -62,7 +73,7 @@ partner; reset a shul's admin password; add a shul by hand.
 | `CRON_SECRET` | protects the cron routes | unchanged |
 | `PLATFORM_ADMIN_PASSWORD` | opens `/platform` | strong secret |
 | `PLATFORM_NOTIFY_EMAIL` | gets a note on every new shul | your email |
-| `PLATFORM_CONTACT_EMAIL` | shown on the site as the contact address | `hello@kabbalasshabbos.com` |
+| `PLATFORM_CONTACT_EMAIL` | support address shown on the site and used by the /admin request form | `support@kabbalasshabbos.com` |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | the wildcard parent domain | `kabbalasshabbos.com` |
 | `DEFAULT_SHUL_SLUG` | optional: tenant for localhost / Vercel preview URLs | `adas` (leave unset to preview the national site) |
 

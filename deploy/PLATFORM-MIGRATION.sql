@@ -68,6 +68,20 @@ CREATE INDEX "Resource_shulId_idx" ON "Resource"("shulId");
 ALTER TABLE "Resource" ADD CONSTRAINT "Resource_shulId_fkey"
   FOREIGN KEY ("shulId") REFERENCES "Shul"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- Uploaded logos, served at /api/logo/<id>
+CREATE TABLE "ShulAsset" (
+    "id" TEXT NOT NULL,
+    "shulId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "mime" TEXT NOT NULL,
+    "data" BYTEA NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ShulAsset_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "ShulAsset_shulId_idx" ON "ShulAsset"("shulId");
+ALTER TABLE "ShulAsset" ADD CONSTRAINT "ShulAsset_shulId_fkey"
+  FOREIGN KEY ("shulId") REFERENCES "Shul"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- Adas row. adminHash = sha256('elul:adas:<ADMIN PASSWORD>') — compute it
 -- with:  echo -n 'elul:adas:YOURPASSWORD' | sha256sum
 -- and replace REPLACE_WITH_ADMIN_HASH below. Charity/pledge/campaign name

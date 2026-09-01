@@ -393,3 +393,61 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
 export async function runCheckinReminders(): Promise<ReminderRunResult> {
   return forEachShul(runCheckinForShul);
 }
+
+/**
+ * A one-off message written by the shul's admin, sent to every household
+ * (or only those with an open check-in). `{link}` and `{family}` in the
+ * text are filled in per household. Each send gets its own log kind so a
+ * second press with the same text only reaches anyone missed.
+ */
+export async function runCustomBlastForShul(
+  shul: Shul,
+  subject: string,
+  text: string,
+  audience: "all" | "unchecked"
+): Promise<ReminderRunResult> {
+  const campaign = campaignOf(shul);
+  const week = Math.max(1, lastShabbosWeek(campaign));
+  const kind = `custom_${Buffer.from(subject + text).toString("base64url").slice(0, 24)}`;
+
+  const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
+    include: { members: { include: { goals: true } } },
+  });
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind, householdId: { in: households.map((h) => h.id) } },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  let sent = 0;
+  let skipped = 0;
+  const details: string[] = [];
+  const targets = households.filter((h) => {
+    if (h.members.length === 0) return false;
+    if (audience === "unchecked") {
+      const open = h.members.some((m) => m.goals.some((g) => g.week === week && !g.checkedInAt));
+      if (!open) return false;
+    }
+    if (alreadySent.has(h.id)) {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  await inBatches(targets, 8, async (h) => {
+    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const family = h.familyName ? `The ${h.familyName} Family` : "Your family";
+    const body = text.replace(/\{link\}/g, link).replace(/\{family\}/g, family);
+    const finalText = body.includes(link) ? body : `${body}\n\nYour family page: ${link}`;
+    const channel = await sendToHousehold(h, { subject, text: finalText }, kind, week);
+    if (channel) {
+      sent++;
+      details.push(`household ${h.id} via ${channel}`);
+    }
+  });
+  return { week, sent, skipped, details };
+}

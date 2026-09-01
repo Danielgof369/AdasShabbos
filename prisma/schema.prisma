@@ -64,6 +64,22 @@ model Shul {
   suggestions Suggestion[]
   raffleDraws RaffleDraw[]
   resources   Resource[]
+  assets      ShulAsset[]
+}
+
+// Uploaded images (logos) — served at /api/logo/<id>. Kept out of the Shul
+// row so tenant lookups stay light.
+model ShulAsset {
+  id        String   @id @default(cuid())
+  shulId    String
+  kind      String // "logoDark" | "logoLight" | "partnerLogoDark" | "partnerLogoLight"
+  mime      String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  shul Shul @relation(fields: [shulId], references: [id], onDelete: Cascade)
+
+  @@index([shulId])
 }
 
 // Downloadable/linkable resources a shul offers (PDFs, divrei Torah, guides).

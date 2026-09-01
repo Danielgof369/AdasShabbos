@@ -281,3 +281,114 @@ export async function mergeHouseholdsAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/families");
 }
+
+// ---------- self-service: schedule, logos, password, custom blasts, support ----------
+
+import { runCustomBlastForShul } from "@/lib/reminders";
+import { shulAdminHash } from "@/lib/adminAuth";
+import { sendPlatformEmail } from "@/lib/messaging";
+import { shulBaseUrl } from "@/lib/tenant";
+import { PLATFORM, TIMEZONES, isIsoDate, utcOffsetOn } from "@/lib/platform";
+
+export async function saveScheduleAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const dates = [
+    ...new Set(
+      String(formData.get("shabbosDates") ?? "")
+        .split(/[,\s]+/)
+        .map((d) => d.trim())
+        .filter(Boolean)
+    ),
+  ].sort();
+  if (dates.length < 1 || dates.length > 12) throw new Error("Between 1 and 12 Shabbos dates");
+  for (const d of dates) {
+    if (!isIsoDate(d)) throw new Error(`${d} is not a date (use YYYY-MM-DD)`);
+    if (new Date(`${d}T12:00:00Z`).getUTCDay() !== 6) throw new Error(`${d} is not a Saturday`);
+  }
+  const timezone = text(formData, "timezone", 60);
+  if (!TIMEZONES.some((t) => t.value === timezone)) throw new Error("Pick a timezone");
+  await prisma.shul.update({
+    where: { id: shul.id },
+    data: { shabbosDates: dates.join(","), timezone, tzOffset: utcOffsetOn(timezone, dates[0]) },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+const LOGO_KINDS = ["logoDark", "logoLight", "partnerLogoDark", "partnerLogoLight"] as const;
+type LogoKind = (typeof LOGO_KINDS)[number];
+const LOGO_MIMES = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
+
+export async function uploadLogoAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const kind = text(formData, "kind", 30) as LogoKind;
+  if (!LOGO_KINDS.includes(kind)) return;
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) throw new Error("Choose an image file");
+  if (!LOGO_MIMES.has(file.type)) throw new Error("PNG, JPEG, WebP or SVG only");
+  if (file.size > 600 * 1024) throw new Error("Keep the image under 600 KB");
+  const data = Buffer.from(await file.arrayBuffer());
+  const asset = await prisma.shulAsset.create({
+    data: { shulId: shul.id, kind, mime: file.type, data },
+  });
+  // Drop the previous upload for this slot, if any.
+  await prisma.shulAsset.deleteMany({ where: { shulId: shul.id, kind, id: { not: asset.id } } });
+  await prisma.shul.update({ where: { id: shul.id }, data: { [kind]: `/api/logo/${asset.id}` } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function removeLogoAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const kind = text(formData, "kind", 30) as LogoKind;
+  if (!LOGO_KINDS.includes(kind)) return;
+  await prisma.shulAsset.deleteMany({ where: { shulId: shul.id, kind } });
+  await prisma.shul.update({ where: { id: shul.id }, data: { [kind]: null } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function changePasswordAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("next") ?? "");
+  if (shulAdminHash(shul.slug, current) !== shul.adminHash) throw new Error("Current password is wrong");
+  if (next.length < 8) throw new Error("New password needs 8+ characters");
+  const adminHash = shulAdminHash(shul.slug, next);
+  await prisma.shul.update({ where: { id: shul.id }, data: { adminHash } });
+  await grantAdmin({ ...shul, adminHash }, next); // keep this browser logged in
+  revalidatePath("/admin");
+}
+
+export async function sendCustomBlastAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const subject = text(formData, "subject", 120);
+  const body = text(formData, "body", 3000);
+  const audience = formData.get("audience") === "unchecked" ? "unchecked" : "all";
+  if (!subject || !body) throw new Error("Subject and message are required");
+  await runCustomBlastForShul(shul, subject, body, audience);
+  revalidatePath("/admin");
+}
+
+export async function requestChangeAction(formData: FormData) {
+  const shul = await requireAdmin();
+  const message = text(formData, "message", 4000);
+  const from = text(formData, "email", 120) || shul.contactEmail || "";
+  if (!message) throw new Error("Describe what you need");
+  const ok = await sendPlatformEmail(
+    [PLATFORM.contactEmail],
+    `[${shul.slug}] Change request from ${shul.name}`,
+    [
+      `Shul: ${shul.name} (${shul.slug}) — ${shulBaseUrl(shul)}`,
+      `From: ${shul.contactName ?? ""} <${from}>`,
+      `Admin page: ${shulBaseUrl(shul)}/admin`,
+      ``,
+      `Request:`,
+      message,
+    ].join("\n")
+  );
+  if (!ok && process.env.NODE_ENV === "production") {
+    throw new Error("Couldn't send just now — email us directly instead");
+  }
+  revalidatePath("/admin");
+}

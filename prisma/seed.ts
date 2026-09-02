@@ -100,7 +100,7 @@ async function main() {
         state: "IL",
         contactName: "Demo Organizer",
         contactEmail: "demo@example.com",
-        campaignName: "The Kabalas Shabbos Initiative",
+        campaignName: "Kabalos Shabbos",
         seasonLabel: "Elul 5786",
         shabbosDates: "2026-09-05,2026-09-12,2026-09-19",
         tzOffset: "-05:00",

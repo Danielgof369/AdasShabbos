@@ -63,7 +63,7 @@ Routine's prompt once the pipeline has earned trust.
 - Never push to the production branch directly. Never touch secrets or
   another shul's data. Never send email; only drafts.
 - Reply drafts: warm, short, in the requester's language; say what was done
-  or when it will land; sign as The Kabalas Shabbos Initiative.
+  or when it will land; sign as Kabalos Shabbos.
 
 ## Escalations the agent can't do
 

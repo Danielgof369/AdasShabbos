@@ -7,7 +7,7 @@ import ShulDirectory from "@/components/national/ShulDirectory";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Find your shul | The Kabalas Shabbos Initiative",
+  title: "Find your shul | Kabalos Shabbos",
 };
 
 export default async function ShulsPage() {

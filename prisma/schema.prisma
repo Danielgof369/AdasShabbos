@@ -25,7 +25,7 @@ model Shul {
   contactName  String?
   contactEmail String?
 
-  campaignName String @default("The Kabalas Shabbos Initiative") // shown in the header
+  campaignName String @default("Kabalos Shabbos") // shown in the header
   seasonLabel  String @default("Elul 5786") // hero kicker, e.g. "Elul 5786"
 
   // Optional program features — each shul turns these on or off.

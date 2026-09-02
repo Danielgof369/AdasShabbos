@@ -146,6 +146,7 @@ ALTER TABLE "Suggestion" ALTER COLUMN "shulId" DROP DEFAULT;
 ALTER TABLE "Suggestion" DROP COLUMN IF EXISTS "audience";
 ALTER TABLE "Suggestion" ADD COLUMN "tier" TEXT NOT NULL DEFAULT 'individual';
 ALTER TABLE "Member" ADD COLUMN "avatar" TEXT;
+ALTER TABLE "Household" ADD COLUMN "shulNote" TEXT;
 CREATE INDEX "Suggestion_shulId_idx" ON "Suggestion"("shulId");
 ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_shulId_fkey"
   FOREIGN KEY ("shulId") REFERENCES "Shul"("id") ON DELETE CASCADE ON UPDATE CASCADE;

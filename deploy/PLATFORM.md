@@ -21,10 +21,13 @@ Resolution is in `lib/tenant.ts`: custom domain → subdomain → bare root
 
 ## National signup (`/join`) — the main path
 
-Families sign up on the national site: pick their shul from the list (or
-add it: name + city, created on the spot as a **national shul**, `hasSite =
-false`, approved and listed, seeded with the program's commitment list),
-then the same family form as a shul site. Their link is
+Families sign up on the national site: pick their shul from the list, or
+sign up on their own ("Don't see your shul?") and type their shul's name
+as a note. Nobody can create a shul from the public site. Solo signups
+attach to an unlisted catch-all shul (`individuals`); at `/platform` the
+"shul requests" section groups those notes and one click creates the real
+shul (`hasSite = false`, listed, seeded with the program's list) and moves
+the families onto it — or moves them into an existing shul. Their link is
 `kabbolasshabbos.com/c/<token>`; every shul has a page at `/s/<slug>`
 showing families, streaks, counters, and the kehilla kabbolos. Reminders,
 check-ins, chasers, and housekeeping work the same; national shuls just

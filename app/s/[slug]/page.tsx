@@ -22,7 +22,7 @@ export default async function ShulPage({ params }: { params: Promise<{ slug: str
   if (await currentShul()) redirect(`${rootBaseUrl()}/s/${(await params).slug}`);
   const { slug } = await params;
   const shul = await prisma.shul.findUnique({ where: { slug } });
-  if (!shul || !shul.active || !shul.approved) notFound();
+  if (!shul || !shul.active || !shul.approved || !shul.listed) notFound();
 
   const campaign = campaignOf(shul);
   const week = activeWeek(campaign);

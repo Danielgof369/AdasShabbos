@@ -13,7 +13,8 @@ import { forget } from "@/lib/memo";
 import { sendPlatformEmail } from "@/lib/messaging";
 import { shulBaseUrl } from "@/lib/tenant";
 import { PLATFORM, TIMEZONES, isIsoDate, utcOffsetOn } from "@/lib/platform";
-import { saveSeason } from "@/lib/season";
+import { saveSeason, getSeason } from "@/lib/season";
+import { getIndividualsShul } from "@/lib/individuals";
 import { cleanSlug as platformSlug, slugProblem } from "@/lib/platform";
 
 export async function platformLoginAction(formData: FormData) {
@@ -132,6 +133,57 @@ export async function saveSeasonAction(formData: FormData) {
   forget("national-stats");
   revalidatePath("/platform");
   revalidatePath("/");
+}
+
+/** Turn the "my shul is…" notes from individual signups into a real shul
+ * and move those families onto it. */
+export async function createShulFromRequestsAction(formData: FormData) {
+  await requirePlatform();
+  const note = String(formData.get("note") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
+  const city = String(formData.get("city") ?? "").trim().slice(0, 80);
+  const state = String(formData.get("state") ?? "").trim().toUpperCase().slice(0, 2) || null;
+  if (!note || !name || !city) throw new Error("Name and city are required");
+  const individuals = await getIndividualsShul();
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let slug = platformSlug(`${name} ${city}`).slice(0, 40).replace(/-+$/, "");
+  if (slugProblem(slug)) slug = platformSlug(`shul-${name}`);
+  for (let n = 2; await prisma.shul.findUnique({ where: { slug } }); n++) slug = `${platformSlug(name).slice(0, 34)}-${n}`;
+  const season = await getSeason();
+  const shul = await prisma.shul.create({
+    data: {
+      slug, name, city, state,
+      hasSite: false, approved: true, listed: true,
+      campaignName: PLATFORM.name, seasonLabel: season.label,
+      shabbosDates: season.dates.join(","), timezone: season.timezone,
+      tzOffset: utcOffsetOn(season.timezone, season.dates[0]),
+      pledgeEnabled: false, pledgePerSignup: 0, raffleEnabled: false,
+      adminHash: shulAdminHash(slug, `${slug}-${Date.now()}-${Math.random()}`),
+      suggestions: { createMany: { data: SUGGESTION_TEMPLATE.map((t) => ({ ...t })) } },
+    },
+  });
+  const households = await prisma.household.findMany({ where: { shulId: individuals.id, shulNote: { not: null } } });
+  const ids = households.filter((h) => norm(h.shulNote ?? "") === norm(note)).map((h) => h.id);
+  if (ids.length) await prisma.household.updateMany({ where: { id: { in: ids } }, data: { shulId: shul.id } });
+  forget("directory");
+  forget("national-stats");
+  revalidatePath("/platform");
+  revalidatePath("/");
+}
+
+export async function moveRequestsToShulAction(formData: FormData) {
+  await requirePlatform();
+  const note = String(formData.get("note") ?? "").trim();
+  const shulId = String(formData.get("shulId") ?? "");
+  if (!note || !shulId) return;
+  const individuals = await getIndividualsShul();
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const households = await prisma.household.findMany({ where: { shulId: individuals.id, shulNote: { not: null } } });
+  const ids = households.filter((h) => norm(h.shulNote ?? "") === norm(note)).map((h) => h.id);
+  if (ids.length) await prisma.household.updateMany({ where: { id: { in: ids } }, data: { shulId } });
+  forget("directory");
+  forget("national-stats");
+  revalidatePath("/platform");
 }
 
 export async function approveShulAction(formData: FormData) {

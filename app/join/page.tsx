@@ -6,6 +6,7 @@ import { currentShul } from "@/lib/tenant";
 import { PLATFORM } from "@/lib/platform";
 import { pluralWeeks } from "@/lib/copy";
 import ShulPicker from "@/components/national/ShulPicker";
+import { getIndividualsShul } from "@/lib/individuals";
 import SignupForm from "@/app/signup/SignupForm";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,19 @@ export const metadata = { title: "Sign up your family | Kabbolas Shabbos" };
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shul?: string }>;
+  searchParams: Promise<{ shul?: string; solo?: string }>;
 }) {
   // On a shul's own site, signup lives at /signup.
   if (await currentShul()) redirect("/signup");
-  const { shul: slug } = await searchParams;
+  const { shul: slug, solo } = await searchParams;
 
-  const shul = slug
-    ? await prisma.shul.findFirst({ where: { slug, active: true, approved: true } })
-    : null;
+  // Signing up on your own: the catch-all shul, plus a "my shul is…" note
+  // the operator uses to set the real shul up later.
+  const shul = solo
+    ? await getIndividualsShul()
+    : slug
+      ? await prisma.shul.findFirst({ where: { slug, active: true, approved: true, listed: true } })
+      : null;
 
   if (!shul) {
     const shuls = await prisma.shul.findMany({
@@ -57,22 +62,28 @@ export default async function JoinPage({
       <p className="text-gold font-display tracking-widest uppercase text-sm mb-2">
         <Link href="/join" className="hover:underline">← Different shul</Link>
       </p>
-      <h1 className="font-display text-3xl text-navy mb-2">Join with {shul.name}</h1>
+      <h1 className="font-display text-3xl text-navy mb-2">{solo ? "Sign up your family" : `Join with ${shul.name}`}</h1>
       <p className="text-ink-soft mb-8">
-        {shul.city}{shul.state ? `, ${shul.state}` : ""} &middot; Sign up your whole household — each person takes on one or
+        {solo ? "" : `${shul.city}${shul.state ? `, ${shul.state}` : ""} · `}Sign up your whole household — each person takes on one or
         more commitments and holds them for the {pluralWeeks(campaign.weeks)} of {campaign.seasonLabel}
         {campaign.weeks > 1 ? (
           <>, {formatShabbosDate(campaign, shabbosOfWeek(campaign, 1))} through {formatShabbosDate(campaign, shabbosOfWeek(campaign, campaign.weeks))}</>
         ) : (
           <> on {formatShabbosDate(campaign, shabbosOfWeek(campaign, 1))}</>
         )}
-        . Your family shows up on <Link href={`/s/${shul.slug}`} className="underline">the {shul.name} page</Link>.
+        {solo ? (
+          <>. Tell us your shul below and we&rsquo;ll set up its page; your family moves onto it automatically.</>
+        ) : (
+          <>. Your family shows up on <Link href={`/s/${shul.slug}`} className="underline">the {shul.name} page</Link>.</>
+        )}
       </p>
       <SignupForm
         suggestions={suggestions}
         charityName={campaign.charityName}
         pledge={campaign.pledgePerSignup}
         shulId={shul.id}
+        askShul={!!solo}
+        defaultShulNote={solo && slug ? slug : ""}
       />
     </div>
   );

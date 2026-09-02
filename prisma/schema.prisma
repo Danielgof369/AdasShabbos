@@ -115,6 +115,7 @@ model Household {
   email      String?
   email2     String? // additional reminder recipients (e.g. both parents)
   email3     String?
+  shulNote   String? // "my shul is…" typed by an individual signup (not a directory entry)
   createdAt  DateTime @default(now())
 
   smsOptIn   Boolean @default(true)

@@ -86,8 +86,8 @@ export type NationalStats = {
  * Cached for a minute per server instance — it's on the busiest page. */
 export const getNationalStats = memo("national-stats", 60_000, async (): Promise<NationalStats> => {
   const shuls = await prisma.shul.findMany({
-    where: { active: true, approved: true, listed: true },
-    select: { id: true, pledgeEnabled: true, pledgePerSignup: true },
+    where: { active: true, approved: true },
+    select: { id: true, pledgeEnabled: true, pledgePerSignup: true, listed: true },
   });
   const ids = shuls.map((s) => s.id);
   const inShuls = { member: { household: { shulId: { in: ids } } } };
@@ -115,5 +115,5 @@ export const getNationalStats = memo("national-stats", 60_000, async (): Promise
     if (s.pledgeEnabled) pledgeTotal += n * s.pledgePerSignup;
   }
   const highlights = await highlightsFromCounts(doneGoals);
-  return { shuls: shuls.length, households, members, kids, checkins, pledgeTotal, highlights };
+  return { shuls: shuls.filter((s) => s.listed).length, households, members, kids, checkins, pledgeTotal, highlights };
 });

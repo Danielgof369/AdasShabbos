@@ -21,6 +21,7 @@ export type SignupBody = {
   emails?: unknown;
   members?: unknown;
   shulId?: unknown;
+  shulNote?: unknown;
 };
 
 type MemberInput = {
@@ -66,6 +67,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
     return fail({ error: "Please provide a valid email — that's where your weekly reminders go." });
   }
 
+  const shulNote = typeof body.shulNote === "string" ? body.shulNote.trim().slice(0, 120) || null : null;
   const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
   const phone = rawPhone ? normalizePhone(rawPhone) : null;
   if (rawPhone && !phone) {
@@ -174,6 +176,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
             email,
             email2: emails[1] ?? null,
             email3: emails[2] ?? null,
+            shulNote,
           },
         });
       } catch (e) {
@@ -199,6 +202,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
         email: existing.email ?? fresh.shift() ?? null,
         email2: existing.email2 ?? fresh.shift() ?? null,
         email3: existing.email3 ?? fresh.shift() ?? null,
+        shulNote: existing.shulNote ?? shulNote,
       },
     });
   }

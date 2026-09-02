@@ -47,7 +47,7 @@ export default async function HouseholdPage({
       <h1 className="font-display text-3xl text-navy mb-1">
         {view.familyName ? `The ${view.familyName} Family` : "Your family's check-in"}
       </h1>
-      {national && (
+      {national && shul.listed && (
         <p className="text-sm text-gold font-semibold mb-1">
           <Link href={`/s/${shul.slug}`} className="hover:underline">{shul.name}</Link>
           {shul.city ? <span className="text-ink-soft font-normal"> · {shul.city}</span> : null}

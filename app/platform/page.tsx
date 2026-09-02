@@ -8,7 +8,10 @@ import {
   updateShulAction,
   approveShulAction,
   saveSeasonAction,
+  createShulFromRequestsAction,
+  moveRequestsToShulAction,
 } from "./actions";
+import { getIndividualsShul } from "@/lib/individuals";
 import { getSeason } from "@/lib/season";
 import { TIMEZONES } from "@/lib/platform";
 
@@ -43,6 +46,18 @@ export default async function PlatformPage() {
   }
 
   const season = await getSeason();
+  const individuals = await getIndividualsShul();
+  const requests = await prisma.household.findMany({
+    where: { shulId: individuals.id, shulNote: { not: null } },
+    select: { shulNote: true, familyName: true },
+  });
+  const requestGroups = [...requests.reduce((m, h) => {
+    const key = (h.shulNote ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const g = m.get(key) ?? { note: h.shulNote ?? "", families: [] as string[] };
+    g.families.push(h.familyName ?? "?");
+    return m.set(key, g);
+  }, new Map<string, { note: string; families: string[] }>()).values()].sort((a, b) => b.families.length - a.families.length);
+  const soloCount = await prisma.household.count({ where: { shulId: individuals.id } });
   const shuls = await prisma.shul.findMany({
     orderBy: { createdAt: "asc" },
     include: {
@@ -102,6 +117,49 @@ export default async function PlatformPage() {
             <button className={btnCls}>Save season</button>
           </div>
         </form>
+      </section>
+
+      {/* Shul requests from individual signups */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">
+          Individual signups ({soloCount}) &middot; shul requests ({requestGroups.length})
+        </h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Nobody can add a shul from the public site. People who sign up on
+          their own tell us their shul; create it here (or pick an existing
+          one) and those families move onto its page automatically.
+        </p>
+        {requestGroups.length === 0 ? (
+          <p className="text-sm text-ink-soft italic">No shul requests yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {requestGroups.map((g) => (
+              <div key={g.note} className="rounded-lg border border-parchment bg-cream/50 p-4">
+                <p className="font-medium text-navy">&ldquo;{g.note}&rdquo; <span className="text-ink-soft font-normal text-sm">· {g.families.length} {g.families.length === 1 ? "family" : "families"}: {g.families.join(", ")}</span></p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  <form action={createShulFromRequestsAction} className="flex flex-wrap gap-2 items-end">
+                    <input type="hidden" name="note" value={g.note} />
+                    <label className="text-xs text-ink-soft flex-1 min-w-40">Create shul<input name="name" defaultValue={g.note} className={inputCls} /></label>
+                    <label className="text-xs text-ink-soft w-28">City<input name="city" className={inputCls} /></label>
+                    <label className="text-xs text-ink-soft w-16">State<input name="state" className={inputCls} /></label>
+                    <button className={btnCls}>Create &amp; move</button>
+                  </form>
+                  <form action={moveRequestsToShulAction} className="flex flex-wrap gap-2 items-end">
+                    <input type="hidden" name="note" value={g.note} />
+                    <label className="text-xs text-ink-soft flex-1 min-w-40">Or move into an existing shul
+                      <select name="shulId" className={inputCls}>
+                        {shuls.filter((s) => s.listed && s.slug !== "individuals").map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} · {s.city}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className={btnCls}>Move</button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Awaiting approval */}

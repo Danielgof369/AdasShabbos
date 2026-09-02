@@ -31,13 +31,19 @@ export default function SignupForm({
   charityName = "Tomchei Shabbos",
   pledge = 5,
   shulId,
+  askShul = false,
+  defaultShulNote = "",
 }: {
   suggestions: SuggestionOption[];
   charityName?: string;
   pledge?: number;
   /** National signup: the shul the family picked. Omitted on a shul's own site. */
   shulId?: string;
+  /** Individual signup: ask which shul they belong to (free text). */
+  askShul?: boolean;
+  defaultShulNote?: string;
 }) {
+  const [shulNote, setShulNote] = useState(defaultShulNote ?? "");
   const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
   const [emails, setEmails] = useState<string[]>([""]);
@@ -102,6 +108,7 @@ export default function SignupForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...(shulId ? { shulId } : {}),
+          ...(askShul ? { shulNote: shulNote.trim() } : {}),
           familyName: familyName.trim(),
           phone: phone.trim() || null,
           emails: emails.map((e) => e.trim()).filter(Boolean),
@@ -214,6 +221,21 @@ export default function SignupForm({
             onChange={(e) => setFamilyName(e.target.value)}
             className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
           />
+          {askShul && (
+            <div>
+              <input
+                type="text"
+                value={shulNote}
+                onChange={(e) => setShulNote(e.target.value)}
+                placeholder="Your shul (optional) — e.g. Young Israel of Example, Baltimore"
+                maxLength={120}
+                className="w-full rounded-lg border border-gold-soft bg-cream px-4 py-3 outline-none focus:border-gold"
+              />
+              <p className="text-xs text-ink-soft mt-1">
+                We set shul pages up by hand so the list stays real. Yours will appear soon, with your family on it.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

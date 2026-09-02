@@ -131,6 +131,7 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       memberId: m.id,
       name: m.name,
       category,
+      avatar: m.avatar ?? null,
       isChild: isChildCategory(category),
       streak,
       commitments,

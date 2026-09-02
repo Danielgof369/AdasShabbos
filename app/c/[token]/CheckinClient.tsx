@@ -237,6 +237,9 @@ export default function CheckinClient({
           <div className="flex items-start gap-4 mb-4">
             <Avatar
               category={m.category}
+              avatar={m.avatar}
+              seed={m.memberId}
+              title
               celebrating={!!celebrating[m.memberId]}
               className="h-20 w-auto shrink-0"
             />

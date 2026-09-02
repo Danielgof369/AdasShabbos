@@ -134,7 +134,8 @@ model Member {
   householdId String
   name        String
   isChild     Boolean @default(false)
-  gender      String? // "man" | "woman" | "boy" | "girl" — drives avatars
+  gender      String? // "man" | "woman" | "boy" | "girl" — audience + fallback avatar
+  avatar      String? // id from lib/avatars (random at signup, shuffleable)
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   goals     Goal[]

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { audienceMatches, type Category } from "@/lib/categories";
 import Avatar from "@/components/Avatar";
+import { randomAvatar, AVATAR_BY_ID } from "@/lib/avatars";
 import type { SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
   name: string;
   audience: "adult" | "child" | null;
   avatar: Category | null;
+  avatarId: string | null;
   suggestionIds: string[];
   useCustom: boolean;
   customTitle: string;
@@ -18,6 +20,7 @@ const emptyPerson = (): PersonDraft => ({
   name: "",
   audience: null,
   avatar: null,
+  avatarId: null,
   suggestionIds: [],
   useCustom: false,
   customTitle: "",
@@ -105,6 +108,7 @@ export default function SignupForm({
           members: people.map((p) => ({
             name: p.name.trim(),
             category: p.avatar,
+            avatar: p.avatarId,
             suggestionIds: p.suggestionIds,
             customTitle: p.useCustom && p.customTitle.trim() ? p.customTitle.trim() : null,
           })),
@@ -249,7 +253,7 @@ export default function SignupForm({
                 onClick={() =>
                   updatePerson(i, {
                     audience: a,
-                    avatar: null,
+                    ...(() => { const r = randomAvatar(a); return { avatar: r.group, avatarId: r.id }; })(),
                     suggestionIds: [],
                     useCustom: false,
                     customTitle: "",
@@ -266,27 +270,27 @@ export default function SignupForm({
             ))}
           </div>
 
-          {p.audience && (
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-sm text-ink-soft">Their avatar:</span>
-              {(p.audience === "adult"
-                ? (["man", "woman"] as const)
-                : (["boy", "girl"] as const)
-              ).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => updatePerson(i, { avatar: c })}
-                  className={`rounded-xl border p-1.5 transition-colors ${
-                    p.avatar === c
-                      ? "border-gold bg-gold-pale"
-                      : "border-parchment bg-cream hover:border-gold-soft"
-                  }`}
-                  aria-label={c}
-                >
-                  <Avatar category={c} className="h-12 w-auto" />
-                </button>
-              ))}
+          {p.audience && p.avatar && (
+            <div className="flex items-center gap-4 mb-4 rounded-xl border border-parchment bg-cream px-4 py-3">
+              <Avatar category={p.avatar} avatar={p.avatarId} className="h-16 w-auto" title />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-navy">
+                  {p.avatarId ? AVATAR_BY_ID.get(p.avatarId)?.name : "Their avatar"}
+                </p>
+                <p className="text-xs text-ink-soft">
+                  Dealt at random — externals don&rsquo;t matter here, what you take on does.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const r = randomAvatar(p.audience!, p.avatarId ?? undefined);
+                  updatePerson(i, { avatar: r.group, avatarId: r.id });
+                }}
+                className="rounded-lg border border-parchment bg-white px-3 py-2 text-sm hover:border-gold-soft transition-colors whitespace-nowrap"
+              >
+                🎲 Shuffle
+              </button>
             </div>
           )}
 

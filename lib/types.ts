@@ -18,6 +18,7 @@ export type MemberGoalView = {
   memberId: string;
   name: string;
   category: Category;
+  avatar: string | null;
   isChild: boolean;
   /** Consecutive fully-checked-in (on-time) weeks for this person. */
   streak: number;

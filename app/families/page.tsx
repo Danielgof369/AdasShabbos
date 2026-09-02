@@ -30,7 +30,7 @@ export default async function FamiliesPage() {
     .map((h) => ({
       id: h.id,
       name: h.familyName as string,
-      categories: h.members.map((m) => memberCategory(m)),
+      categories: h.members.map((m) => ({ category: memberCategory(m), avatar: m.avatar, seed: m.id })),
       people: h.members.length,
       streak: familyStreakFromGoals(campaign, h.members),
     }))
@@ -64,7 +64,7 @@ export default async function FamiliesPage() {
             >
               <div className="flex -space-x-2 mb-2">
                 {f.categories.slice(0, 6).map((c, i) => (
-                  <Avatar key={i} category={c} className="h-11 w-auto" />
+                  <Avatar key={i} category={c.category} avatar={c.avatar} seed={c.seed} className="h-11 w-auto" title />
                 ))}
                 {f.categories.length > 6 && (
                   <span className="self-end text-xs text-ink-soft pl-2">

@@ -12,6 +12,7 @@ import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
 import { sendToHousehold } from "@/lib/messaging";
 import { pluralWeeks } from "@/lib/copy";
+import { AVATAR_BY_ID } from "@/lib/avatars";
 
 export type SignupBody = {
   familyName?: unknown;
@@ -25,6 +26,7 @@ export type SignupBody = {
 type MemberInput = {
   name?: unknown;
   category?: unknown;
+  avatar?: unknown;
   suggestionIds?: unknown;
   customTitle?: unknown;
 };
@@ -100,6 +102,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
   const cleanMembers: {
     name: string;
     category: "man" | "woman" | "boy" | "girl";
+    avatar: string | null;
     suggestionIds: string[];
     customTitle: string | null;
   }[] = [];
@@ -108,6 +111,9 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
     if (!name) {
       return fail({ error: "Every person needs a first name." });
     }
+    // An avatar id carries its own group; the category falls back to it.
+    const avatarDef = typeof m.avatar === "string" ? AVATAR_BY_ID.get(m.avatar) ?? null : null;
+    if (!isCategory(m.category) && avatarDef) m.category = avatarDef.group;
     if (!isCategory(m.category)) {
       return fail({ error: `Choose adult or child for ${name}.` });
     }
@@ -121,7 +127,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
     if (suggestionIds.length === 0 && !customTitle) {
       return fail({ error: `Pick at least one commitment for ${name}.` });
     }
-    cleanMembers.push({ name, category: m.category, suggestionIds, customTitle });
+    cleanMembers.push({ name, category: m.category, avatar: avatarDef?.id ?? null, suggestionIds, customTitle });
   }
 
   // Reuse an existing household for the same contact so families can add
@@ -205,6 +211,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
         householdId: household.id,
         name: m.name,
         gender: m.category,
+        avatar: m.avatar,
         isChild: isChildCategory(m.category),
       },
     });

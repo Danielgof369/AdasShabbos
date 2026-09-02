@@ -84,6 +84,13 @@ CREATE INDEX "ShulAsset_shulId_idx" ON "ShulAsset"("shulId");
 ALTER TABLE "ShulAsset" ADD CONSTRAINT "ShulAsset_shulId_fkey"
   FOREIGN KEY ("shulId") REFERENCES "Shul"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+CREATE TABLE "Setting" (
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Setting_pkey" PRIMARY KEY ("key")
+);
+
 -- Adas row. adminHash = sha256('elul:adas:<ADMIN PASSWORD>') — compute it
 -- with:  echo -n 'elul:adas:YOURPASSWORD' | sha256sum
 -- and replace REPLACE_WITH_ADMIN_HASH below. Charity/pledge/campaign name

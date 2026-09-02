@@ -7,7 +7,10 @@ import {
   createShulAction,
   updateShulAction,
   approveShulAction,
+  saveSeasonAction,
 } from "./actions";
+import { getSeason } from "@/lib/season";
+import { TIMEZONES } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +42,7 @@ export default async function PlatformPage() {
     );
   }
 
+  const season = await getSeason();
   const shuls = await prisma.shul.findMany({
     orderBy: { createdAt: "asc" },
     include: {
@@ -62,6 +66,43 @@ export default async function PlatformPage() {
           <button className="text-sm text-ink-soft underline hover:text-navy">Log out</button>
         </form>
       </div>
+
+      {/* National season */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">National season</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          The label and Shabbos dates every shul added from the national signup
+          runs on ({shuls.filter((s) => !s.hasSite).length} national{" "}
+          {shuls.filter((s) => !s.hasSite).length === 1 ? "shul" : "shuls"} right now). Shuls with their own
+          site keep their own dates. Families who join mid-season get the
+          remaining Shabbosos.
+        </p>
+        <form action={saveSeasonAction} className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+          <label className="text-xs text-ink-soft">
+            Season label
+            <input name="label" defaultValue={season.label} className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft sm:col-span-2">
+            Shabbos dates (YYYY-MM-DD, comma or newline separated, Saturdays)
+            <textarea name="dates" rows={2} defaultValue={season.dates.join(", ")} className={inputCls} />
+          </label>
+          <label className="text-xs text-ink-soft">
+            Timezone for date labels
+            <select name="timezone" defaultValue={season.timezone} className={inputCls}>
+              {TIMEZONES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink self-end pb-2 sm:col-span-2">
+            <input type="checkbox" name="applyToNational" defaultChecked />
+            Also update every existing national shul to these dates
+          </label>
+          <div className="sm:col-span-3">
+            <button className={btnCls}>Save season</button>
+          </div>
+        </form>
+      </section>
 
       {/* Awaiting approval */}
       {shuls.some((s) => !s.approved) && (

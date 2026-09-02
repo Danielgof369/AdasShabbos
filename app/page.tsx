@@ -19,6 +19,7 @@ import { PLATFORM } from "@/lib/platform";
 import JoinNudge from "@/components/JoinNudge";
 import HomePopups from "@/components/HomePopups";
 import NationalHome from "@/components/national/NationalHome";
+import { getSeason } from "@/lib/season";
 import PendingApproval from "@/components/PendingApproval";
 import { isAdmin } from "@/lib/adminAuth";
 
@@ -59,8 +60,8 @@ export default async function Home() {
   if (!shul) {
     const missing = await unknownSubdomain();
     if (missing) return <UnclaimedShul slug={missing} />;
-    const [stats, shuls] = await Promise.all([getNationalStats(), listDirectoryShuls()]);
-    return <NationalHome stats={stats} shuls={shuls} />;
+    const [stats, shuls, season] = await Promise.all([getNationalStats(), listDirectoryShuls(), getSeason()]);
+    return <NationalHome stats={stats} shuls={shuls} seasonLabel={season.label} />;
   }
   if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
 

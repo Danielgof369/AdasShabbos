@@ -20,7 +20,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
   );
 }
 
-export default function NationalHome({ stats, shuls }: { stats: NationalStats; shuls: DirectoryShul[] }) {
+export default function NationalHome({ stats, shuls, seasonLabel }: { stats: NationalStats; shuls: DirectoryShul[]; seasonLabel: string }) {
   const live = stats.shuls > 0;
   const partnerDark = partnerLogo("dark");
   const examples = TIERS.map((t) => ({
@@ -46,7 +46,7 @@ export default function NationalHome({ stats, shuls }: { stats: NationalStats; s
             )}
           </div>
           <p className="text-gold-soft font-display tracking-[0.25em] uppercase text-sm mb-5">
-            {PLATFORM.season.label} &middot; in partnership with {PLATFORM.partner.name}
+            {seasonLabel} &middot; in partnership with {PLATFORM.partner.name}
           </p>
           <h1 className="font-display text-4xl sm:text-6xl leading-[1.08] mb-6 max-w-3xl" style={{ textWrap: "balance" }}>
             One small thing for Shabbos.
@@ -55,8 +55,8 @@ export default function NationalHome({ stats, shuls }: { stats: NationalStats; s
           </h1>
           <p className="text-cream/85 text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed">
             Every man, woman and child takes on one extra way to honor Shabbos and holds it
-            for the weeks leading into Rosh Hashanah. Sign up your family, name your shul,
-            and watch your shul&rsquo;s page fill up alongside shuls across the country.
+            every week of the season. Sign up your family, name your shul, and watch your
+            shul&rsquo;s page fill up alongside shuls across the country.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/join" className="bg-gold text-navy-deep font-bold rounded-lg px-8 py-4 text-center text-lg hover:bg-gold-soft transition-colors">

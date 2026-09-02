@@ -14,8 +14,9 @@ export const PLATFORM = {
   /** Program partner shown beside the initiative's logo. */
   partner: { name: "Kedushas Shabbos", logoLight: "/kedushas-shabbos.png", logoDark: "/kedushas-shabbos-white.png" },
   /** Credit line in the national footer. */
-  builder: { name: "The Implementation Squad", url: process.env.BUILDER_URL ?? "https://theimplementationsquad.com" },
-  /** Defaults for shuls that families add from the national signup. */
+  builder: { name: "SHFA.ai", url: process.env.BUILDER_URL ?? "https://shfa.ai" },
+  /** Fallback season for shuls families add from the national signup;
+   * the live values are edited at /platform (see lib/season.ts). */
   season: {
     label: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
     dates: (process.env.NATIONAL_SHABBOS_DATES ?? "2026-09-05,2026-09-19").split(",").map((d) => d.trim()).filter(Boolean),

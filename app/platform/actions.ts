@@ -12,7 +12,8 @@ import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
 import { forget } from "@/lib/memo";
 import { sendPlatformEmail } from "@/lib/messaging";
 import { shulBaseUrl } from "@/lib/tenant";
-import { PLATFORM } from "@/lib/platform";
+import { PLATFORM, TIMEZONES, isIsoDate, utcOffsetOn } from "@/lib/platform";
+import { saveSeason } from "@/lib/season";
 import { cleanSlug as platformSlug, slugProblem } from "@/lib/platform";
 
 export async function platformLoginAction(formData: FormData) {
@@ -107,6 +108,30 @@ export async function createShulAction(formData: FormData) {
   forget("directory");
   forget("national-stats");
   revalidatePath("/platform");
+}
+
+export async function saveSeasonAction(formData: FormData) {
+  await requirePlatform();
+  const label = String(formData.get("label") ?? "").trim().slice(0, 40);
+  const timezone = String(formData.get("timezone") ?? "").trim();
+  const dates = [...new Set(String(formData.get("dates") ?? "").split(/[,\s]+/).map((d) => d.trim()).filter(Boolean))].sort();
+  if (!label || dates.length < 1 || dates.length > 20) throw new Error("Label and 1–20 dates required");
+  for (const d of dates) {
+    if (!isIsoDate(d) || new Date(`${d}T12:00:00Z`).getUTCDay() !== 6) throw new Error(`${d} is not a Saturday (YYYY-MM-DD)`);
+  }
+  if (!TIMEZONES.some((t) => t.value === timezone)) throw new Error("Pick a timezone");
+  await saveSeason({ label, dates, timezone });
+  if (formData.get("applyToNational") === "on") {
+    // Every shul families created on the national site follows the season.
+    await prisma.shul.updateMany({
+      where: { hasSite: false },
+      data: { seasonLabel: label, shabbosDates: dates.join(","), timezone, tzOffset: utcOffsetOn(timezone, dates[0]) },
+    });
+  }
+  forget("directory");
+  forget("national-stats");
+  revalidatePath("/platform");
+  revalidatePath("/");
 }
 
 export async function approveShulAction(formData: FormData) {

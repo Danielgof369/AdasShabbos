@@ -34,9 +34,10 @@ wants its own admin and subdomain goes through `/start` — see below).
 The commitment list (`lib/suggestionTemplate.ts`) is the Kedushas Shabbos
 program in three tiers: **individual** (per person), **family** (adults
 pick for the household), **kehilla** (shown on the shul page; a shul admin
-marks the ones the kehilla took on by making them active). Env defaults for
-national shuls: `NATIONAL_SEASON_LABEL`, `NATIONAL_SHABBOS_DATES`,
-`NATIONAL_TIMEZONE`. Partner logo files: `public/kedushas-shabbos.png` and
+marks the ones the kehilla took on by making them active). The **national season**
+(label, Shabbos dates, timezone) is edited at `/platform` and applied to
+every national shul; `NATIONAL_SEASON_LABEL`, `NATIONAL_SHABBOS_DATES`,
+`NATIONAL_TIMEZONE` are only the first-run defaults. Partner logo files: `public/kedushas-shabbos.png` and
 `public/kedushas-shabbos-white.png` (light and dark grounds); the slots light
 up when the files exist. Footer credit link: `BUILDER_URL`.
 

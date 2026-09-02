@@ -5,6 +5,7 @@ import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
 import { PLATFORM, cleanSlug, slugProblem, utcOffsetOn } from "@/lib/platform";
 import { forget } from "@/lib/memo";
 import { sendPlatformEmail } from "@/lib/messaging";
+import { getSeason } from "@/lib/season";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest) {
   if (slugProblem(slug)) slug = cleanSlug(`shul-${name}`);
   for (let n = 2; await prisma.shul.findUnique({ where: { slug } }); n++) slug = `${cleanSlug(name).slice(0, 34)}-${n}`;
 
-  const dates = PLATFORM.season.dates;
+  const season = await getSeason();
+  const dates = season.dates;
   const shul = await prisma.shul.create({
     data: {
       slug,
@@ -61,10 +63,10 @@ export async function POST(req: NextRequest) {
       approved: true,
       listed: true,
       campaignName: PLATFORM.name,
-      seasonLabel: PLATFORM.season.label,
+      seasonLabel: season.label,
       shabbosDates: dates.join(","),
-      timezone: PLATFORM.season.timezone,
-      tzOffset: utcOffsetOn(PLATFORM.season.timezone, dates[0]),
+      timezone: season.timezone,
+      tzOffset: utcOffsetOn(season.timezone, dates[0]),
       pledgeEnabled: false,
       pledgePerSignup: 0,
       raffleEnabled: false,

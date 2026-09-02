@@ -197,6 +197,13 @@ model RaffleDraw {
   @@unique([shulId, week])
 }
 
+// Platform-wide key/value settings edited at /platform (national season).
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 // Log of every reminder sent, for admin visibility and dedupe.
 // Household ids are globally unique, so this needs no shul column.
 model MessageLog {

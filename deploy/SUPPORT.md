@@ -13,7 +13,7 @@ bottom of `/admin`, or email **support@kabbolasshabbos.com** directly.
 shul admin  ──/admin form or email──▶  support@kabbolasshabbos.com
                                              │ (GoDaddy forwarding)
                                              ▼
-                                   danielsgofman@gmail.com
+                                   daniel@gflowsystems.com
                                              │ hourly Routine (Claude Code, Gmail connector)
                                              ▼
         ┌──────────────────────────────────────────────────────────────┐
@@ -39,7 +39,7 @@ Routine's prompt once the pipeline has earned trust.
 ## One-time setup (Daniel)
 
 1. **Mailbox**: GoDaddy → Email & Office → Email Forwarding → create
-   `support@kabbolasshabbos.com` → forward to `danielsgofman@gmail.com`.
+   `support@kabbolasshabbos.com` → forward to `daniel@gflowsystems.com`.
    (Free with the domain. A Google Workspace mailbox works too.)
 2. **Resend**: `EMAIL_REPLY_TO=support@kabbolasshabbos.com` and
    `PLATFORM_CONTACT_EMAIL=support@kabbolasshabbos.com` in Vercel, so every

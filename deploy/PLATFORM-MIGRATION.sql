@@ -103,7 +103,7 @@ INSERT INTO "Shul"
    "whyText","announcementTitle","announcementBody","announcementUrl","announcementUpdatedAt")
 VALUES
   ('shul_adas','adas','shabboswithadas.com','Adas Torah','LINK Kollel','Los Angeles','CA',
-   'Daniel Gofman','danielsgofman@gmail.com',true,
+   'Daniel Gofman','daniel@gflowsystems.com',true,
    'The Elul Shabbos Project','Elul 5786','pizza party',
    '2026-08-22,2026-08-29,2026-09-05,2026-09-19','-07:00','America/Los_Angeles',
    '/logo.png','/logo-white.png','/link-logo.png','/link-logo-white.png',

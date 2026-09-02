@@ -9,7 +9,7 @@ export const PLATFORM = {
    * reads this inbox — see deploy/SUPPORT.md. */
   contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabbolasshabbos.com",
   /** The platform operator, notified on every self-serve signup. */
-  notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? null,
+  notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? "daniel@gflowsystems.com",
   origin: { shul: "Adas Torah", city: "Los Angeles", season: "Elul 5786" },
   /** Program partner shown beside the initiative's logo. */
   partner: { name: "Kedushas Shabbos", logoLight: "/kedushas-shabbos.png", logoDark: "/kedushas-shabbos-white.png" },

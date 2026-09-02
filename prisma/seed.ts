@@ -118,6 +118,65 @@ async function main() {
       await prisma.resource.create({ data: { shulId: demo.id, ...HELPERS_GUIDE, sortOrder: 1 } });
     }
     console.log(`Demo shul ready: ${demo.name} (${demo.slug})`);
+
+    // National shuls (no site of their own) with sample families, so the
+    // national landing, directory, shul pages and family pages look alive.
+    const nationalDates = process.env.NATIONAL_SHABBOS_DATES ?? "2026-09-05,2026-09-19";
+    const samples: {
+      slug: string; name: string; city: string; state: string;
+      families: [string, [string, string][]][];
+    }[] = [
+      { slug: "young-israel-of-chicago-chicago", name: "Young Israel of Chicago", city: "Chicago", state: "IL", families: [
+        ["Stern", [["Yitzie", "shtreimel-kiddush"], ["Rivky", "tichel-mic"], ["Tzippy", "braids-grapejuice"]]],
+        ["Friedman", [["Ari", "srugi-guitar"], ["Esti", "sheitel-challah"], ["Yaakov", "peyos-lollipop"]]],
+        ["Weiss", [["Shmuel", "nanach-tambourine"], ["Chaim", "cap-gragger"]]],
+        ["Berger", [["Naftali", "velvet-coffee"], ["Gitty", "wrap-cholent"], ["Hindy", "pigtails-sefer"], ["Benny", "toddler-pacifier"]]],
+      ]},
+      { slug: "kehillas-bais-yehuda-baltimore", name: "Kehillas Bais Yehuda", city: "Baltimore", state: "MD", families: [
+        ["Cohen", [["Meir", "fedora-sefer"], ["Yael", "beret-tea"]]],
+        ["Levine", [["Zev", "kippah-sunglasses"], ["Malka", "flowerhat-tambourine"], ["Tzvi", "peyos-lollipop"]]],
+        ["Rubin", [["Yitzy", "blackhat-mic"], ["Adina", "tichel-mic"], ["Rina", "braids-grapejuice"]]],
+      ]},
+    ];
+    for (const sm of samples) {
+      let shul = await prisma.shul.findUnique({ where: { slug: sm.slug } });
+      if (!shul) {
+        shul = await prisma.shul.create({
+          data: {
+            slug: sm.slug, name: sm.name, city: sm.city, state: sm.state,
+            hasSite: false, approved: true, listed: true,
+            campaignName: "Kabalos Shabbos", seasonLabel: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
+            shabbosDates: nationalDates, tzOffset: "-04:00", timezone: "America/New_York",
+            pledgeEnabled: false, pledgePerSignup: 0, raffleEnabled: false,
+            adminHash: shulAdminHash(sm.slug, `demo-${sm.slug}-${Date.now()}`),
+            suggestions: { createMany: { data: SUGGESTION_TEMPLATE.map((t) => ({ ...t })) } },
+          },
+        });
+        const sugg = await prisma.suggestion.findMany({ where: { shulId: shul.id, active: true, tier: { not: "kehilla" } } });
+        const weeks = nationalDates.split(",").length;
+        let n = 0;
+        for (const [family, members] of sm.families) {
+          n++;
+          const h = await prisma.household.create({
+            data: { shulId: shul.id, token: family.toLowerCase() + (sm.slug.includes("baltimore") ? "-b" : ""), familyName: family, email: `${family.toLowerCase()}@example.com` },
+          });
+          for (const [name, avatar] of members) {
+            const isChild = /lollipop|gragger|pigtails|grapejuice|pacifier/.test(avatar);
+            const gender = isChild ? (/pigtails|grapejuice/.test(avatar) ? "girl" : "boy") : (/tichel|sheitel|beret|flowerhat|wrap/.test(avatar) ? "woman" : "man");
+            const m = await prisma.member.create({ data: { householdId: h.id, name, gender, isChild, avatar } });
+            const pool = sugg.filter((s) => (isChild ? s.categories !== "adult" : s.categories !== "child"));
+            const pick = pool[(n * 7 + name.length) % pool.length];
+            for (let w = 1; w <= weeks; w++) {
+              const done = w === 1 && (n + name.length) % 4 !== 0;
+              await prisma.goal.create({ data: { memberId: m.id, week: w, suggestionId: pick.id, checkedInAt: done ? new Date() : null } });
+            }
+          }
+        }
+        // a couple of kehilla kabbolos taken on
+        await prisma.suggestion.updateMany({ where: { shulId: shul.id, tier: "kehilla", sortOrder: { in: [24, 27] } }, data: { active: true } });
+        console.log(`National sample shul ready: ${sm.name}`);
+      }
+    }
   }
 }
 

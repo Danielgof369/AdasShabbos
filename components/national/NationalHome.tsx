@@ -21,7 +21,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 }
 
 export default function NationalHome({ stats, shuls, seasonLabel }: { stats: NationalStats; shuls: DirectoryShul[]; seasonLabel: string }) {
-  const live = stats.shuls > 0;
+  const live = stats.shuls > 0 || stats.members > 0;
   const partnerDark = partnerLogo("dark");
   const examples = TIERS.map((t) => ({
     ...t,

@@ -1,5 +1,5 @@
 /**
- * Kabalos Shabbos commitment list — in partnership with
+ * Kabbolas Shabbos commitment list — in partnership with
  * Kedushas Shabbos — copied into every newly created shul. Three tiers:
  *   individual — one person takes it on (shown per person at signup)
  *   family     — the household together (adults pick it at signup)

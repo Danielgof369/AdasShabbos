@@ -36,6 +36,7 @@ async function main() {
       customDomain: "shabboswithadas.com",
       name: "Adas Torah",
       approved: true,
+      listed: false, // a fresh database starts with an empty directory
       partnerName: "LINK Kollel",
       city: "Los Angeles",
       state: "CA",
@@ -87,8 +88,9 @@ async function main() {
   }
   console.log(`Shul ready: ${adas.name} (${adas.slug})`);
 
-  // Optional demo tenant for local multi-shul testing: SEED_DEMO=1
-  if (process.env.SEED_DEMO) {
+  // Sample data for local testing and screenshots only: SEED_SAMPLES=1.
+  // Never set this on a deployed database — the directory should start empty.
+  if (process.env.SEED_SAMPLES) {
     const demo = await prisma.shul.upsert({
       where: { slug: "demo" },
       update: {},

@@ -178,7 +178,7 @@ their `/platform` entry.
 sed -i 's/provider = "postgresql"/provider = "sqlite"/' prisma/schema.prisma
 rm -f prisma/dev.db
 DATABASE_URL="file:./dev.db" npx prisma db push --skip-generate && npx prisma generate
-DATABASE_URL="file:./dev.db" SEED_DEMO=1 SEED_ADMIN_PASSWORD=adas-pass npx prisma db seed
+DATABASE_URL="file:./dev.db" SEED_SAMPLES=1 SEED_ADMIN_PASSWORD=adas-pass npx prisma db seed
 DATABASE_URL="file:./dev.db" NEXT_PUBLIC_ROOT_DOMAIN=localhost PLATFORM_ADMIN_PASSWORD=plat npm run build
 DATABASE_URL="file:./dev.db" NEXT_PUBLIC_ROOT_DOMAIN=localhost PLATFORM_ADMIN_PASSWORD=plat PORT=3111 npm run start -- -p 3111
 # http://localhost:3111 = national · http://adas.localhost:3111 · http://demo.localhost:3111

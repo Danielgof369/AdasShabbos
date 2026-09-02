@@ -1,9 +1,10 @@
 # A live demo before the domain (Vercel + Neon, ~10 minutes)
 
 Make a second Vercel project from the same repo, pointed at the platform
-branch, with its own empty Neon database. The build seeds it with sample
-shuls and families, so you get a real, clickable site at a `*.vercel.app`
-address without touching Adas or the domain. When the domain is ready you
+branch, with its own empty Neon database. The build creates the tables and
+the commitment list, so you get a real, clickable site at a `*.vercel.app`
+address without touching Adas or the domain. The directory starts empty;
+shuls appear as families add them. When the domain is ready you
 attach it to this same project — the demo *becomes* production.
 
 ## 1. Neon: a database for the demo
@@ -25,8 +26,7 @@ already connected) → Project name **`kabalos-shabbos`**.
 | `AUTH_SECRET` | 32+ random characters |
 | `CRON_SECRET` | 32+ random characters |
 | `DB_SETUP_ON_BUILD` | `1` |
-| `SEED_DEMO` | `1` |
-| `SEED_ADMIN_PASSWORD` | anything — the demo Adas shul's admin password |
+| `SEED_ADMIN_PASSWORD` | anything — the (unlisted) Adas shul's admin password |
 | `PLATFORM_NOTIFY_EMAIL` | your email (optional) |
 
 Do **not** add `RESEND_API_KEY` yet: without it every email is logged
@@ -46,8 +46,8 @@ Subdomain sites (`adas.…`) don't resolve on a `vercel.app` address; they
 work once the real domain and wildcard are attached.
 
 ## 4. Turning the demo into production later
-1. Remove `DB_SETUP_ON_BUILD` and `SEED_DEMO`; delete the sample shuls at
-   `/platform` (or reset the Neon database and run `deploy/PLATFORM-MIGRATION.sql`
-   to bring the Adas data over — see `deploy/PLATFORM.md`).
+1. Remove `DB_SETUP_ON_BUILD`; delete any test shuls at `/platform` (or
+   reset the Neon database and run `deploy/PLATFORM-MIGRATION.sql` to bring
+   the Adas data over — see `deploy/PLATFORM.md`).
 2. Add the domain and wildcard, Resend key, and the rest of the env vars
    from `deploy/PLATFORM.md`.

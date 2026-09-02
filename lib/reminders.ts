@@ -5,7 +5,7 @@ import {
   formatShabbosDate,
   type CampaignInfo,
 } from "@/lib/campaign";
-import { shulBaseUrl, type Shul } from "@/lib/tenant";
+import { familyLink, type Shul } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek, goalTitle } from "@/lib/household";
 import { sendBatch, type OutboundItem } from "@/lib/messaging";
 
@@ -100,7 +100,7 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
       Date.now() - shabbosOfWeek(campaign, prevWeek).getTime() <= 8 * DAY_MS &&
       h.members.some((m) => m.goals.some((g) => g.week === prevWeek && !g.checkedInAt));
 
-    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const link = familyLink(shul, h.token);
     const lines: string[] = [];
     lines.push(`🕯️ Shabbos is coming — ${shabbosLabel}! Week ${week} of ${campaign.weeks} of ${campaign.name}.`);
     if (withGoal.length > 0) {
@@ -190,7 +190,7 @@ export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> 
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
-    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const link = familyLink(shul, h.token);
     const names = pending.map((m) => m.name).join(" & ");
     const isLastWeek = week >= campaign.weeks;
     const text =
@@ -272,7 +272,7 @@ export async function runRaffleDeadlineForShul(
     const pending = h.members.filter((m) =>
       m.goals.some((g) => g.week === week && !g.checkedInAt)
     );
-    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const link = familyLink(shul, h.token);
     const names = pending.map((m) => m.name).join(" & ");
     const text = [
       `Don't forget to check in!`,
@@ -341,7 +341,7 @@ export async function runErevShabbosForShul(shul: Shul): Promise<ReminderRunResu
       .filter((x) => x.goals.length > 0);
     const withoutGoal = h.members.filter((m) => !m.goals.some((g) => g.week === week));
 
-    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const link = familyLink(shul, h.token);
     const lines: string[] = [`🕯️ Good Erev Shabbos!`];
     if (withGoal.length > 0) {
       lines.push("");
@@ -424,7 +424,7 @@ export async function runCustomBlastForShul(
 
   const outbox: OutboundItem[] = [];
   for (const h of targets) {
-    const link = `${shulBaseUrl(shul)}/c/${h.token}`;
+    const link = familyLink(shul, h.token);
     const family = h.familyName ? `The ${h.familyName} Family` : "Your family";
     const body = text.replace(/\{link\}/g, link).replace(/\{family\}/g, family);
     const finalText = body.includes(link) ? body : `${body}\n\nYour family page: ${link}`;

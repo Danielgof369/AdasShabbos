@@ -19,7 +19,28 @@ Branch: `claude/kabbalas-shabbos`. Adas production stays on
 Resolution is in `lib/tenant.ts`: custom domain → subdomain → bare root
 (national) → `DEFAULT_SHUL_SLUG` fallback for localhost/previews.
 
-## Self-serve onboarding (`/start`)
+## National signup (`/join`) — the main path
+
+Families sign up on the national site: pick their shul from the list (or
+add it: name + city, created on the spot as a **national shul**, `hasSite =
+false`, approved and listed, seeded with the program's commitment list),
+then the same family form as a shul site. Their link is
+`kabbolasshabbos.com/c/<token>`; every shul has a page at `/s/<slug>`
+showing families, streaks, counters, and the kehilla kabbolos. Reminders,
+check-ins, chasers, and housekeeping work the same; national shuls just
+have no admin of their own (you manage them at `/platform`; a shul that
+wants its own admin and subdomain goes through `/start` — see below).
+
+The commitment list (`lib/suggestionTemplate.ts`) is the Kedushas Shabbos
+program in three tiers: **individual** (per person), **family** (adults
+pick for the household), **kehilla** (shown on the shul page; a shul admin
+marks the ones the kehilla took on by making them active). Env defaults for
+national shuls: `NATIONAL_SEASON_LABEL`, `NATIONAL_SHABBOS_DATES`,
+`NATIONAL_TIMEZONE`. Partner logo files: `public/kedushas-shabbos.png` and
+`public/kedushas-shabbos-white.png` (light and dark grounds); the slots light
+up when the files exist. Footer credit link: `BUILDER_URL`.
+
+## Self-serve onboarding (`/start`) — for shuls that want their own site
 
 Shul name, city/state, web address (auto-suggested, live availability check,
 reserved words blocked), organizer name + email, admin password, campaign

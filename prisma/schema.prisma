@@ -55,6 +55,10 @@ model Shul {
   partnerLogoLight String?
   partnerLogoDark  String?
 
+  // true = the shul runs its own site (subdomain/custom domain + admin).
+  // false = a shul families named when signing up on the national site;
+  // it lives at kabbolasshabbos.com/s/<slug> and has no admin yet.
+  hasSite   Boolean @default(true)
   adminHash String // sha256("elul:<slug>:<password>") — per-shul admin login
   active    Boolean  @default(true) // false = site off (platform admin switch)
   approved  Boolean  @default(false) // self-serve shuls wait for the operator's OK
@@ -149,6 +153,9 @@ model Suggestion {
   unitValue Int     @default(1)
   // audience: "adult" | "child" | "both" (legacy CSVs tolerated)
   categories String @default("both")
+  // "individual" (one person), "family" (the household together),
+  // "kehilla" (the shul as a whole — shown on the shul page, not in signup)
+  tier       String @default("individual")
   sortOrder  Int    @default(0)
   active     Boolean @default(true)
 

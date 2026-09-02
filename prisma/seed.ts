@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { SUGGESTION_TEMPLATE } from "../lib/suggestionTemplate";
+import { SUGGESTION_TEMPLATE, ADAS_TEMPLATE } from "../lib/suggestionTemplate";
 
 const prisma = new PrismaClient();
 
@@ -63,9 +63,9 @@ async function main() {
 
   if ((await prisma.suggestion.count({ where: { shulId: adas.id } })) === 0) {
     await prisma.suggestion.createMany({
-      data: SUGGESTION_TEMPLATE.map((t) => ({ ...t, shulId: adas.id })),
+      data: ADAS_TEMPLATE.map((t) => ({ ...t, shulId: adas.id })),
     });
-    console.log(`Seeded ${SUGGESTION_TEMPLATE.length} suggestions for ${adas.name}`);
+    console.log(`Seeded ${ADAS_TEMPLATE.length} suggestions for ${adas.name}`);
   }
   if ((await prisma.resource.count({ where: { shulId: adas.id } })) === 0) {
     await prisma.resource.createMany({

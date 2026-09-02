@@ -5,6 +5,7 @@ export type SuggestionOption = {
   title: string;
   detail: string | null;
   categories: string; // audience: "adult" | "child" | "both" (legacy CSVs tolerated)
+  tier?: string; // "individual" | "family" | "kehilla"
 };
 
 export type PendingItem = {

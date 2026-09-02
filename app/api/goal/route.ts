@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { campaignOf } from "@/lib/campaign";
-import { findShulByHost } from "@/lib/tenant";
+import { findShulByHost, householdShulAllowed } from "@/lib/tenant";
 import { nextShabbosWeek } from "@/lib/household";
 
 /**
@@ -28,27 +28,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const shul = await findShulByHost(req.headers.get("host"));
-  if (shul && !shul.approved) {
+  const hostShul = await findShulByHost(req.headers.get("host"));
+  if (hostShul && !hostShul.approved) {
     return NextResponse.json({ error: "This campaign isn't open yet — check back soon." }, { status: 403 });
   }
   const member = await prisma.member.findUnique({
     where: { id: memberId },
-    include: { household: true, goals: true },
+    include: { household: { include: { shul: true } }, goals: true },
   });
   if (
-    !shul ||
     !member ||
     member.household.token !== token ||
-    member.household.shulId !== shul.id
+    !householdShulAllowed(hostShul, member.household) ||
+    !member.household.shul.approved
   ) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
+  const shul = member.household.shul;
 
   const validIds = new Set(
     (
       await prisma.suggestion.findMany({
-        where: { shulId: shul.id, active: true },
+        where: { shulId: shul.id, active: true, tier: { not: "kehilla" } },
         select: { id: true },
       })
     ).map((s) => s.id)

@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { campaignOf } from "@/lib/campaign";
-import { getShul } from "@/lib/tenant";
+import { currentShul, unknownSubdomain, type Shul } from "@/lib/tenant";
+import Link from "next/link";
 import PendingApproval from "@/components/PendingApproval";
 import { getHouseholdView } from "@/lib/household";
 import { isAdmin } from "@/lib/adminAuth";
@@ -14,20 +15,31 @@ export default async function HouseholdPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
-  const { token } = await params;
-  const shul = await getShul();
+  const { token: rawToken } = await params;
+  const token = decodeURIComponent(rawToken).toLowerCase();
+  let shul: Shul | null = await currentShul();
+  const national = !shul;
+  if (!shul) {
+    if (await unknownSubdomain()) notFound();
+    // National site: the family's link is unique across national shuls.
+    const hh = await prisma.household.findFirst({
+      where: { token, shul: { hasSite: false, active: true } },
+      include: { shul: true },
+    });
+    if (!hh) notFound();
+    shul = hh.shul;
+  }
   if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
   const campaign = campaignOf(shul);
   const view =
-    (await getHouseholdView(token, campaign)) ??
-    (await getHouseholdView(decodeURIComponent(token).toLowerCase(), campaign));
+    (await getHouseholdView(rawToken, campaign)) ?? (await getHouseholdView(token, campaign));
   if (!view) notFound();
   const viewerIsAdmin = await isAdmin(shul);
 
   const suggestions = await prisma.suggestion.findMany({
-    where: { shulId: shul.id, active: true },
+    where: { shulId: shul.id, active: true, tier: { not: "kehilla" } },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, title: true, detail: true, categories: true },
+    select: { id: true, title: true, detail: true, categories: true, tier: true },
   });
 
   return (
@@ -35,6 +47,12 @@ export default async function HouseholdPage({
       <h1 className="font-display text-3xl text-navy mb-1">
         {view.familyName ? `The ${view.familyName} Family` : "Your family's check-in"}
       </h1>
+      {national && (
+        <p className="text-sm text-gold font-semibold mb-1">
+          <Link href={`/s/${shul.slug}`} className="hover:underline">{shul.name}</Link>
+          {shul.city ? <span className="text-ink-soft font-normal"> · {shul.city}</span> : null}
+        </p>
+      )}
       <p className="text-ink-soft mb-2">
         Check in on last Shabbos, set next week&rsquo;s commitment, and keep
         the streak going.

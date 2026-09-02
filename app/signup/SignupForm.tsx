@@ -27,10 +27,13 @@ export default function SignupForm({
   suggestions,
   charityName = "Tomchei Shabbos",
   pledge = 5,
+  shulId,
 }: {
   suggestions: SuggestionOption[];
   charityName?: string;
   pledge?: number;
+  /** National signup: the shul the family picked. Omitted on a shul's own site. */
+  shulId?: string;
 }) {
   const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
@@ -95,6 +98,7 @@ export default function SignupForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(shulId ? { shulId } : {}),
           familyName: familyName.trim(),
           phone: phone.trim() || null,
           emails: emails.map((e) => e.trim()).filter(Boolean),
@@ -289,31 +293,46 @@ export default function SignupForm({
           {p.audience ? (
             <>
               <p className="text-sm text-ink-soft mb-2">
-                For all four Shabbosos, {p.name.trim() || "they"}&rsquo;ll take on
+                For the whole campaign, {p.name.trim() || "they"}&rsquo;ll take on
                 <span className="text-navy font-medium"> (pick one or more — you
                 can add more later, but commitments are for keeps)</span>:
               </p>
+              {(() => {
+                const visible = suggestions.filter(
+                  (s) => (s.tier ?? "individual") !== "kehilla" && audienceMatches(s.categories, p.audience === "child")
+                );
+                const groups: { key: string; label: string | null; items: typeof visible }[] = [
+                  { key: "individual", label: visible.some((s) => s.tier === "family") ? "For yourself" : null, items: visible.filter((s) => (s.tier ?? "individual") !== "family") },
+                  { key: "family", label: "For the whole family", items: visible.filter((s) => s.tier === "family") },
+                ].filter((g) => g.items.length > 0);
+                const pick = (s: (typeof visible)[number]) => {
+                  const selected = p.suggestionIds.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => togglePick(i, s.id)}
+                      className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
+                        selected
+                          ? "border-gold bg-gold-pale text-navy-deep font-medium"
+                          : "border-parchment bg-cream hover:border-gold-soft"
+                      }`}
+                    >
+                      {selected ? "✓ " : ""}
+                      {s.title}
+                    </button>
+                  );
+                };
+                return groups.map((g) => (
+                  <div key={g.key} className="mb-3">
+                    {g.label && (
+                      <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1.5">{g.label}</p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{g.items.map(pick)}</div>
+                  </div>
+                ));
+              })()}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {suggestions
-                  .filter((s) => audienceMatches(s.categories, p.audience === "child"))
-                  .map((s) => {
-                    const selected = p.suggestionIds.includes(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => togglePick(i, s.id)}
-                        className={`text-left rounded-lg border px-3.5 py-2.5 text-sm transition-colors ${
-                          selected
-                            ? "border-gold bg-gold-pale text-navy-deep font-medium"
-                            : "border-parchment bg-cream hover:border-gold-soft"
-                        }`}
-                      >
-                        {selected ? "✓ " : ""}
-                        {s.title}
-                      </button>
-                    );
-                  })}
                 <button
                   type="button"
                   onClick={() => updatePerson(i, { useCustom: !p.useCustom })}
@@ -379,7 +398,7 @@ export default function SignupForm({
         onClick={submit}
         className="w-full bg-gold text-navy-deep text-lg font-semibold rounded-xl py-4 hover:bg-gold-soft transition-colors disabled:opacity-60"
       >
-        {submitting ? "Signing you up…" : "Sign up for the four Shabbosos"}
+        {submitting ? "Signing you up…" : "Sign up for the whole campaign"}
       </button>
       <p className="text-xs text-ink-soft text-center pb-4">
         By signing up you agree to receive weekly reminder emails for this

@@ -1,4 +1,4 @@
-import { shulBaseUrl } from "@/lib/tenant";
+import Link from "next/link";
 
 export type DirectoryShul = {
   id: string;
@@ -42,9 +42,9 @@ export default function ShulDirectory({ shuls, compact = false }: { shuls: Direc
           </h3>
           <div className={`grid grid-cols-1 ${compact ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3`}>
             {list.map((s) => (
-              <a
+              <Link
                 key={s.id}
-                href={shulBaseUrl(s)}
+                href={`/s/${s.slug}`}
                 className="block bg-white rounded-xl border border-parchment shadow-sm px-5 py-4 hover:border-gold-soft transition-colors"
               >
                 <div className="font-semibold text-navy">{s.name}</div>
@@ -56,10 +56,8 @@ export default function ShulDirectory({ shuls, compact = false }: { shuls: Direc
                     ? `${s.people.toLocaleString()} ${s.people === 1 ? "person" : "people"} · ${s.families.toLocaleString()} ${s.families === 1 ? "family" : "families"}`
                     : "Just getting started"}
                 </div>
-                <div className="text-xs text-gold font-semibold mt-2">
-                  {s.customDomain ?? `${s.slug}.${shulBaseUrl(s).replace(/^https?:\/\/[^.]+\./, "").replace(/:\d+$/, "")}`} →
-                </div>
-              </a>
+                <div className="text-xs text-gold font-semibold mt-2">See who&rsquo;s here →</div>
+              </Link>
             ))}
           </div>
         </div>

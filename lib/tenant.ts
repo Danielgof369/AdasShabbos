@@ -90,6 +90,31 @@ export function rootBaseUrl(): string {
   return `https://${ROOT_DOMAIN}`;
 }
 
+/**
+ * For household-scoped APIs (check-in, add commitment): the shul this
+ * request may act on for a given household. On a shul's own site it must be
+ * that shul; on the national site any national (no-site) shul is fine.
+ */
+export function householdShulAllowed(
+  hostShul: Shul | null,
+  household: { shulId: string; shul?: { hasSite: boolean } | null }
+): boolean {
+  if (hostShul) return household.shulId === hostShul.id;
+  return household.shul?.hasSite === false;
+}
+
+/** A family's check-in link: on the shul's own site if it has one, else on
+ * the national site. */
+export function familyLink(shul: Pick<Shul, "slug" | "customDomain" | "hasSite">, token: string): string {
+  const base = shul.hasSite ? shulBaseUrl(shul) : rootBaseUrl();
+  return `${base}/c/${token}`;
+}
+
+/** Where people go to see a shul: its own site, or its national page. */
+export function shulPublicUrl(shul: Pick<Shul, "slug" | "customDomain" | "hasSite">): string {
+  return shul.hasSite ? shulBaseUrl(shul) : `${rootBaseUrl()}/s/${shul.slug}`;
+}
+
 /** Public base URL for a shul (used in emails and blast texts). */
 export function shulBaseUrl(shul: Pick<Shul, "slug" | "customDomain">): string {
   if (shul.customDomain) return `https://${shul.customDomain}`;

@@ -5,7 +5,15 @@ import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/Logo";
 import { currentShul, shulBaseUrl, rootBaseUrl } from "@/lib/tenant";
 import { PLATFORM } from "@/lib/platform";
+import fs from "node:fs";
+import path from "node:path";
 import "./globals.css";
+
+/** Partner logo lights up once the file is dropped into /public. */
+function partnerLogo(tone: "light" | "dark"): string | null {
+  const file = tone === "dark" ? PLATFORM.partner.logoDark : PLATFORM.partner.logoLight;
+  return fs.existsSync(path.join(process.cwd(), "public", file)) ? file : null;
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const shul = await currentShul();
@@ -57,30 +65,48 @@ export default async function RootLayout({
               </Link>
               <nav className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
                 <Link href="/shuls" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
-                  Find your shul
+                  Shuls
+                </Link>
+                <Link href="/find" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
+                  My family
                 </Link>
                 <Link
-                  href="/start"
+                  href="/join"
                   className="bg-gold text-navy-deep font-semibold rounded-lg px-4 py-2 hover:bg-gold-soft transition-colors whitespace-nowrap"
                 >
-                  <span className="sm:hidden">Start</span>
-                  <span className="hidden sm:inline">Bring it to your shul</span>
+                  Sign up
                 </Link>
               </nav>
             </div>
           </header>
           <main className="flex-1">{children}</main>
           <footer className="bg-navy-deep text-cream/70 text-sm">
-            <div className="mx-auto max-w-5xl px-4 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/ksi-logo-white.png" alt={PLATFORM.name} className="h-20 w-auto" />
-                <div className="hidden sm:block text-cream/70 max-w-xs">{PLATFORM.tagline}</div>
+            <div className="mx-auto max-w-5xl px-4 py-10 flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/ksi-logo-white.png" alt={PLATFORM.name} className="h-20 w-auto" />
+                  {partnerLogo("dark") && (
+                    <>
+                      <span className="h-14 w-px bg-cream/25" aria-hidden />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={partnerLogo("dark")!} alt={PLATFORM.partner.name} className="h-20 w-auto" />
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Link href="/join" className="underline underline-offset-2 hover:text-gold-soft">Sign up</Link>
+                  <Link href="/shuls" className="underline underline-offset-2 hover:text-gold-soft">Shuls</Link>
+                  <Link href="/find" className="underline underline-offset-2 hover:text-gold-soft">My family</Link>
+                  <Link href="/start" className="underline underline-offset-2 hover:text-gold-soft">Run your shul&rsquo;s own site</Link>
+                  <a href={`mailto:${PLATFORM.contactEmail}`} className="underline underline-offset-2 hover:text-gold-soft">Contact</a>
+                </div>
               </div>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="/shuls" className="underline underline-offset-2 hover:text-gold-soft">Shuls</Link>
-                <Link href="/start" className="underline underline-offset-2 hover:text-gold-soft">Start a campaign</Link>
-                <a href={`mailto:${PLATFORM.contactEmail}`} className="underline underline-offset-2 hover:text-gold-soft">Contact</a>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-cream/50 border-t border-cream/10 pt-5">
+                <span>{PLATFORM.name} &middot; in partnership with {PLATFORM.partner.name}</span>
+                <a href={PLATFORM.builder.url} className="hover:text-gold-soft underline underline-offset-2" target="_blank" rel="noreferrer">
+                  Built by {PLATFORM.builder.name}
+                </a>
               </div>
             </div>
           </footer>

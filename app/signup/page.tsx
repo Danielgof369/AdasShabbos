@@ -15,7 +15,7 @@ export default async function SignupPage() {
   const suggestions = await prisma.suggestion.findMany({
     where: { shulId: shul.id, active: true },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, title: true, detail: true, categories: true },
+    select: { id: true, title: true, detail: true, categories: true, tier: true },
   });
 
   return (

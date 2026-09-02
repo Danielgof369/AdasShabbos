@@ -41,6 +41,7 @@ CREATE TABLE "Shul" (
     "logoDark" TEXT,
     "partnerLogoLight" TEXT,
     "partnerLogoDark" TEXT,
+    "hasSite" BOOLEAN NOT NULL DEFAULT true,
     "adminHash" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "approved" BOOLEAN NOT NULL DEFAULT false,
@@ -136,6 +137,7 @@ ALTER TABLE "Household" ADD CONSTRAINT "Household_shulId_fkey"
 ALTER TABLE "Suggestion" ADD COLUMN "shulId" TEXT NOT NULL DEFAULT 'shul_adas';
 ALTER TABLE "Suggestion" ALTER COLUMN "shulId" DROP DEFAULT;
 ALTER TABLE "Suggestion" DROP COLUMN IF EXISTS "audience";
+ALTER TABLE "Suggestion" ADD COLUMN "tier" TEXT NOT NULL DEFAULT 'individual';
 CREATE INDEX "Suggestion_shulId_idx" ON "Suggestion"("shulId");
 ALTER TABLE "Suggestion" ADD CONSTRAINT "Suggestion_shulId_fkey"
   FOREIGN KEY ("shulId") REFERENCES "Shul"("id") ON DELETE CASCADE ON UPDATE CASCADE;

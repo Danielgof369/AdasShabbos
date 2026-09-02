@@ -11,7 +11,24 @@ export const PLATFORM = {
   /** The platform operator, notified on every self-serve signup. */
   notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? null,
   origin: { shul: "Adas Torah", city: "Los Angeles", season: "Elul 5786" },
+  /** Program partner shown beside the initiative's logo. */
+  partner: { name: "Kedushas Shabbos", logoLight: "/kedushas-shabbos.png", logoDark: "/kedushas-shabbos-white.png" },
+  /** Credit line in the national footer. */
+  builder: { name: "The Implementation Squad", url: process.env.BUILDER_URL ?? "https://theimplementationsquad.com" },
+  /** Defaults for shuls that families add from the national signup. */
+  season: {
+    label: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
+    dates: (process.env.NATIONAL_SHABBOS_DATES ?? "2026-09-05,2026-09-19").split(",").map((d) => d.trim()).filter(Boolean),
+    timezone: process.env.NATIONAL_TIMEZONE ?? "America/New_York",
+  },
 };
+
+export type Tier = "individual" | "family" | "kehilla";
+export const TIERS: { key: Tier; title: string; blurb: string }[] = [
+  { key: "individual", title: "Individual", blurb: "One person, one small thing, every Shabbos." },
+  { key: "family", title: "Family", blurb: "Taken on together at the Shabbos table." },
+  { key: "kehilla", title: "Kehilla", blurb: "What the whole shul commits to, led by the rav." },
+];
 
 /** Subdomains that can never be claimed by a shul. */
 export const RESERVED_SLUGS = new Set([

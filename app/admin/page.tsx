@@ -5,7 +5,7 @@ import {
   shabbosOfWeek,
   formatShabbosDate,
 } from "@/lib/campaign";
-import { getShul, shulBaseUrl } from "@/lib/tenant";
+import { getShul, shulBaseUrl, shulPublicUrl } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
@@ -93,7 +93,7 @@ export default async function AdminPage() {
     _count: { _all: true },
     orderBy: [{ week: "asc" }],
   });
-  const siteUrl = shulBaseUrl(shul);
+  const siteUrl = shulPublicUrl(shul);
   const audit = await auditShul(shul.id);
   const resources = await prisma.resource.findMany({
     where: { shulId: shul.id },

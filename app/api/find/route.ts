@@ -24,7 +24,9 @@ export async function POST(req: NextRequest) {
 
   const household = await prisma.household.findFirst({
     where: {
-      shulId: shul?.id ?? "none",
+      // A shul's own site searches its families; the national site searches
+      // every shul that lives on the national site.
+      ...(shul ? { shulId: shul.id } : { shul: { hasSite: false, active: true, approved: true } }),
       OR: [
         ...(phone ? [{ phone }] : []),
         ...(email ? [{ email }, { email2: email }, { email3: email }] : []),

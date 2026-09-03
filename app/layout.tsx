@@ -92,10 +92,8 @@ export default async function RootLayout({
                   {partnerLogo("dark") && (
                     <>
                       <span className="h-14 w-px bg-cream/25" aria-hidden />
-                      <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" title={PLATFORM.partner.name}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={partnerLogo("dark")!} alt={PLATFORM.partner.name} className="h-20 w-auto" />
-                      </a>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={partnerLogo("dark")!} alt={PLATFORM.partner.name} className="h-20 w-auto" />
                     </>
                   )}
                 </div>
@@ -107,9 +105,7 @@ export default async function RootLayout({
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-cream/50 border-t border-cream/10 pt-5">
-                <span>{PLATFORM.name} &middot; in partnership with{" "}
-                  <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-gold-soft">{PLATFORM.partner.name}</a>
-                </span>
+                <span>{PLATFORM.name} &middot; in partnership with {PLATFORM.partner.name}</span>
                 <a href={PLATFORM.builder.url} className="hover:text-gold-soft underline underline-offset-2" target="_blank" rel="noreferrer">
                   Built by {PLATFORM.builder.name}
                 </a>

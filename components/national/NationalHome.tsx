@@ -42,16 +42,13 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel }: { st
             {partnerDark && (
               <>
                 <span className="h-24 sm:h-32 w-px bg-cream/25" aria-hidden />
-                <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" title={PLATFORM.partner.name}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={partnerDark} alt={PLATFORM.partner.name} className="h-28 sm:h-40 w-auto" />
-                </a>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={partnerDark} alt={PLATFORM.partner.name} className="h-28 sm:h-40 w-auto" />
               </>
             )}
           </div>
           <p className="text-gold-soft font-display tracking-[0.25em] uppercase text-sm mb-5">
-            {seasonLabel} &middot; in partnership with{" "}
-            <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-gold">{PLATFORM.partner.name}</a>
+            {seasonLabel} &middot; in partnership with {PLATFORM.partner.name}
           </p>
           <h1 className="font-display text-4xl sm:text-6xl leading-[1.08] mb-6 max-w-3xl" style={{ textWrap: "balance" }}>
             One small thing for Shabbos.

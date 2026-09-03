@@ -8,7 +8,7 @@ import {
 import { lastShabbosWeek, nextShabbosWeek } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
 import { getCampaignStats } from "@/lib/stats";
-import { raffleEligible, raffleDraws } from "@/lib/raffle";
+import { raffleStanding, raffleDraws, RAFFLE_MIN_PEOPLE } from "@/lib/raffle";
 import { isAdmin } from "@/lib/adminAuth";
 import { goalTitle } from "@/lib/household";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -102,7 +102,7 @@ export default async function AdminPage() {
       : `The campaign is about to begin — sign up now and pick your first commitment:`,
     `${shul.siteUrl}/find`,
     ``,
-    `🍕 Every family where *everyone* checks in is entered into this week's pizza raffle!`,
+    `🍕 Every family of ${RAFFLE_MIN_PEOPLE}+ where *everyone* checks in is entered into this week's pizza raffle!`,
   ].join("\n");
 
   // Pizza raffle: one draw per week whose Shabbos has passed.
@@ -111,7 +111,7 @@ export default async function AdminPage() {
     Array.from({ length: doneWeek }, (_, i) => i + 1).map(async (w) => ({
       week: w,
       shabbos: formatShabbosDate(shabbosOfWeek(campaign, w)),
-      eligible: await raffleEligible(w),
+      ...(await raffleStanding(w)),
       winner: draws.find((d) => d.week === w) ?? null,
     }))
   );
@@ -249,7 +249,8 @@ export default async function AdminPage() {
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-1">🍕 Pizza raffle</h2>
         <p className="text-sm text-ink-soft mb-4">
-          One winner per week, drawn from the families where{" "}
+          One winner per week, drawn from the families with at least{" "}
+          <strong>{RAFFLE_MIN_PEOPLE} people signed up</strong> where{" "}
           <strong>everyone</strong> checked in for that Shabbos (late check-ins
           count). Best drawn Monday night or later, after the check-in window
           closes. Redrawing replaces the saved winner.
@@ -276,17 +277,25 @@ export default async function AdminPage() {
                 </div>
                 <p className="text-sm text-ink-soft mb-3">
                   {rw.eligible.length === 0 ? (
-                    <em>No fully-checked-in families yet for this week.</em>
+                    <em>No qualifying families yet for this week.</em>
                   ) : (
                     <>
                       {rw.eligible.length}{" "}
                       {rw.eligible.length === 1 ? "family" : "families"} in the hat:{" "}
                       {rw.eligible
-                        .map((f) => f.familyName ?? f.token)
+                        .map((f) => `${f.familyName ?? f.token} (${f.people})`)
                         .join(", ")}
                     </>
                   )}
                 </p>
+                {rw.tooSmall.length > 0 && (
+                  <p className="text-xs text-ink-soft mb-3">
+                    Fully checked in but under {RAFFLE_MIN_PEOPLE} people, so not in the hat:{" "}
+                    {rw.tooSmall
+                      .map((f) => `${f.familyName ?? f.token} (${f.people})`)
+                      .join(", ")}
+                  </p>
+                )}
                 {rw.eligible.length > 0 && (
                   <form action={drawRaffleAction}>
                     <input type="hidden" name="week" value={rw.week} />

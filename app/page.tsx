@@ -9,7 +9,7 @@ import {
 } from "@/lib/campaign";
 import { lastShabbosWeek } from "@/lib/household";
 import { getCampaignStats } from "@/lib/stats";
-import { raffleDraws } from "@/lib/raffle";
+import { raffleDraws, RAFFLE_MIN_PEOPLE } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
 import { LogoOnDark, LinkLogoOnDark } from "@/components/Logo";
 import { shul, isAdasDeployment } from "@/lib/shul";
@@ -406,8 +406,8 @@ export default async function Home() {
               <div className="text-4xl mb-1">🍕</div>
               <p className="text-cream/85 text-sm leading-relaxed">
                 <strong className="text-gold-soft">Weekly pizza raffle</strong> —
-                every family where <em>everyone</em> checks in is entered to win
-                pizza on Motzei Shabbos
+                every family of {RAFFLE_MIN_PEOPLE}+ where <em>everyone</em> checks
+                in is entered to win pizza on Motzei Shabbos
               </p>
             </div>
           </div>

@@ -66,7 +66,7 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
               Sign up your family →
             </Link>
             <Link href="/shuls" className="border border-cream/40 rounded-lg px-8 py-4 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors">
-              See who&rsquo;s in from your shul
+              See who&rsquo;s already in
             </Link>
           </div>
           {live && (
@@ -103,7 +103,7 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
           <h2 className="font-display text-3xl text-navy mb-8 text-center">How it works</h2>
           <ol className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              ["1", "Sign up your family", "Thirty seconds on your phone. Name your shul, add everyone in the house, and each person picks what they'll take on. No app, no passwords — a personal link is your login."],
+              ["1", "Sign up", "Thirty seconds on your phone, on your own or with the whole house. Each person picks what they'll take on. No app, no passwords — a personal link is your login."],
               ["2", "Get the nudges", "A reminder Thursday with what everyone took on. After Shabbos, a ten-second check-in: tap “I did it.” Miss it and we'll nudge again."],
               ["3", "Watch it add up", "Your family's streak, your shul's page filling with families, and a national count of what Klal Yisroel has done for Shabbos this season."],
             ].map(([n, title, body]) => (

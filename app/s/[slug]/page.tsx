@@ -48,7 +48,7 @@ export default async function ShulPage({ params }: { params: Promise<{ slug: str
     }))
     .sort((a, b) => b.streak - a.streak || a.name.localeCompare(b.name));
   const takenOn = kehilla.filter((k) => k.active);
-  const joinHref = shul.hasSite ? `${shulBaseUrl(shul)}/signup` : `/join?shul=${encodeURIComponent(shul.slug)}`;
+  const joinHref = shul.hasSite ? `${shulBaseUrl(shul)}/signup` : `/join?shul=${encodeURIComponent(shul.name)}`;
 
   return (
     <div>

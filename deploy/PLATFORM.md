@@ -21,9 +21,9 @@ Resolution is in `lib/tenant.ts`: custom domain → subdomain → bare root
 
 ## National signup (`/join`) — the main path
 
-Families sign up on the national site: pick their shul from the list, or
-sign up on their own ("Don't see your shul?") and type their shul's name
-as a note. Nobody can create a shul from the public site. Solo signups
+Everyone signs up through one form on the national site — individuals or
+whole families — with a city (curated dropdown) and an optional "your
+shul" note. Nobody can create a shul from the public site. Solo signups
 attach to an unlisted catch-all shul (`individuals`); at `/platform` the
 "shul requests" section groups those notes and one click creates the real
 shul (`hasSite = false`, listed, seeded with the program's list) and moves

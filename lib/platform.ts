@@ -1,9 +1,9 @@
 /**
- * Platform-wide brand + onboarding rules for Kabbalos Shabbos, the national
+ * Platform-wide brand + onboarding rules for Kabalos Shabbos, the national
  * network of shul Shabbos campaigns.
  */
 export const PLATFORM = {
-  name: "Kabbalos Shabbos",
+  name: "Kabalos Shabbos",
   tagline: "One small thing for Shabbos. Every week. Together.",
   /** Where questions and change requests go. A person (and an agent)
    * reads this inbox — see deploy/SUPPORT.md. */

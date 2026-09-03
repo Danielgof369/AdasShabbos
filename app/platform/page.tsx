@@ -28,7 +28,7 @@ export default async function PlatformPage() {
       <div className="mx-auto max-w-sm px-4 py-16">
         <h1 className="font-display text-2xl text-navy mb-1">Platform admin</h1>
         <p className="text-sm text-ink-soft mb-4">
-          Creates and manages the shuls on Kabbalos Shabbos.
+          Creates and manages the shuls on Kabalos Shabbos.
         </p>
         <form action={platformLoginAction} className="space-y-3">
           <input

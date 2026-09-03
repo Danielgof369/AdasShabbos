@@ -22,7 +22,7 @@ CREATE TABLE "Shul" (
     "state" TEXT,
     "contactName" TEXT,
     "contactEmail" TEXT,
-    "campaignName" TEXT NOT NULL DEFAULT 'Kabbalos Shabbos',
+    "campaignName" TEXT NOT NULL DEFAULT 'Kabalos Shabbos',
     "seasonLabel" TEXT NOT NULL DEFAULT 'Elul 5786',
     "pledgeEnabled" BOOLEAN NOT NULL DEFAULT true,
     "charityName" TEXT NOT NULL DEFAULT 'Tomchei Shabbos',

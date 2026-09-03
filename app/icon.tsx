@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
-/** Favicon per host: the Kabbalos Shabbos mark, or Adas's own on its site. */
+/** Favicon per host: the Kabalos Shabbos mark, or Adas's own on its site. */
 export default async function Icon() {
   const shul = await currentShul();
   const file = shul?.slug === "adas" ? "favicon-adas.png" : "favicon-kabbalos.png";

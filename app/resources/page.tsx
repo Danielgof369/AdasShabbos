@@ -16,6 +16,31 @@ export default function ResourcesPage() {
 
       <div className="grid grid-cols-1 gap-5">
         <a
+          href="/dvar-halacha-pineapple-kugel.pdf"
+          target="_blank"
+          className="block bg-white rounded-2xl border border-gold/50 shadow-sm p-6 hover:border-gold transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="text-4xl shrink-0">📖</div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">
+                Dvar Halacha · New this week
+              </p>
+              <h2 className="font-display text-xl text-navy mb-1">Pineapple Kugel</h2>
+              <p className="text-ink-soft text-sm mb-1">by Rabbi Yisroel Casen</p>
+              <p className="text-ink-soft text-sm">
+                Picking the pineapple out of the kugel to save for dessert —
+                ordinary eating, or Borer? The three conditions, and a machlokes
+                between Rav Moshe Feinstein and Rav Elyashiv.
+              </p>
+              <p className="text-navy text-sm font-semibold underline underline-offset-2 mt-2">
+                Download the PDF →
+              </p>
+            </div>
+          </div>
+        </a>
+
+        <a
           href="/dvar-halacha-broken-water-heater.pdf"
           target="_blank"
           className="block bg-white rounded-2xl border border-parchment shadow-sm p-6 hover:border-gold-soft transition-colors"
@@ -24,7 +49,7 @@ export default function ResourcesPage() {
             <div className="text-4xl shrink-0">📖</div>
             <div>
               <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">
-                Dvar Halacha
+                Dvar Halacha · Last week
               </p>
               <h2 className="font-display text-xl text-navy mb-1">
                 The Broken Water Heater

@@ -360,7 +360,7 @@ export default async function Home() {
             <p className="text-navy text-sm">
               📖 <span className="font-semibold">For the table:</span> download{" "}
               <a
-                href="/dvar-halacha-broken-water-heater.pdf"
+                href="/dvar-halacha-pineapple-kugel.pdf"
                 className="underline underline-offset-2 font-semibold hover:text-navy-deep"
               >
                 this week&rsquo;s Dvar Halacha

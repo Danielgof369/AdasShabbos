@@ -1,4 +1,4 @@
-# Kabbolas Shabbos — the national platform
+# Kabbalos Shabbos — the national platform
 
 One deployment, one database, every shul at **`shulname.kabbolasshabbos.com`**
 (plus optional custom domains, like shabboswithadas.com for Adas Torah).
@@ -40,7 +40,7 @@ pick for the household), **kehilla** (shown on the shul page; a shul admin
 marks the ones the kehilla took on by making them active). The **national season**
 (label, Shabbos dates, timezone) is edited at `/platform` and applied to
 every national shul; `NATIONAL_SEASON_LABEL`, `NATIONAL_SHABBOS_DATES`,
-`NATIONAL_TIMEZONE` are only the first-run defaults. Partner logo files: `public/kedushas-shabbos.png` and
+`NATIONAL_TIMEZONE` are only the first-run defaults (Tishrei 5787: every Shabbos from Rosh Hashanah through Bereishis). Partner logo files: `public/kedushas-shabbos.png` and
 `public/kedushas-shabbos-white.png` (light and dark grounds); the slots light
 up when the files exist. Footer credit link: `BUILDER_URL`.
 
@@ -101,7 +101,7 @@ partner; reset a shul's admin password; add a shul by hand.
 | Var | Purpose | Example |
 | --- | --- | --- |
 | `DATABASE_URL` | Neon Postgres (pooled string) | unchanged |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="Kabbolas Shabbos <hello@kabbolasshabbos.com>"` |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="Kabbalos Shabbos <hello@kabbolasshabbos.com>"` |
 | `CRON_SECRET` | protects the cron routes | unchanged |
 | `PLATFORM_ADMIN_PASSWORD` | opens `/platform` | strong secret |
 | `AUTH_SECRET` | mixed into admin cookies so a leaked DB row can't forge a session (falls back to `CRON_SECRET`) | random 32+ chars |

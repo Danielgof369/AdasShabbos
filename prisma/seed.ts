@@ -102,7 +102,7 @@ async function main() {
         state: "IL",
         contactName: "Demo Organizer",
         contactEmail: "demo@example.com",
-        campaignName: "Kabbolas Shabbos",
+        campaignName: "Kabbalos Shabbos",
         seasonLabel: "Elul 5786",
         shabbosDates: "2026-09-05,2026-09-12,2026-09-19",
         tzOffset: "-05:00",
@@ -147,7 +147,7 @@ async function main() {
           data: {
             slug: sm.slug, name: sm.name, city: sm.city, state: sm.state,
             hasSite: false, approved: true, listed: true,
-            campaignName: "Kabbolas Shabbos", seasonLabel: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
+            campaignName: "Kabbalos Shabbos", seasonLabel: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
             shabbosDates: nationalDates, tzOffset: "-04:00", timezone: "America/New_York",
             pledgeEnabled: false, pledgePerSignup: 0, raffleEnabled: false,
             adminHash: shulAdminHash(sm.slug, `demo-${sm.slug}-${Date.now()}`),

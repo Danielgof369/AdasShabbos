@@ -1,9 +1,9 @@
 /**
- * Platform-wide brand + onboarding rules for Kabbolas Shabbos, the national
+ * Platform-wide brand + onboarding rules for Kabbalos Shabbos, the national
  * network of shul Shabbos campaigns.
  */
 export const PLATFORM = {
-  name: "Kabbolas Shabbos",
+  name: "Kabbalos Shabbos",
   tagline: "One small thing for Shabbos. Every week. Every shul.",
   /** Where questions and change requests go. A person (and an agent)
    * reads this inbox — see deploy/SUPPORT.md. */
@@ -18,8 +18,10 @@ export const PLATFORM = {
   /** Fallback season for shuls families add from the national signup;
    * the live values are edited at /platform (see lib/season.ts). */
   season: {
-    label: process.env.NATIONAL_SEASON_LABEL ?? "Elul 5786",
-    dates: (process.env.NATIONAL_SHABBOS_DATES ?? "2026-09-05,2026-09-19").split(",").map((d) => d.trim()).filter(Boolean),
+    label: process.env.NATIONAL_SEASON_LABEL ?? "Tishrei 5787",
+    // Every Shabbos of Tishrei 5787: Rosh Hashanah, Shabbos Shuva, Sukkos,
+    // Shemini Atzeres, Bereishis.
+    dates: (process.env.NATIONAL_SHABBOS_DATES ?? "2026-09-12,2026-09-19,2026-09-26,2026-10-03,2026-10-10").split(",").map((d) => d.trim()).filter(Boolean),
     timezone: process.env.NATIONAL_TIMEZONE ?? "America/New_York",
   },
 };
@@ -36,7 +38,7 @@ export const RESERVED_SLUGS = new Set([
   "www", "app", "api", "admin", "platform", "start", "shuls", "mail", "email",
   "smtp", "imap", "ftp", "cdn", "static", "assets", "img", "images", "blog",
   "docs", "help", "support", "status", "dev", "staging", "test", "demo",
-  "vercel", "kabbalasshabbos", "kabbalas", "kabolas", "kabolasshabbos", "kabbolas", "kabbolasshabbos", "kabalas", "kabalasshabbos", "kabalos", "kabalosshabbos", "initiative", "shabbos", "shabbat", "national",
+  "vercel", "kabbalasshabbos", "kabbalas", "kabolas", "kabolasshabbos", "kabbolas", "kabbolasshabbos", "kabalas", "kabalasshabbos", "kabalos", "kabalosshabbos", "kabbalos", "kabbalosshabbos", "initiative", "shabbos", "shabbat", "national",
   "us", "ca", "il", "ny", "nj", "la", "chicago", "root", "null", "undefined",
 ]);
 

@@ -1,4 +1,4 @@
-# Kabbolas Shabbos — national Shabbos campaign platform
+# Kabbalos Shabbos — national Shabbos campaign platform
 
 > **Want to run this at YOUR shul?** Go to **kabbolasshabbos.com/start** —
 > two minutes, no code, free. Your shul gets its own site at

@@ -11,7 +11,7 @@ import SignupForm from "@/app/signup/SignupForm";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Sign up your family | Kabbolas Shabbos" };
+export const metadata = { title: "Sign up your family | Kabbalos Shabbos" };
 
 export default async function JoinPage({
   searchParams,

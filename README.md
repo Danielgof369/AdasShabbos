@@ -1,8 +1,8 @@
 # Kabbalos Shabbos — national Shabbos campaign platform
 
-> **Want to run this at YOUR shul?** Go to **kabbolasshabbos.com/start** —
+> **Want to run this at YOUR shul?** Go to **kabalosshabbos.com/start** —
 > two minutes, no code, free. Your shul gets its own site at
-> `yourshul.kabbolasshabbos.com` with reminders, check-ins, a raffle and a
+> `yourshul.kabalosshabbos.com` with reminders, check-ins, a raffle and a
 > live count. (Prefer to self-host a copy? [`deploy/NEW-SHUL-SETUP.md`](deploy/NEW-SHUL-SETUP.md)
 > still works.) Platform architecture, env vars and the cutover plan:
 > [`deploy/PLATFORM.md`](deploy/PLATFORM.md).

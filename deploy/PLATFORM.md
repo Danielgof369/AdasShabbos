@@ -1,8 +1,8 @@
 # Kabbalos Shabbos — the national platform
 
-One deployment, one database, every shul at **`shulname.kabbolasshabbos.com`**
+One deployment, one database, every shul at **`shulname.kabalosshabbos.com`**
 (plus optional custom domains, like shabboswithadas.com for Adas Torah).
-Shuls sign themselves up at **kabbolasshabbos.com/start** in two minutes.
+Shuls sign themselves up at **kabalosshabbos.com/start** in two minutes.
 
 Branch: `claude/kabbalas-shabbos`. Adas production stays on
 `claude/ada-torah-elul-signup-rjtgs8` until the cutover below.
@@ -11,8 +11,8 @@ Branch: `claude/kabbalas-shabbos`. Adas production stays on
 
 | Host | What renders |
 | --- | --- |
-| `kabbolasshabbos.com` | National landing: story, live national counters, shul directory, **/start** onboarding, **/shuls** directory, **/platform** (operator admin) |
-| `<slug>.kabbolasshabbos.com` | That shul's campaign site (homepage, signup, family pages, admin) |
+| `kabalosshabbos.com` | National landing: story, live national counters, shul directory, **/start** onboarding, **/shuls** directory, **/platform** (operator admin) |
+| `<slug>.kabalosshabbos.com` | That shul's campaign site (homepage, signup, family pages, admin) |
 | custom domain (e.g. shabboswithadas.com) | Same, resolved by the `customDomain` column |
 | unknown subdomain | "No shul here yet — claim it" page linking to /start |
 
@@ -28,7 +28,7 @@ attach to an unlisted catch-all shul (`individuals`); at `/platform` the
 "shul requests" section groups those notes and one click creates the real
 shul (`hasSite = false`, listed, seeded with the program's list) and moves
 the families onto it — or moves them into an existing shul. Their link is
-`kabbolasshabbos.com/c/<token>`; every shul has a page at `/s/<slug>`
+`kabalosshabbos.com/c/<token>`; every shul has a page at `/s/<slug>`
 showing families, streaks, counters, and the kehilla kabbolos. Reminders,
 check-ins, chasers, and housekeeping work the same; national shuls just
 have no admin of their own (you manage them at `/platform`; a shul that
@@ -86,7 +86,7 @@ is conditional on those toggles, and the raffle prize is never hardcoded.
 ## Support
 
 Shuls ask for anything the admin page can't do via the form at the bottom
-of `/admin` (or support@kabbolasshabbos.com). An hourly Routine reads that
+of `/admin` (or support@kabalosshabbos.com). An hourly Routine reads that
 inbox, makes code changes as pull requests, and drafts replies. Full
 description and setup: [`SUPPORT.md`](SUPPORT.md).
 
@@ -101,14 +101,14 @@ partner; reset a shul's admin password; add a shul by hand.
 | Var | Purpose | Example |
 | --- | --- | --- |
 | `DATABASE_URL` | Neon Postgres (pooled string) | unchanged |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="Kabbalos Shabbos <hello@kabbolasshabbos.com>"` |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | email | `EMAIL_FROM="Kabbalos Shabbos <hello@kabalosshabbos.com>"` |
 | `CRON_SECRET` | protects the cron routes | unchanged |
 | `PLATFORM_ADMIN_PASSWORD` | opens `/platform` | strong secret |
 | `AUTH_SECRET` | mixed into admin cookies so a leaked DB row can't forge a session (falls back to `CRON_SECRET`) | random 32+ chars |
 | `CRON_BUDGET_MS` | optional: how long a cron sweep may run before deferring remaining shuls (default 240000) | `240000` |
 | `PLATFORM_NOTIFY_EMAIL` | gets a note on every new shul | your email |
-| `PLATFORM_CONTACT_EMAIL` | support address shown on the site and used by the /admin request form | `support@kabbolasshabbos.com` |
-| `NEXT_PUBLIC_ROOT_DOMAIN` | the wildcard parent domain | `kabbolasshabbos.com` |
+| `PLATFORM_CONTACT_EMAIL` | support address shown on the site and used by the /admin request form | `support@kabalosshabbos.com` |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | the wildcard parent domain | `kabalosshabbos.com` |
 | `DEFAULT_SHUL_SLUG` | optional: tenant for localhost / Vercel preview URLs | `adas` (leave unset to preview the national site) |
 
 Retired (superseded by the DB): `ADMIN_PASSWORD`, `NEXT_PUBLIC_SHUL_NAME`,
@@ -125,23 +125,23 @@ Retired (superseded by the DB): `ADMIN_PASSWORD`, `NEXT_PUBLIC_SHUL_NAME`,
    Dvar Halacha popup and both resources), and rewires every family,
    check-in and raffle draw to it. Nothing is deleted.
 3. **Domains** (Vercel → project → Settings → Domains):
-   add `kabbolasshabbos.com` and the wildcard `*.kabbolasshabbos.com`.
+   add `kabalosshabbos.com` and the wildcard `*.kabalosshabbos.com`.
    Wildcards need the domain's nameservers pointed at Vercel — Vercel shows
    the two NS records to set at GoDaddy. Keep shabboswithadas.com attached
    to the project directly (it is Adas's custom domain now, not a redirect);
-   theelulshabbosproject.com can redirect to kabbolasshabbos.com.
-4. **Resend**: verify `kabbolasshabbos.com` as a sending domain and set
+   theelulshabbosproject.com can redirect to kabalosshabbos.com.
+4. **Resend**: verify `kabalosshabbos.com` as a sending domain and set
    `EMAIL_FROM` to it, so every shul's mail comes from the platform.
 5. **Env vars**: add the new ones above; remove the retired ones.
 6. **Ship code**: point Vercel's production branch at `claude/kabbalas-shabbos`
    (or merge it into the production branch). shabboswithadas.com renders as
-   the Adas tenant with identical data; kabbolasshabbos.com is the national site.
+   the Adas tenant with identical data; kabalosshabbos.com is the national site.
 7. **Verify**: shabboswithadas.com unchanged; `/platform` opens; run through
    `/start` with a test shul, check its subdomain, then deactivate it.
 
 ## Onboarding a shul (after cutover)
 
-Send them **kabbolasshabbos.com/start**. That's it. They get the welcome
+Send them **kabalosshabbos.com/start**. That's it. They get the welcome
 email; you get the notification. When they reply with a logo, drop it in
 `/public/<slug>-logo.png` (or any public URL) and paste the path in their
 entry at `/platform`. A custom domain = add it in Vercel + paste it into
@@ -196,4 +196,4 @@ before committing.
 3. **PWA / app** — installable home-screen app with push notifications for reminders instead of only email.
 4. **Agent follow-ups** — automated, personalized nudges (WhatsApp/SMS via Twilio, already wired) driven by each family's check-in history.
 5. **Multi-season** — archive a campaign and start the next one (Shovavim, Sefirah) without losing history.
-6. **City pages** — chicago.kabbolasshabbos.com rolling up several shuls.
+6. **City pages** — chicago.kabalosshabbos.com rolling up several shuls.

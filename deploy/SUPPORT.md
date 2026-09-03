@@ -5,19 +5,19 @@ messages, the commitment list, dates, logos, pledge/raffle settings,
 resources, announcements, password. When they need something the admin page
 can't do (a custom domain, a new counter, different email wording, a
 feature), they use the **"Need something that isn't here?"** form at the
-bottom of `/admin`, or email **support@kabbolasshabbos.com** directly.
+bottom of `/admin`, or email **support@kabalosshabbos.com** directly.
 
 ## The pipeline
 
 ```
-shul admin  ──/admin form or email──▶  support@kabbolasshabbos.com
+shul admin  ──/admin form or email──▶  support@kabalosshabbos.com
                                              │ (GoDaddy forwarding)
                                              ▼
                                    daniel@gflowsystems.com
                                              │ hourly Routine (Claude Code, Gmail connector)
                                              ▼
         ┌──────────────────────────────────────────────────────────────┐
-        │ 1. search: to:support@kabbolasshabbos.com -label:KSI-Handled  │
+        │ 1. search: to:support@kabalosshabbos.com -label:KSI-Handled  │
         │ 2. per email: classify                                        │
         │    • can do it themselves → draft reply pointing to the exact │
         │      /admin section                                           │
@@ -39,10 +39,10 @@ Routine's prompt once the pipeline has earned trust.
 ## One-time setup (Daniel)
 
 1. **Mailbox**: GoDaddy → Email & Office → Email Forwarding → create
-   `support@kabbolasshabbos.com` → forward to `daniel@gflowsystems.com`.
+   `support@kabalosshabbos.com` → forward to `daniel@gflowsystems.com`.
    (Free with the domain. A Google Workspace mailbox works too.)
-2. **Resend**: `EMAIL_REPLY_TO=support@kabbolasshabbos.com` and
-   `PLATFORM_CONTACT_EMAIL=support@kabbolasshabbos.com` in Vercel, so every
+2. **Resend**: `EMAIL_REPLY_TO=support@kabalosshabbos.com` and
+   `PLATFORM_CONTACT_EMAIL=support@kabalosshabbos.com` in Vercel, so every
    platform email invites replies to the support address.
 3. **Gmail label** `KSI-Handled`: the Routine creates it on its first run.
    No filter is needed — the Routine searches by recipient.

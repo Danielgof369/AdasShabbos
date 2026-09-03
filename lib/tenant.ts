@@ -11,12 +11,12 @@ import type { Shul } from "@prisma/client";
  *
  * Resolution order for an incoming host:
  *   1. exact customDomain match ("shabboswithadas.com")
- *   2. subdomain of ROOT_DOMAIN ("adas.kabbolasshabbos.com" -> "adas")
+ *   2. subdomain of ROOT_DOMAIN ("adas.kabalosshabbos.com" -> "adas")
  *   3. the bare root domain (or www.) -> no shul: national pages
  *   4. anything else (localhost, *.vercel.app previews) -> DEFAULT_SHUL_SLUG
  *      if set, otherwise national pages
  */
-export const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "kabbolasshabbos.com")
+export const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "kabalosshabbos.com")
   .toLowerCase()
   .replace(/^https?:\/\//, "")
   .replace(/\/$/, "");

@@ -7,7 +7,7 @@ export const PLATFORM = {
   tagline: "One small thing for Shabbos. Every week. Together.",
   /** Where questions and change requests go. A person (and an agent)
    * reads this inbox — see deploy/SUPPORT.md. */
-  contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabbolasshabbos.com",
+  contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabalosshabbos.com",
   /** The platform operator, notified on every self-serve signup. */
   notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? "daniel@gflowsystems.com",
   origin: { shul: "Adas Torah", city: "Los Angeles", season: "Elul 5786" },

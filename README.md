@@ -11,7 +11,7 @@ Started as **The Elul Shabbos Project** at Adas Torah, Los Angeles (Elul 5786).
 
 A mobile-first campaign site for the month of Elul: everyone in the shul —
 men, women, and kids — signs up to take on **one extra thing for Shabbos each
-week**, gets a reminder on Thursday, checks in after Shabbos, and picks their
+week**, gets a reminder on Friday, checks in after Shabbos, and picks their
 commitment for the next week. Every signup and every check-in adds to a
 running pledge to Tomchei Shabbos, and the homepage shows a live "highlight
 reel" of what the community has taken on (minutes added to Shabbos, tables
@@ -22,10 +22,10 @@ set, challos baked…).
 1. **Sign up** (`/signup`) — name + phone and/or email, add as many family
    members as you like (kids get a kid-friendly option list), and each person
    picks their week-1 commitment. No passwords.
-2. **Thursday reminder** — each household gets one message listing what
+2. **Friday reminder** — each household gets one message listing what
    everyone committed to, with their personal link. Anyone who hasn't picked
    yet gets nudged to choose.
-3. **Check in** (`/c/<token>`) — after Shabbos (Sunday reminder), tap
+3. **Check in** (`/c/<token>`) — after Shabbos (Monday reminder, then a nudge every two days), tap
    "I did it ✓". The shul-wide numbers and the Tomchei Shabbos pledge tick up,
    and the page immediately asks for next week's commitment — same again, a
    different option, or a write-in.
@@ -70,10 +70,13 @@ testable without any accounts.
 Two endpoints do the sending (both idempotent per household per week, guarded
 by `CRON_SECRET` as `Authorization: Bearer <secret>` or `?key=<secret>`):
 
-- `GET /api/cron/thursday` — "Shabbos is coming" reminder (scheduled Thu 9am PT)
-- `GET /api/cron/checkin` — "how did it go? check in" reminder (scheduled Sun 9am PT)
+- `GET /api/cron/daily` — the one reminder cron, scheduled every day at 9am PT
+  (`0 16 * * *`). By weekday and check-in state it sends: Friday pre-Shabbos
+  reminder, Monday check-in reminder, and a drip every two days to families
+  who still haven't checked in (never on Shabbos). `?job=friday|checkin|drip`
+  forces one job for ops checks.
 
-`vercel.json` schedules both on Vercel; on any other host, point any cron
+`vercel.json` schedules it on Vercel; on any other host, point any cron
 service at those URLs.
 
 ## Messaging channels

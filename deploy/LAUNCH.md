@@ -56,8 +56,8 @@ Do the steps in order.
 4. In Vercel → Settings → Environment Variables, add:
    - `RESEND_API_KEY` = the key
    - `EMAIL_FROM` = `The Elul Shabbos Project <shabbos@shabboswithadas.com>`
-5. Redeploy (Vercel → Deployments → ⋯ → Redeploy). Thursday + Sunday
-   reminder emails are now fully automated (schedule is in `vercel.json`,
+5. Redeploy (Vercel → Deployments → ⋯ → Redeploy). Reminder emails are
+   now fully automated by the daily cron (schedule is in `vercel.json`,
    9am PT).
 
 ## 5. Smoke test — 5 min
@@ -66,7 +66,7 @@ Do the steps in order.
 - [ ] Sign up a test family (use your own phone/email)
 - [ ] The personal link (`/c/…`) opens and shows the family
 - [ ] `/admin` opens with the admin password; the test signup is listed
-- [ ] Admin → "Send Thursday reminder now" → with Resend configured, the
+- [ ] Admin → "Send pre-Shabbos reminder now" → with Resend configured, the
       email arrives (without it, nothing sends — that's expected)
 - [ ] Delete test data before announcing: Neon SQL Editor →
       `DELETE FROM "Household";` (cascades to members/goals)

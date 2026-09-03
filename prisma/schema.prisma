@@ -213,7 +213,7 @@ model Setting {
 model MessageLog {
   id          String   @id @default(cuid())
   householdId String
-  kind        String // "thursday_reminder" | "checkin_reminder" | ...
+  kind        String // "friday_reminder" | "checkin_reminder" | "checkin_drip" | ...
   channel     String // "sms" | "email" | "whatsapp" | "console"
   week        Int
   sentAt      DateTime @default(now())

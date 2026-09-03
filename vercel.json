@@ -2,12 +2,8 @@
   "buildCommand": "bash scripts/vercel-build.sh",
   "crons": [
     {
-      "path": "/api/cron/thursday",
-      "schedule": "0 16 * * 4"
-    },
-    {
-      "path": "/api/cron/checkin",
-      "schedule": "0 16 * * 0,2"
+      "path": "/api/cron/daily",
+      "schedule": "0 16 * * *"
     }
   ]
 }

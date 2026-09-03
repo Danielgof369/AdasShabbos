@@ -207,7 +207,7 @@ export default function StartForm({
         <ol className="list-decimal pl-5 space-y-2 text-sm text-ink-soft mb-8">
           <li>Open the admin page and look over the commitment list. Hide anything that doesn&rsquo;t fit; add your own.</li>
           <li>Line up the rav&rsquo;s announcement. When the approval email arrives, paste the message below into the shul WhatsApp.</li>
-          <li>Reminders run themselves: Thursday before Shabbos, Sunday and Tuesday after. The admin page has each week&rsquo;s WhatsApp texts ready to paste.</li>
+          <li>Reminders run themselves: Friday before Shabbos, Monday after, then every two days until everyone has checked in. The admin page has each week&rsquo;s WhatsApp texts ready to paste.</li>
           <li>Reply to the welcome email with your logo (PNG) and we&rsquo;ll put it on your site.</li>
         </ol>
         <p className="text-xs font-medium text-navy mb-1">Announcement for your WhatsApp group:</p>

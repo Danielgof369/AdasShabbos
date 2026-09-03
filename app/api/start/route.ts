@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
     `What to do while you wait:`,
     `1. Open the admin page and look over the commitment list — hide anything that doesn't fit, add your own.`,
     `2. Line up the rav's announcement. Once you get the approval email, paste the site link into the shul WhatsApp. Families sign up in 30 seconds; no app, no passwords.`,
-    `3. Reminders run themselves: Thursday before Shabbos, Sunday and Tuesday after. The admin page has the WhatsApp texts ready to paste each week.`,
+    `3. Reminders run themselves: Friday before Shabbos, Monday after, then every two days until everyone has checked in. The admin page has the WhatsApp texts ready to paste each week.`,
     `4. Send us your logo (PNG) and we'll put it on your site: ${PLATFORM.contactEmail}`,
     ``,
     `Your campaign: ${seasonLabel}, ${dates.length} ${dates.length === 1 ? "Shabbos" : "Shabbosos"} (${dates.join(", ")}).`,

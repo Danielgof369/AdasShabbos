@@ -26,7 +26,7 @@ import {
   deleteResourceAction,
   saveSuggestionAction,
   deleteSuggestionAction,
-  sendThursdayAction,
+  sendFridayAction,
   sendCheckinAction,
   sendErevShabbosAction,
   sendRaffleDeadlineAction,
@@ -189,15 +189,15 @@ export default async function AdminPage() {
       <section className="bg-white rounded-xl border border-parchment p-5">
         <h2 className="font-semibold text-navy mb-3">Reminders</h2>
         <p className="text-sm text-ink-soft mb-4">
-          Crons run automatically: Thursday mornings (pre-Shabbos), and check-in
-          chasers Sunday &amp; Tuesday mornings — families who haven&rsquo;t checked
-          in keep hearing from us every ~2 days until the window closes. These
+          Reminders run automatically every morning: the pre-Shabbos reminder on
+          Friday, the check-in reminder on Monday, and a nudge every two days to
+          families who still haven&rsquo;t checked in, until they do. These
           buttons trigger the same runs by hand — already-sent households are
           skipped, so it&rsquo;s safe to press twice.
         </p>
         <div className="flex flex-wrap gap-3 mb-4">
-          <form action={sendThursdayAction}>
-            <button className={btnCls}>Send Thursday reminder now</button>
+          <form action={sendFridayAction}>
+            <button className={btnCls}>Send pre-Shabbos reminder now</button>
           </form>
           <form action={sendErevShabbosAction}>
             <button className={btnCls}>Send Good Erev Shabbos nudge now</button>
@@ -256,7 +256,7 @@ export default async function AdminPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-xs font-medium text-navy mb-1">
-              Before Shabbos (send Thursday/Friday):
+              Before Shabbos (send Friday):
             </p>
             <textarea
               readOnly
@@ -267,7 +267,7 @@ export default async function AdminPage() {
           </div>
           <div>
             <p className="text-xs font-medium text-navy mb-1">
-              After Shabbos (send Motzei Shabbos/Sunday):
+              After Shabbos (send Motzei Shabbos/Monday):
             </p>
             <textarea
               readOnly

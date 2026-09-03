@@ -130,7 +130,7 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel }: { st
           <ol className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
               ["1", "Sign up", "Thirty seconds on your phone, on your own or with the whole house. Each person picks what they'll take on. No app, no passwords — a personal link is your login."],
-              ["2", "Get the nudges", "A reminder Thursday with what everyone took on. After Shabbos, a ten-second check-in: tap “I did it.” Miss it and we'll nudge again."],
+              ["2", "Get the nudges", "A reminder Friday with what everyone took on. Monday, a ten-second check-in: tap “I did it.” Miss it and we'll nudge again every couple of days."],
               ["3", "Watch it add up", "Your family's streak, your city on the board, and a national count of what Klal Yisroel has done for Shabbos this season."],
             ].map(([n, title, body]) => (
               <li key={n} className="bg-white rounded-2xl border border-parchment shadow-sm p-6">

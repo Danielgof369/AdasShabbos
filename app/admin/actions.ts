@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getShul } from "@/lib/tenant";
 import { isAdmin, grantAdmin, revokeAdmin } from "@/lib/adminAuth";
 import {
-  runThursdayForShul,
+  runFridayForShul,
   runCheckinForShul,
   runRaffleDeadlineForShul,
   runErevShabbosForShul,
@@ -152,9 +152,9 @@ export async function deleteSuggestionAction(formData: FormData) {
   revalidatePath("/");
 }
 
-export async function sendThursdayAction() {
+export async function sendFridayAction() {
   const shul = await requireAdmin();
-  await runThursdayForShul(shul);
+  await runFridayForShul(shul);
   revalidatePath("/admin");
 }
 

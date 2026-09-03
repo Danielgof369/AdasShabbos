@@ -3,13 +3,22 @@ import {
   campaignOf,
   shabbosOfWeek,
   formatShabbosDate,
-  type CampaignInfo,
 } from "@/lib/campaign";
 import { familyLink, type Shul } from "@/lib/tenant";
 import { lastShabbosWeek, nextShabbosWeek, goalTitle } from "@/lib/household";
 import { sendBatch, type OutboundItem } from "@/lib/messaging";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** MessageLog kinds for the weekly cadence. */
+export const FRIDAY_KIND = "friday_reminder";
+export const CHECKIN_KIND = "checkin_reminder";
+export const DRIP_KIND = "checkin_drip";
+/** A week's check-ins stay chased this many days after its Shabbos. */
+const CHECKIN_WINDOW_DAYS = 8;
+/** "Every two days": at least this long since the family's last reminder
+ * (a little under 48h so a 9am cron two days later always qualifies). */
+const DRIP_GAP_MS = 44 * 60 * 60 * 1000;
 
 export type ReminderRunResult = {
   week: number;
@@ -49,12 +58,13 @@ async function forEachShul(
 }
 
 /**
- * Thursday reminder for one shul: what everyone committed to for the
- * upcoming Shabbos, plus a nudge for still-open check-ins from last week.
+ * Friday (pre-Shabbos) reminder for one shul: what everyone committed to
+ * for the coming Shabbos, plus a P.S. for still-open check-ins from last
+ * week. Families who have already completed this week are left alone.
  */
-export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult> {
+export async function runFridayForShul(shul: Shul, now = new Date()): Promise<ReminderRunResult> {
   const campaign = campaignOf(shul);
-  const week = nextShabbosWeek(campaign);
+  const week = nextShabbosWeek(campaign, now);
   if (week > campaign.weeks) {
     return { week, sent: 0, skipped: 0, details: ["Campaign is over — nothing to send."] };
   }
@@ -72,13 +82,14 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
   const alreadySent = new Set(
     (
       await prisma.messageLog.findMany({
-        where: { kind: "thursday_reminder", week, householdId: { in: households.map((h) => h.id) } },
+        where: { kind: FRIDAY_KIND, week, householdId: { in: households.map((h) => h.id) } },
         select: { householdId: true },
       })
     ).map((r) => r.householdId)
   );
   const targets = households.filter((h) => {
     if (h.members.length === 0) return false;
+    if (weekCompleted(h.members, week)) return false;
     if (alreadySent.has(h.id)) {
       skipped++;
       return false;
@@ -97,7 +108,7 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
     const prevWeek = week - 1;
     const prevUnchecked =
       prevWeek >= 1 &&
-      Date.now() - shabbosOfWeek(campaign, prevWeek).getTime() <= 8 * DAY_MS &&
+      now.getTime() - shabbosOfWeek(campaign, prevWeek).getTime() <= CHECKIN_WINDOW_DAYS * DAY_MS &&
       h.members.some((m) => m.goals.some((g) => g.week === prevWeek && !g.checkedInAt));
 
     const link = familyLink(shul, h.token);
@@ -125,7 +136,85 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
       );
     }
 
-    outbox.push({ household: h, message: { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") }, kind: "thursday_reminder", week });
+    outbox.push({ household: h, message: { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") }, kind: FRIDAY_KIND, week });
+  }
+  for (const [id, channel] of await sendBatch(outbox)) {
+    sent++;
+    details.push(`household ${id} via ${channel}`);
+  }
+
+  return { week, sent, skipped, details };
+}
+
+/** Families with a goal this week that isn't confirmed yet. */
+function hasPending(members: { goals: { week: number; checkedInAt: Date | null }[] }[], week: number): boolean {
+  return members.some((m) => m.goals.some((g) => g.week === week && !g.checkedInAt));
+}
+
+/** Every goal this week is confirmed (and there is at least one). */
+function weekCompleted(members: { goals: { week: number; checkedInAt: Date | null }[] }[], week: number): boolean {
+  const goals = members.flatMap((m) => m.goals.filter((g) => g.week === week));
+  return goals.length > 0 && goals.every((g) => !!g.checkedInAt);
+}
+
+/**
+ * Monday check-in reminder for one shul: the first "how did Shabbos go?"
+ * to every family with an unconfirmed goal for the Shabbos just passed.
+ * One per family per week (dedupes on its log kind).
+ */
+export async function runCheckinForShul(shul: Shul, now = new Date()): Promise<ReminderRunResult> {
+  const campaign = campaignOf(shul);
+  const week = lastShabbosWeek(campaign, now);
+  if (week < 1) {
+    return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
+  }
+  const daysSince = Math.floor((now.getTime() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS);
+  if (daysSince > CHECKIN_WINDOW_DAYS) {
+    return { week, sent: 0, skipped: 0, details: ["Check-in window has closed."] };
+  }
+
+  const households = await prisma.household.findMany({
+    where: { shulId: shul.id },
+    include: { members: { include: { goals: true } } },
+  });
+
+  let sent = 0;
+  let skipped = 0;
+  const details: string[] = [];
+
+  const alreadySent = new Set(
+    (
+      await prisma.messageLog.findMany({
+        where: { kind: CHECKIN_KIND, week, householdId: { in: households.map((h) => h.id) } },
+        select: { householdId: true },
+      })
+    ).map((r) => r.householdId)
+  );
+  const targets = households.filter((h) => {
+    if (!hasPending(h.members, week)) return false;
+    if (alreadySent.has(h.id)) {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  const outbox: OutboundItem[] = [];
+  for (const h of targets) {
+    const pending = h.members.filter((m) => m.goals.some((g) => g.week === week && !g.checkedInAt));
+    const link = familyLink(shul, h.token);
+    const names = pending.map((m) => m.name).join(" & ");
+    const isLastWeek = week >= campaign.weeks;
+    const text = [
+      `✨ Gut voch! How did week ${week} go?`,
+      `Check in for ${names} — every check-in grows your streak and the totals for your city.`,
+      isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
+      ``,
+      `Your family page: ${link}`,
+    ]
+      .filter((l, i, a) => l !== "" || a[i - 1] !== "")
+      .join("\n");
+    outbox.push({ household: h, message: { subject: `How did Shabbos go? Check in — week ${week}`, text }, kind: CHECKIN_KIND, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;
@@ -136,49 +225,54 @@ export async function runThursdayForShul(shul: Shul): Promise<ReminderRunResult>
 }
 
 /**
- * Check-in chaser for one shul. Families that haven't checked in hear from
- * us every ~2 days (Sunday, Tuesday, and the Thursday email's P.S.) until
- * the late window closes; each wave dedupes under its own log kind.
+ * Check-in drip for one shul: after the Monday reminder, a family that
+ * still hasn't confirmed hears from us again every two days until they
+ * check in or the week's window closes. "Every two days" is measured from
+ * the last reminder we actually sent them (Monday reminder, an earlier
+ * drip, or the Friday email's P.S.), so a nudge is never sent on top of
+ * one from yesterday.
  */
-export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> {
+export async function runCheckinDripForShul(shul: Shul, now = new Date()): Promise<ReminderRunResult> {
   const campaign = campaignOf(shul);
-  const week = lastShabbosWeek(campaign);
+  const week = lastShabbosWeek(campaign, now);
   if (week < 1) {
     return { week, sent: 0, skipped: 0, details: ["No Shabbos has passed yet."] };
   }
-
-  const daysSince = Math.floor(
-    (Date.now() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS
-  );
-  if (daysSince > 8) {
+  const daysSince = Math.floor((now.getTime() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS);
+  if (daysSince > CHECKIN_WINDOW_DAYS) {
     return { week, sent: 0, skipped: 0, details: ["Check-in window has closed."] };
   }
-  const wave = daysSince <= 2 ? 1 : daysSince <= 4 ? 2 : 3;
-  const kind = wave === 1 ? "checkin_reminder" : `checkin_reminder${wave}`;
 
   const households = await prisma.household.findMany({
     where: { shulId: shul.id },
     include: { members: { include: { goals: true } } },
   });
+  const pendingIds = households.filter((h) => hasPending(h.members, week)).map((h) => h.id);
+  if (pendingIds.length === 0) {
+    return { week, sent: 0, skipped: 0, details: ["Everyone has checked in."] };
+  }
+
+  // Latest reminder of any kind per family, and whether the Monday
+  // reminder for this week has gone out (the drip only follows it).
+  const logs = await prisma.messageLog.findMany({
+    where: { householdId: { in: pendingIds }, kind: { in: [CHECKIN_KIND, DRIP_KIND, FRIDAY_KIND] } },
+    select: { householdId: true, kind: true, week: true, sentAt: true },
+  });
+  const lastReminder = new Map<string, number>();
+  const mondaySent = new Set<string>();
+  for (const l of logs) {
+    lastReminder.set(l.householdId, Math.max(lastReminder.get(l.householdId) ?? 0, l.sentAt.getTime()));
+    if (l.kind === CHECKIN_KIND && l.week === week) mondaySent.add(l.householdId);
+  }
 
   let sent = 0;
   let skipped = 0;
-  const details: string[] = [`wave ${wave} (day ${daysSince} after Shabbos)`];
-
-  const alreadySent = new Set(
-    (
-      await prisma.messageLog.findMany({
-        where: { kind, week, householdId: { in: households.map((h) => h.id) } },
-        select: { householdId: true },
-      })
-    ).map((r) => r.householdId)
-  );
+  const details: string[] = [`day ${daysSince} after Shabbos`];
   const targets = households.filter((h) => {
-    const pending = h.members.some((m) =>
-      m.goals.some((g) => g.week === week && !g.checkedInAt)
-    );
-    if (!pending) return false;
-    if (alreadySent.has(h.id)) {
+    if (!pendingIds.includes(h.id)) return false;
+    if (!mondaySent.has(h.id)) return false; // the Monday reminder comes first
+    const last = lastReminder.get(h.id) ?? 0;
+    if (now.getTime() - last < DRIP_GAP_MS) {
       skipped++;
       return false;
     }
@@ -187,33 +281,16 @@ export async function runCheckinForShul(shul: Shul): Promise<ReminderRunResult> 
 
   const outbox: OutboundItem[] = [];
   for (const h of targets) {
-    const pending = h.members.filter((m) =>
-      m.goals.some((g) => g.week === week && !g.checkedInAt)
-    );
+    const pending = h.members.filter((m) => m.goals.some((g) => g.week === week && !g.checkedInAt));
     const link = familyLink(shul, h.token);
     const names = pending.map((m) => m.name).join(" & ");
-    const isLastWeek = week >= campaign.weeks;
-    const text =
-      wave === 1
-        ? [
-            `✨ Gut voch! How did week ${week} go?`,
-            `Check in for ${names} — every check-in grows your streak and the whole shul's numbers.`,
-            isLastWeek ? "" : `Your commitment carries into next Shabbos too — keep it going!`,
-            link,
-          ]
-            .filter(Boolean)
-            .join("\n")
-        : [
-            `👋 Quick nudge — ${names} ${pending.length === 1 ? "hasn't" : "haven't"} checked in yet for Shabbos week ${week}.`,
-            `It takes 10 seconds, and late check-ins still count toward the shul-wide totals:`,
-            link,
-          ].join("\n");
-    const subject =
-      wave === 1
-        ? `How did Shabbos go? Check in — week ${week}`
-        : `Still time to check in — week ${week} of ${campaign.name}`;
-
-    outbox.push({ household: h, message: { subject, text }, kind: kind, week });
+    const text = [
+      `👋 Quick nudge — ${names} ${pending.length === 1 ? "hasn't" : "haven't"} checked in yet for Shabbos week ${week}.`,
+      `It takes 10 seconds, and late check-ins still count toward the totals:`,
+      ``,
+      `Your family page: ${link}`,
+    ].join("\n");
+    outbox.push({ household: h, message: { subject: `Still time to check in — week ${week} of ${campaign.name}`, text }, kind: DRIP_KIND, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;
@@ -370,12 +447,73 @@ export async function runErevShabbosForShul(shul: Shul): Promise<ReminderRunResu
 }
 
 // ---------- cron entrypoints: every active shul ----------
-export async function runThursdayReminders(): Promise<ReminderRunResult> {
-  return forEachShul(runThursdayForShul);
+export async function runFridayReminders(now = new Date()): Promise<ReminderRunResult> {
+  return forEachShul((shul) => runFridayForShul(shul, now));
 }
 
-export async function runCheckinReminders(): Promise<ReminderRunResult> {
-  return forEachShul(runCheckinForShul);
+export async function runCheckinReminders(now = new Date()): Promise<ReminderRunResult> {
+  return forEachShul((shul) => runCheckinForShul(shul, now));
+}
+
+export async function runCheckinDrips(now = new Date()): Promise<ReminderRunResult> {
+  return forEachShul((shul) => runCheckinDripForShul(shul, now));
+}
+
+export type DailyJob = "friday" | "checkin" | "drip";
+
+/** Weekday name in the shul's timezone ("Mon", "Fri", ...). */
+export function weekdayIn(timezone: string, now = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: timezone }).format(now);
+  } catch {
+    return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(now);
+  }
+}
+
+/**
+ * The one daily cron. Runs every morning and decides per shul, by that
+ * shul's local weekday and its families' check-in state:
+ *   Friday      → pre-Shabbos reminder (skips families already done this week;
+ *                 carries a P.S. for anyone still unconfirmed from last week)
+ *   Saturday    → nothing
+ *   Monday      → first check-in reminder for the Shabbos just passed
+ *   Sun–Thu     → drip to families still unconfirmed, at most every 2 days
+ *                 since their last reminder, only after the Monday reminder
+ * `only` forces a single job regardless of weekday (ops / testing).
+ */
+export async function runDailyReminders(now = new Date(), only?: DailyJob): Promise<ReminderRunResult & { jobs: string[] }> {
+  const jobs: string[] = [];
+  const result = await forEachShul(async (shul) => {
+    const day = weekdayIn(shul.timezone, now);
+    const agg: ReminderRunResult = { week: 0, sent: 0, skipped: 0, details: [] };
+    const run = async (name: DailyJob, job: () => Promise<ReminderRunResult>) => {
+      const r = await job();
+      if (!jobs.includes(name)) jobs.push(name);
+      agg.week = r.week;
+      agg.sent += r.sent;
+      agg.skipped += r.skipped;
+      agg.details.push(`${name}: sent ${r.sent}, skipped ${r.skipped}`, ...r.details.map((d) => `${name}: ${d}`));
+    };
+    if (only) {
+      if (only === "friday") await run("friday", () => runFridayForShul(shul, now));
+      if (only === "checkin") await run("checkin", () => runCheckinForShul(shul, now));
+      if (only === "drip") await run("drip", () => runCheckinDripForShul(shul, now));
+      return agg;
+    }
+    if (day === "Sat") {
+      agg.details.push("Shabbos — nothing sent");
+    } else if (day === "Fri") {
+      await run("friday", () => runFridayForShul(shul, now));
+    } else if (day === "Mon") {
+      await run("checkin", () => runCheckinForShul(shul, now));
+    } else {
+      // Sun–Thu: the every-two-days drip (Wednesday, in practice, then the
+      // Friday email's P.S. picks up anyone still open).
+      await run("drip", () => runCheckinDripForShul(shul, now));
+    }
+    return agg;
+  });
+  return { ...result, jobs };
 }
 
 /**

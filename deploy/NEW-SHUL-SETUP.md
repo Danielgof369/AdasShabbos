@@ -6,7 +6,7 @@ charity, logos — comes from settings, not code. You can have your own copy
 live in about 45 minutes, for **$0/month** on free tiers.
 
 **What your community gets:** family signup (adults & children, multiple
-commitments each), automatic Thursday + Motzei Shabbos email reminders with
+commitments each), automatic Friday + Monday email reminders with
 personal check-in links, streaks, a public "who's joined" wall, a live
 shul-wide dashboard, a weekly pizza-raffle tool, and an admin page for it all.
 
@@ -73,7 +73,7 @@ you can also use the free `yourproject.vercel.app` address to start).
    shows at your registrar (typically `A @ → 76.76.21.21` and
    `CNAME www → cname.vercel-dns.com`).
 
-The reminder crons (Thursday 9am + Sunday/Tuesday 9am, in the timezone
+The reminder cron (daily 9am: Friday pre-Shabbos, Monday check-in, drip every two days; in the timezone
 implied by the cron schedule — see note below) deploy automatically from
 `vercel.json`. Vercel calls them with your `CRON_SECRET`; nothing to set up.
 
@@ -113,7 +113,7 @@ implied by the cron schedule — see note below) deploy automatically from
 
 ## Weekly rhythm during the campaign
 
-- **Thursday & Sunday/Tuesday:** reminder emails go out automatically.
+- **Friday & Monday (then every two days until checked in):** reminder emails go out automatically.
 - **Motzei Shabbos:** paste the ready-made WhatsApp blast from `/admin`.
 - **Monday night or later:** draw the 🍕 pizza raffle in `/admin` and paste
   the winner announcement.

@@ -350,7 +350,7 @@ export default async function Home() {
               {
                 n: "2",
                 title: "Get a nudge",
-                body: "A friendly reminder arrives Thursday so you're ready before Shabbos, and again after Shabbos to check in.",
+                body: "A friendly reminder arrives Friday so you're ready before Shabbos, and again Monday to check in.",
               },
               {
                 n: "3",

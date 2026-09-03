@@ -97,6 +97,33 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
         </section>
       )}
 
+      {/* What everyone is taking on */}
+      {stats.takenOn.length > 0 && (
+        <section className="mx-auto max-w-5xl px-4 py-14">
+          <h2 className="font-display text-3xl text-navy mb-2 text-center" style={{ textWrap: "balance" }}>
+            What everyone is taking on this Shabbos
+          </h2>
+          <p className="text-ink-soft text-center mb-8">
+            Week {stats.week} of {stats.weeks} &middot; {stats.members.toLocaleString()} people, {stats.cities} {stats.cities === 1 ? "city" : "cities"}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {stats.takenOn.map((t) => (
+              <div key={t.title} className="flex items-center justify-between gap-4 bg-white rounded-xl border border-parchment px-5 py-4">
+                <span className="text-navy font-medium">{t.title}</span>
+                <span className="shrink-0 font-display text-2xl text-gold tabular-nums">
+                  {t.people.toLocaleString()} <span className="text-xs text-ink-soft font-sans">{t.people === 1 ? "person" : "people"}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link href="/join" className="inline-block bg-gold text-navy-deep font-semibold rounded-lg px-8 py-3.5 text-lg hover:bg-gold-soft transition-colors">
+              Add yours
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* How it works */}
       <section className="bg-parchment/60">
         <div className="mx-auto max-w-5xl px-4 py-16">

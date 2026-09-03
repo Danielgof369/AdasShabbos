@@ -14,6 +14,7 @@ import { sendToHousehold } from "@/lib/messaging";
 import { pluralWeeks } from "@/lib/copy";
 import { AVATAR_BY_ID } from "@/lib/avatars";
 import { ALL_CITIES, regionOf } from "@/lib/cities";
+import { forget } from "@/lib/memo";
 
 export type SignupBody = {
   familyName?: unknown;
@@ -285,5 +286,7 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
     ).catch(() => {});
   }
 
+  forget("national-stats");
+  forget("directory");
   return { ok: true, token: household.token };
 }

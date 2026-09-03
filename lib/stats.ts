@@ -72,9 +72,15 @@ export async function getCampaignStats(
   };
 }
 
+export type TakenOn = { title: string; people: number };
+
 export type NationalStats = {
   shuls: number;
   cities: number;
+  /** The most-taken commitments for the current Shabbos, across everyone. */
+  takenOn: TakenOn[];
+  week: number;
+  weeks: number;
   households: number;
   members: number;
   kids: number;
@@ -85,7 +91,14 @@ export type NationalStats = {
 
 /** Roll-up across every active, listed shul for the national landing page.
  * Cached for a minute per server instance — it's on the busiest page. */
-export const getNationalStats = memo("national-stats", 60_000, async (): Promise<NationalStats> => {
+export const getNationalStats = memo("national-stats", 30_000, async (): Promise<NationalStats> => {
+  // The season calendar comes from the catch-all shul (every national shul
+  // follows it); the current week is what "this Shabbos" means below.
+  const { getIndividualsShul } = await import("@/lib/individuals");
+  const { campaignOf, activeWeek } = await import("@/lib/campaign");
+  const seasonShul = await getIndividualsShul();
+  const seasonCampaign = campaignOf(seasonShul);
+  const week = activeWeek(seasonCampaign);
   const shuls = await prisma.shul.findMany({
     where: { active: true, approved: true },
     select: { id: true, pledgeEnabled: true, pledgePerSignup: true, listed: true },
@@ -125,5 +138,19 @@ export const getNationalStats = memo("national-stats", 60_000, async (): Promise
     if (s.pledgeEnabled) pledgeTotal += n * s.pledgePerSignup;
   }
   const highlights = await highlightsFromCounts(doneGoals);
-  return { shuls: shuls.filter((s) => s.listed).length, cities: cities.size, households, members, kids, checkins, pledgeTotal, highlights };
+  const weekGoals = await prisma.goal.findMany({
+    where: { week, ...inShuls },
+    select: { memberId: true, suggestion: { select: { title: true } }, customTitle: true },
+  });
+  const byTitle = new Map<string, Set<string>>();
+  for (const g of weekGoals) {
+    const title = g.suggestion?.title ?? g.customTitle;
+    if (!title) continue;
+    byTitle.set(title, (byTitle.get(title) ?? new Set()).add(g.memberId));
+  }
+  const takenOn = [...byTitle.entries()]
+    .map(([title, set]) => ({ title, people: set.size }))
+    .sort((a, b) => b.people - a.people)
+    .slice(0, 8);
+  return { shuls: shuls.filter((s) => s.listed).length, cities: cities.size, takenOn, week, weeks: seasonCampaign.weeks, households, members, kids, checkins, pledgeTotal, highlights };
 });

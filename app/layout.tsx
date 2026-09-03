@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(rootBaseUrl()),
       title: `${PLATFORM.name} — ${PLATFORM.tagline}`,
       description:
-        "A national network of shul Shabbos campaigns. Every man, woman and child takes on one small thing for Shabbos, every week — with reminders, check-ins and a live count for the whole community. Free for any shul.",
+        "Sign up your family, take on one small thing for each Shabbos of the season, get a reminder before Shabbos and a check-in after, and watch what Klal Yisroel does for Shabbos add up, city by city.",
       openGraph: {
         title: PLATFORM.name,
         description: PLATFORM.tagline,

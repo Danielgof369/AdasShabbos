@@ -60,7 +60,7 @@ export default function FindPage() {
       </form>
       <p className="text-sm text-ink-soft mt-6 text-center">
         Haven&rsquo;t signed up yet?{" "}
-        <a href="/signup" className="underline hover:text-navy">
+        <a href="/join" className="underline hover:text-navy">
           Join the campaign
         </a>
       </p>

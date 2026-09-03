@@ -66,7 +66,7 @@ export default async function ShulPage({ params }: { params: Promise<{ slug: str
           <div className="grid grid-cols-3 gap-3 max-w-lg mb-8">
             {[
               [stats.households, stats.households === 1 ? "family" : "families"],
-              [stats.members, "people"],
+              [stats.members, stats.members === 1 ? "person" : "people"],
               [stats.checkins, "check-ins"],
             ].map(([v, l]) => (
               <div key={String(l)} className="bg-white/10 rounded-xl border border-cream/15 px-3 py-4 text-center">

@@ -5,7 +5,7 @@ import { listDirectoryShuls, listCities } from "@/lib/directory";
 import { getNationalStats } from "@/lib/stats";
 import { PLATFORM } from "@/lib/platform";
 import ShulDirectory from "@/components/national/ShulDirectory";
-import CitiesBoard from "@/components/national/CitiesBoard";
+import CitiesBoard, { plural } from "@/components/national/CitiesBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +20,19 @@ export default async function WhosInPage() {
       <p className="text-ink-soft text-center mb-10">
         {stats.members === 0
           ? "Be the first."
-          : `${stats.members.toLocaleString()} people · ${stats.households.toLocaleString()} families · ${stats.cities} ${stats.cities === 1 ? "city" : "cities"}`}
+          : `${plural(stats.members, "person", "people")} · ${plural(stats.households, "family", "families")} · ${plural(stats.cities, "city", "cities")}`}
       </p>
+      {stats.highlights.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2.5 mb-10 -mt-4">
+          {stats.highlights.slice(0, 6).map((h) => (
+            <div key={h.label} className="bg-gold-pale rounded-full px-4 py-1.5 text-navy text-sm">
+              <span className="font-display text-base text-gold mr-1.5 tabular-nums">{h.value.toLocaleString()}</span>
+              {h.label}
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-ink-soft text-sm text-center mb-6">Tap a city to see the families there and what they&rsquo;ve done.</p>
       <CitiesBoard cities={cities} />
       {shuls.length > 0 && (
         <div className="mt-14">

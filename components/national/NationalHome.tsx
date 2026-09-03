@@ -71,7 +71,7 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel }: { st
           {live && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-14">
               <Stat value={stats.households.toLocaleString()} label={stats.households === 1 ? "family" : "families"} />
-              <Stat value={stats.members.toLocaleString()} label="people" />
+              <Stat value={stats.members.toLocaleString()} label={stats.members === 1 ? "person" : "people"} />
               <Stat value={stats.kids.toLocaleString()} label="children" />
               <Stat value={stats.cities.toLocaleString()} label={stats.cities === 1 ? "city" : "cities"} />
             </div>
@@ -103,7 +103,7 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel }: { st
             What everyone is taking on this Shabbos
           </h2>
           <p className="text-ink-soft text-center mb-8">
-            Week {stats.week} of {stats.weeks} &middot; {stats.members.toLocaleString()} people, {stats.cities} {stats.cities === 1 ? "city" : "cities"}
+            Week {stats.week} of {stats.weeks} &middot; {stats.members.toLocaleString()} {stats.members === 1 ? "person" : "people"}, {stats.cities} {stats.cities === 1 ? "city" : "cities"}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {stats.takenOn.map((t) => (

@@ -5,6 +5,7 @@ import { campaignOf, shabbosOfWeek, formatShabbosDate } from "@/lib/campaign";
 import { currentShul } from "@/lib/tenant";
 import { PLATFORM } from "@/lib/platform";
 import { pluralWeeks } from "@/lib/copy";
+import { ALL_CITIES } from "@/lib/cities";
 import { getIndividualsShul } from "@/lib/individuals";
 import SignupForm from "@/app/signup/SignupForm";
 
@@ -20,11 +21,11 @@ export const metadata = { title: `Sign up | ${PLATFORM.name}` };
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shul?: string }>;
+  searchParams: Promise<{ shul?: string; city?: string }>;
 }) {
   // On a shul's own site, signup lives at /signup.
   if (await currentShul()) redirect("/signup");
-  const { shul: prefill } = await searchParams;
+  const { shul: prefill, city: cityPrefill } = await searchParams;
 
   const shul = await getIndividualsShul();
   const campaign = campaignOf(shul);
@@ -56,6 +57,7 @@ export default async function JoinPage({
         askShul
         defaultShulNote={prefill ?? ""}
         askCity
+        defaultCity={cityPrefill && ALL_CITIES.has(cityPrefill) ? cityPrefill : ""}
       />
     </div>
   );

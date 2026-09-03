@@ -116,6 +116,8 @@ model Household {
   email2     String? // additional reminder recipients (e.g. both parents)
   email3     String?
   shulNote   String? // "my shul is…" typed by an individual signup (not a directory entry)
+  city       String? // from the curated dropdown (national signups)
+  region     String? // state/country group of that city
   createdAt  DateTime @default(now())
 
   smsOptIn   Boolean @default(true)

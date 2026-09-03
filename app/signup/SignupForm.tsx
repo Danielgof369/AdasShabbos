@@ -4,6 +4,7 @@ import { useState } from "react";
 import { audienceMatches, type Category } from "@/lib/categories";
 import Avatar from "@/components/Avatar";
 import { randomAvatar, AVATAR_BY_ID } from "@/lib/avatars";
+import { CITY_GROUPS } from "@/lib/cities";
 import type { SuggestionOption } from "@/lib/types";
 
 type PersonDraft = {
@@ -33,6 +34,8 @@ export default function SignupForm({
   shulId,
   askShul = false,
   defaultShulNote = "",
+  askCity = false,
+  defaultCity = "",
 }: {
   suggestions: SuggestionOption[];
   charityName?: string;
@@ -42,8 +45,13 @@ export default function SignupForm({
   /** Individual signup: ask which shul they belong to (free text). */
   askShul?: boolean;
   defaultShulNote?: string;
+  /** National signups: pick a city from the curated list. */
+  askCity?: boolean;
+  defaultCity?: string;
 }) {
   const [shulNote, setShulNote] = useState(defaultShulNote ?? "");
+  const [city, setCity] = useState(defaultCity ?? "");
+  const [otherCity, setOtherCity] = useState("");
   const [familyName, setFamilyName] = useState("");
   const [phone, setPhone] = useState("");
   const [emails, setEmails] = useState<string[]>([""]);
@@ -79,6 +87,10 @@ export default function SignupForm({
       setError("Please enter an email so we can send your weekly reminders.");
       return;
     }
+    if (askCity && (!city || (city === "__other" && !otherCity.trim()))) {
+      setError("Please pick your city.");
+      return;
+    }
     for (const p of people) {
       if (!p.name.trim()) {
         setError("Please give every person a first name.");
@@ -109,6 +121,7 @@ export default function SignupForm({
         body: JSON.stringify({
           ...(shulId ? { shulId } : {}),
           ...(askShul ? { shulNote: shulNote.trim() } : {}),
+          ...(askCity ? { city: city === "__other" ? `Other: ${otherCity.trim()}` : city } : {}),
           familyName: familyName.trim(),
           phone: phone.trim() || null,
           emails: emails.map((e) => e.trim()).filter(Boolean),
@@ -221,6 +234,35 @@ export default function SignupForm({
             onChange={(e) => setFamilyName(e.target.value)}
             className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
           />
+          {askCity && (
+            <div>
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
+              >
+                <option value="">Your city…</option>
+                {CITY_GROUPS.map((g) => (
+                  <optgroup key={g.region} label={g.region}>
+                    {g.cities.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </optgroup>
+                ))}
+                <option value="__other">Somewhere else…</option>
+              </select>
+              {city === "__other" && (
+                <input
+                  type="text"
+                  value={otherCity}
+                  onChange={(e) => setOtherCity(e.target.value)}
+                  placeholder="City, state/country"
+                  maxLength={80}
+                  className="mt-2 w-full rounded-lg border border-parchment bg-cream px-4 py-3 outline-none focus:border-gold"
+                />
+              )}
+            </div>
+          )}
           {askShul && (
             <div>
               <input

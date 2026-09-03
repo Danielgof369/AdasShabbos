@@ -1,8 +1,7 @@
 import Link from "next/link";
 import fs from "node:fs";
 import path from "node:path";
-import { PLATFORM, TIERS } from "@/lib/platform";
-import { SUGGESTION_TEMPLATE } from "@/lib/suggestionTemplate";
+import { PLATFORM } from "@/lib/platform";
 import type { NationalStats } from "@/lib/stats";
 import ShulDirectory, { type DirectoryShul } from "@/components/national/ShulDirectory";
 
@@ -23,10 +22,6 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 export default function NationalHome({ stats, shuls, seasonLabel }: { stats: NationalStats; shuls: DirectoryShul[]; seasonLabel: string }) {
   const live = stats.shuls > 0 || stats.members > 0;
   const partnerDark = partnerLogo("dark");
-  const examples = TIERS.map((t) => ({
-    ...t,
-    items: SUGGESTION_TEMPLATE.filter((s) => s.tier === t.key && s.categories !== "child").slice(0, 4),
-  }));
   return (
     <div>
       {/* Hero */}
@@ -62,9 +57,9 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
             Every week. <span className="text-gold-soft">Every shul.</span>
           </h1>
           <p className="text-cream/85 text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed">
-            Every man, woman and child takes on one extra way to honor Shabbos and holds it
-            every week of the season. Sign up your family, name your shul, and watch your
-            shul&rsquo;s page fill up alongside shuls across the country.
+            Take on one small thing for Shabbos and hold it every week of {seasonLabel}.
+            Sign up your family in thirty seconds; we&rsquo;ll remind you before Shabbos and
+            check in after.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/join" className="bg-gold text-navy-deep font-bold rounded-lg px-8 py-4 text-center text-lg hover:bg-gold-soft transition-colors">
@@ -76,10 +71,10 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
           </div>
           {live && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-14">
-              <Stat value={stats.shuls} label={stats.shuls === 1 ? "shul" : "shuls"} />
-              <Stat value={stats.members.toLocaleString()} label="people signed up" />
+              <Stat value={stats.households.toLocaleString()} label={stats.households === 1 ? "family" : "families"} />
+              <Stat value={stats.members.toLocaleString()} label="people" />
               <Stat value={stats.kids.toLocaleString()} label="children" />
-              <Stat value={stats.checkins.toLocaleString()} label="Shabbos check-ins" />
+              <Stat value={stats.cities.toLocaleString()} label={stats.cities === 1 ? "city" : "cities"} />
             </div>
           )}
         </div>
@@ -101,40 +96,6 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
           </div>
         </section>
       )}
-
-      {/* Three tiers */}
-      <section className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="font-display text-3xl sm:text-4xl text-navy mb-3 text-center" style={{ textWrap: "balance" }}>
-          Three ways in: yourself, your family, your kehilla
-        </h2>
-        <p className="text-ink-soft text-center max-w-2xl mx-auto mb-10">
-          The program from {PLATFORM.partner.name}. Pick what you&rsquo;ll hold every Shabbos this season.
-          A few of the {SUGGESTION_TEMPLATE.filter((s) => s.tier !== "kehilla").length} choices:
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {examples.map((t) => (
-            <div key={t.key} className="bg-white rounded-2xl border border-parchment shadow-sm p-6 flex flex-col">
-              <h3 className="font-display text-2xl text-navy mb-1">{t.title}</h3>
-              <p className="text-ink-soft text-sm mb-4">{t.blurb}</p>
-              <ul className="space-y-2 text-sm text-ink flex-1">
-                {t.items.map((s) => (
-                  <li key={s.title} className="flex gap-2">
-                    <span className="text-gold shrink-0">✓</span>
-                    <span>{s.title}</span>
-                  </li>
-                ))}
-              </ul>
-              {t.key !== "kehilla" ? (
-                <Link href="/join" className="mt-5 text-sm font-semibold text-navy underline underline-offset-4 hover:text-gold">
-                  Take one on →
-                </Link>
-              ) : (
-                <span className="mt-5 text-sm text-ink-soft">Led by the rav; shown on your shul&rsquo;s page.</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* How it works */}
       <section className="bg-parchment/60">

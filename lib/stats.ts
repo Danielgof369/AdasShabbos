@@ -74,6 +74,7 @@ export async function getCampaignStats(
 
 export type NationalStats = {
   shuls: number;
+  cities: number;
   households: number;
   members: number;
   kids: number;
@@ -91,7 +92,7 @@ export const getNationalStats = memo("national-stats", 60_000, async (): Promise
   });
   const ids = shuls.map((s) => s.id);
   const inShuls = { member: { household: { shulId: { in: ids } } } };
-  const [members, kids, checkins, doneGoals, perShul] = await Promise.all([
+  const [members, kids, checkins, doneGoals, perShul, cityRows] = await Promise.all([
     prisma.member.count({ where: { household: { shulId: { in: ids } } } }),
     prisma.member.count({ where: { isChild: true, household: { shulId: { in: ids } } } }),
     prisma.goal.count({ where: { checkedInAt: { not: null }, ...inShuls } }),
@@ -105,7 +106,16 @@ export const getNationalStats = memo("national-stats", 60_000, async (): Promise
       where: { shulId: { in: ids } },
       _count: { _all: true },
     }),
+    prisma.household.findMany({
+      where: { shulId: { in: ids } },
+      select: { city: true, shul: { select: { city: true, listed: true } } },
+    }),
   ]);
+  const cities = new Set(
+    cityRows
+      .map((h) => (h.city ?? (h.shul.listed ? h.shul.city : null))?.trim().toLowerCase())
+      .filter((c): c is string => !!c)
+  );
   const householdsBy = new Map(perShul.map((r) => [r.shulId, r._count._all]));
   let households = 0;
   let pledgeTotal = 0;
@@ -115,5 +125,5 @@ export const getNationalStats = memo("national-stats", 60_000, async (): Promise
     if (s.pledgeEnabled) pledgeTotal += n * s.pledgePerSignup;
   }
   const highlights = await highlightsFromCounts(doneGoals);
-  return { shuls: shuls.filter((s) => s.listed).length, households, members, kids, checkins, pledgeTotal, highlights };
+  return { shuls: shuls.filter((s) => s.listed).length, cities: cities.size, households, members, kids, checkins, pledgeTotal, highlights };
 });

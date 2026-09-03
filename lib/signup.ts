@@ -13,6 +13,7 @@ import { isCategory, isChildCategory } from "@/lib/categories";
 import { sendToHousehold } from "@/lib/messaging";
 import { pluralWeeks } from "@/lib/copy";
 import { AVATAR_BY_ID } from "@/lib/avatars";
+import { ALL_CITIES, regionOf } from "@/lib/cities";
 
 export type SignupBody = {
   familyName?: unknown;
@@ -22,6 +23,7 @@ export type SignupBody = {
   members?: unknown;
   shulId?: unknown;
   shulNote?: unknown;
+  city?: unknown;
 };
 
 type MemberInput = {
@@ -68,6 +70,10 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
   }
 
   const shulNote = typeof body.shulNote === "string" ? body.shulNote.trim().slice(0, 120) || null : null;
+  // City: a dropdown pick, or "Other: <text>" from the free-text fallback.
+  const rawCity = typeof body.city === "string" ? body.city.trim().slice(0, 80) : "";
+  const city = rawCity ? (ALL_CITIES.has(rawCity) ? rawCity : rawCity.replace(/^Other:\s*/i, "").trim() || null) : null;
+  const region = city ? regionOf(city) : null;
   const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
   const phone = rawPhone ? normalizePhone(rawPhone) : null;
   if (rawPhone && !phone) {
@@ -177,6 +183,8 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
             email2: emails[1] ?? null,
             email3: emails[2] ?? null,
             shulNote,
+            city,
+            region,
           },
         });
       } catch (e) {
@@ -203,6 +211,8 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
         email2: existing.email2 ?? fresh.shift() ?? null,
         email3: existing.email3 ?? fresh.shift() ?? null,
         shulNote: existing.shulNote ?? shulNote,
+        city: existing.city ?? city,
+        region: existing.region ?? region,
       },
     });
   }

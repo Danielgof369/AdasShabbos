@@ -84,6 +84,8 @@ export default async function JoinPage({
         shulId={shul.id}
         askShul={!!solo}
         defaultShulNote={solo && slug ? slug : ""}
+        askCity
+        defaultCity={solo ? "" : shul.city}
       />
     </div>
   );

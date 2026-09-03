@@ -12,5 +12,7 @@ if [ "${DB_SETUP_ON_BUILD:-}" = "1" ]; then
     echo "SEED_ON_BUILD=1: seeding"
     npx prisma db seed
   fi
+  # Bounded one-off data fixes (see each script's header).
+  npx tsx scripts/cleanup-test-signups.ts
 fi
 npx next build

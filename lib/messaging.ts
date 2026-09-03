@@ -1,4 +1,17 @@
 import { prisma } from "@/lib/db";
+import { PLATFORM } from "@/lib/platform";
+
+/**
+ * The From header for every email. The display name is always the
+ * platform name; EMAIL_FROM only supplies the address (either a bare
+ * address or "Anything <address>"), so a stale name in the env var can't
+ * leak into people's inboxes.
+ */
+export function emailFrom(): string {
+  const raw = (process.env.EMAIL_FROM ?? "").trim();
+  const address = (raw.match(/<([^>]+)>/)?.[1] ?? raw).trim() || "onboarding@resend.dev";
+  return `${PLATFORM.name} <${address}>`;
+}
 
 export type OutboundMessage = {
   subject: string; // email subject; ignored for SMS/WhatsApp
@@ -48,7 +61,7 @@ export async function sendResend(to: string[], subject: string, text: string): P
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "Kabalos Shabbos <onboarding@resend.dev>",
+      from: emailFrom(),
       to,
       subject,
       text,
@@ -173,7 +186,7 @@ const RESEND_BATCH = 100;
 async function sendResendBatch(
   emails: { to: string[]; subject: string; text: string }[]
 ): Promise<void> {
-  const from = process.env.EMAIL_FROM ?? "Kabalos Shabbos <onboarding@resend.dev>";
+  const from = emailFrom();
   const res = await fetch("https://api.resend.com/emails/batch", {
     method: "POST",
     headers: {

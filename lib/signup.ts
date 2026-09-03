@@ -1,17 +1,10 @@
 import { prisma } from "@/lib/db";
-import {
-  campaignOf,
-  activeWeek,
-  shabbosOfWeek,
-  formatShabbosDate,
-  checkinDeadline,
-} from "@/lib/campaign";
-import { shulBaseUrl, rootBaseUrl, familyLink, type Shul } from "@/lib/tenant";
+import { campaignOf, activeWeek, checkinDeadline } from "@/lib/campaign";
+import type { Shul } from "@/lib/tenant";
 import { lastShabbosWeek } from "@/lib/household";
 import { normalizePhone, normalizeEmail } from "@/lib/contact";
 import { isCategory, isChildCategory } from "@/lib/categories";
-import { sendToHousehold } from "@/lib/messaging";
-import { pluralWeeks } from "@/lib/copy";
+import { sendWelcome } from "@/lib/welcome";
 import { AVATAR_BY_ID } from "@/lib/avatars";
 import { ALL_CITIES, regionOf } from "@/lib/cities";
 import { forget } from "@/lib/memo";
@@ -243,47 +236,13 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
   }
 
   // Welcome email with the family's permanent link (first signup only).
-  const welcomed = await prisma.messageLog.findFirst({
-    where: { householdId: household.id, kind: "welcome" },
-  });
-  if (!welcomed) {
-    const link = familyLink(shul, household.token);
-    const base = shul.hasSite ? shulBaseUrl(shul) : rootBaseUrl();
-    const memberGoals = await prisma.member.findMany({
-      where: { householdId: household.id },
-      include: { goals: { where: { week }, include: { suggestion: true } } },
-    });
-    const lines = memberGoals
-      .filter((m) => m.goals.length)
-      .map(
-        (m) =>
-          `• ${m.name}: ${m.goals
-            .map((g) => g.suggestion?.title ?? g.customTitle)
-            .filter(Boolean)
-            .join(" + ")}`
-      );
-    const text = [
-      `Welcome to ${campaign.name}! 🕯️`,
-      ``,
-      `The ${familyName} family has taken on their commitments for the ${pluralWeeks(campaign.weeks)} of the campaign — starting Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, week))}, through Shabbos ${formatShabbosDate(campaign, shabbosOfWeek(campaign, campaign.weeks))}:`,
-      ...lines,
-      ``,
-      `Your family page — there's no password, this link IS your login:`,
-      link,
-      ``,
-      `Lost the link? Tap "Sign in" at ${base.replace(/^https?:\/\//, "")} and enter this email address — that's it.`,
-      ``,
-      `We'll remind you before each Shabbos, and after Shabbos to check in.${campaign.pledgeEnabled ? ` Your family's signup sent $${campaign.pledgePerSignup} to ${campaign.charityName}.` : ""}`,
-      ...(cleanMembers.some((m) => m.category === "boy" || m.category === "girl")
-        ? [``, `P.S. For the children: the Shabbos Helpers Guide, full of jobs worth owning — ${base}/shabbos-helpers-guide.pdf`]
-        : []),
-    ].join("\n");
-    sendToHousehold(
-      household,
-      { subject: `Your family page — ${campaign.name}`, text },
-      "welcome",
-      week
-    ).catch(() => {});
+  // Awaited on purpose: on serverless hosts a fire-and-forget send can be
+  // cut off when the response returns. Failure is logged, never fatal.
+  try {
+    const outcome = await sendWelcome(shul, household.id, { week });
+    if (outcome === "failed") console.error(`[signup] welcome email failed for household ${household.id}`);
+  } catch (e) {
+    console.error(`[signup] welcome email threw for household ${household.id}:`, e);
   }
 
   forget("national-stats");

@@ -15,6 +15,7 @@ import { shulBaseUrl } from "@/lib/tenant";
 import { PLATFORM, TIMEZONES, isIsoDate, utcOffsetOn } from "@/lib/platform";
 import { saveSeason, getSeason } from "@/lib/season";
 import { getIndividualsShul } from "@/lib/individuals";
+import { sendWelcome } from "@/lib/welcome";
 import { cleanSlug as platformSlug, slugProblem } from "@/lib/platform";
 
 export async function platformLoginAction(formData: FormData) {
@@ -253,5 +254,15 @@ export async function updateShulAction(formData: FormData) {
       ...(password.length >= 8 ? { adminHash: shulAdminHash(shul.slug, password) } : {}),
     },
   });
+  revalidatePath("/platform");
+}
+
+/** Send (or re-send) a family's welcome email from the delivery panel. */
+export async function resendWelcomeAction(formData: FormData) {
+  await requirePlatform();
+  const id = String(formData.get("id") ?? "");
+  const household = await prisma.household.findUnique({ where: { id }, include: { shul: true } });
+  if (!household) return;
+  await sendWelcome(household.shul, household.id, { force: true });
   revalidatePath("/platform");
 }

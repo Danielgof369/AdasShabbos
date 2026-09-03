@@ -10,9 +10,11 @@ import {
   saveSeasonAction,
   createShulFromRequestsAction,
   moveRequestsToShulAction,
+  resendWelcomeAction,
 } from "./actions";
 import { getIndividualsShul } from "@/lib/individuals";
 import { getSeason } from "@/lib/season";
+import { emailFrom } from "@/lib/messaging";
 import { TIMEZONES } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +60,29 @@ export default async function PlatformPage() {
     return m.set(key, g);
   }, new Map<string, { note: string; families: string[] }>()).values()].sort((a, b) => b.families.length - a.families.length);
   const soloCount = await prisma.household.count({ where: { shulId: individuals.id } });
+
+  // Email delivery: recent signups and whether their welcome went out.
+  const recent = await prisma.household.findMany({
+    where: { shulId: individuals.id },
+    orderBy: { createdAt: "desc" },
+    take: 30,
+    select: { id: true, familyName: true, email: true, city: true, createdAt: true, _count: { select: { members: true } } },
+  });
+  const welcomeLogs = await prisma.messageLog.findMany({
+    where: { kind: "welcome", householdId: { in: recent.map((h) => h.id) } },
+    orderBy: { sentAt: "desc" },
+    select: { householdId: true, channel: true, sentAt: true },
+  });
+  const welcomeBy = new Map<string, { channel: string; sentAt: Date }>();
+  for (const l of welcomeLogs) if (!welcomeBy.has(l.householdId)) welcomeBy.set(l.householdId, l);
+  const missingWelcome = recent.filter((h) => !welcomeBy.has(h.id));
+  const lastCron = await prisma.messageLog.findFirst({
+    where: { kind: { in: ["friday_reminder", "checkin_reminder", "checkin_drip"] } },
+    orderBy: { sentAt: "desc" },
+    select: { kind: true, sentAt: true },
+  });
+  const resendConfigured = !!process.env.RESEND_API_KEY;
+  const fmt = (d: Date) => d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: season.timezone });
   const shuls = await prisma.shul.findMany({
     orderBy: { createdAt: "asc" },
     include: {
@@ -117,6 +142,57 @@ export default async function PlatformPage() {
             <button className={btnCls}>Save season</button>
           </div>
         </form>
+      </section>
+
+      {/* Email delivery */}
+      <section className="bg-white rounded-xl border border-parchment p-5">
+        <h2 className="font-semibold text-navy mb-1">Email delivery</h2>
+        <p className="text-sm text-ink-soft mb-4">
+          Sending as <span className="font-mono text-navy">{emailFrom()}</span>
+          {" · "}
+          {resendConfigured ? "Resend connected" : <span className="text-red-700 font-medium">RESEND_API_KEY missing — nothing is being emailed</span>}
+          {" · "}
+          {lastCron ? `last reminder run: ${lastCron.kind.replace(/_/g, " ")} at ${fmt(lastCron.sentAt)}` : "no reminder run yet"}
+        </p>
+        {missingWelcome.length > 0 && (
+          <p className="text-sm bg-red-50 border border-red-200 text-red-800 rounded-lg px-3 py-2 mb-4">
+            {missingWelcome.length} recent {missingWelcome.length === 1 ? "signup has" : "signups have"} no welcome email on record. Use &ldquo;Send welcome&rdquo; below.
+          </p>
+        )}
+        {recent.length === 0 ? (
+          <p className="text-sm text-ink-soft italic">No signups yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-ink-soft text-left">
+                <tr><th className="py-1 pr-3">Signed up</th><th className="py-1 pr-3">Family</th><th className="py-1 pr-3">Email</th><th className="py-1 pr-3">Welcome email</th><th className="py-1"></th></tr>
+              </thead>
+              <tbody>
+                {recent.map((h) => {
+                  const w = welcomeBy.get(h.id);
+                  return (
+                    <tr key={h.id} className="border-t border-parchment">
+                      <td className="py-2 pr-3 whitespace-nowrap text-ink-soft">{fmt(h.createdAt)}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap"><span className="font-medium text-navy">{h.familyName ?? "?"}</span> <span className="text-ink-soft">· {h._count.members} · {h.city ?? "—"}</span></td>
+                      <td className="py-2 pr-3 whitespace-nowrap">{h.email ?? <span className="text-ink-soft italic">no email</span>}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">
+                        {w ? <span className="text-green-800">✓ {w.channel} · {fmt(w.sentAt)}</span> : <span className="text-red-700 font-medium">not sent</span>}
+                      </td>
+                      <td className="py-2 text-right">
+                        {h.email && (
+                          <form action={resendWelcomeAction}>
+                            <input type="hidden" name="id" value={h.id} />
+                            <button className="text-xs underline text-navy hover:text-gold">{w ? "Resend welcome" : "Send welcome"}</button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Shul requests from individual signups */}

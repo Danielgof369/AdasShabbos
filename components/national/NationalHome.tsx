@@ -4,6 +4,8 @@ import path from "node:path";
 import { PLATFORM } from "@/lib/platform";
 import type { NationalStats } from "@/lib/stats";
 import ShulDirectory, { type DirectoryShul } from "@/components/national/ShulDirectory";
+import CitiesBoard from "@/components/national/CitiesBoard";
+import type { CityRow } from "@/lib/directory";
 
 function partnerLogo(tone: "light" | "dark"): string | null {
   const file = tone === "dark" ? PLATFORM.partner.logoDark : PLATFORM.partner.logoLight;
@@ -19,7 +21,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
   );
 }
 
-export default function NationalHome({ stats, shuls, seasonLabel }: { stats: NationalStats; shuls: DirectoryShul[]; seasonLabel: string }) {
+export default function NationalHome({ stats, shuls, cities, seasonLabel }: { stats: NationalStats; shuls: DirectoryShul[]; cities: CityRow[]; seasonLabel: string }) {
   const live = stats.shuls > 0 || stats.members > 0;
   const partnerDark = partnerLogo("dark");
   return (
@@ -54,7 +56,7 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
           <h1 className="font-display text-4xl sm:text-6xl leading-[1.08] mb-6 max-w-3xl" style={{ textWrap: "balance" }}>
             One small thing for Shabbos.
             <br />
-            Every week. <span className="text-gold-soft">Every shul.</span>
+            Every week. <span className="text-gold-soft">Together.</span>
           </h1>
           <p className="text-cream/85 text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed">
             Take on one small thing for Shabbos and hold it every week of {seasonLabel}.
@@ -65,7 +67,7 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
             <Link href="/join" className="bg-gold text-navy-deep font-bold rounded-lg px-8 py-4 text-center text-lg hover:bg-gold-soft transition-colors">
               Sign up your family →
             </Link>
-            <Link href="/shuls" className="border border-cream/40 rounded-lg px-8 py-4 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors">
+            <Link href="/whos-in" className="border border-cream/40 rounded-lg px-8 py-4 text-center text-lg hover:border-gold-soft hover:text-gold-soft transition-colors">
               See who&rsquo;s already in
             </Link>
           </div>
@@ -132,7 +134,7 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
             {[
               ["1", "Sign up", "Thirty seconds on your phone, on your own or with the whole house. Each person picks what they'll take on. No app, no passwords — a personal link is your login."],
               ["2", "Get the nudges", "A reminder Thursday with what everyone took on. After Shabbos, a ten-second check-in: tap “I did it.” Miss it and we'll nudge again."],
-              ["3", "Watch it add up", "Your family's streak, your shul's page filling with families, and a national count of what Klal Yisroel has done for Shabbos this season."],
+              ["3", "Watch it add up", "Your family's streak, your city on the board, and a national count of what Klal Yisroel has done for Shabbos this season."],
             ].map(([n, title, body]) => (
               <li key={n} className="bg-white rounded-2xl border border-parchment shadow-sm p-6">
                 <div className="font-display text-gold text-4xl mb-2">{n}</div>
@@ -144,11 +146,16 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
         </div>
       </section>
 
-      {/* Directory */}
-      <section id="shuls" className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="font-display text-3xl text-navy mb-2 text-center">Shuls in the initiative</h2>
-        <p className="text-ink-soft text-center mb-10">Tap yours to see who&rsquo;s already in — or be the first from your shul.</p>
-        <ShulDirectory shuls={shuls} compact />
+      {/* Who's in */}
+      <section id="whos-in" className="mx-auto max-w-5xl px-4 py-16">
+        <h2 className="font-display text-3xl text-navy mb-2 text-center">Who&rsquo;s in</h2>
+        <p className="text-ink-soft text-center mb-10">Families across the country, city by city.</p>
+        <CitiesBoard cities={cities} compact />
+        {shuls.length > 0 && (
+          <div className="mt-10">
+            <ShulDirectory shuls={shuls} compact />
+          </div>
+        )}
         <div className="text-center mt-10">
           <Link href="/join" className="inline-block bg-navy text-cream font-semibold rounded-lg px-8 py-3.5 hover:bg-navy-soft transition-colors">
             Sign up your family
@@ -168,14 +175,13 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
             asking how to do the same.
           </p>
           <p className="text-cream/85 leading-relaxed mb-8">
-            Together with {PLATFORM.partner.name}, it&rsquo;s now open to every shul. Same idea, same tools, your community.
+            Together with {PLATFORM.partner.name}, it&rsquo;s now open to everyone, everywhere. Same idea, same tools.
           </p>
           <Link href="/join" className="inline-block bg-gold text-navy-deep font-bold rounded-lg px-10 py-4 text-lg hover:bg-gold-soft transition-colors">
             Sign up your family
           </Link>
           <p className="text-cream/55 text-sm mt-5">
-            Running it for your whole shul, with your own site and admin?{" "}
-            <Link href="/start" className="underline hover:text-gold-soft">Start here</Link>. Questions:{" "}
+            Questions:{" "}
             <a href={`mailto:${PLATFORM.contactEmail}`} className="underline hover:text-gold-soft">{PLATFORM.contactEmail}</a>
           </p>
         </div>

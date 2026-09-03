@@ -31,3 +31,24 @@ export const listDirectoryShuls = memo("directory", 60_000, async (): Promise<Di
     people: peopleBy.get(s.id) ?? 0,
   }));
 });
+
+export type CityRow = { city: string; region: string | null; families: number; people: number };
+
+/** Families and people by city, across every approved shul (cached a minute). */
+export const listCities = memo("cities", 60_000, async (): Promise<CityRow[]> => {
+  const rows = await prisma.household.findMany({
+    where: { shul: { active: true, approved: true } },
+    select: { city: true, region: true, shul: { select: { city: true, state: true, listed: true } }, _count: { select: { members: true } } },
+  });
+  const by = new Map<string, CityRow>();
+  for (const h of rows) {
+    const city = (h.city ?? (h.shul.listed ? h.shul.city : null))?.trim();
+    if (!city) continue;
+    const key = city.toLowerCase();
+    const cur = by.get(key) ?? { city, region: h.region ?? h.shul.state ?? null, families: 0, people: 0 };
+    cur.families += 1;
+    cur.people += h._count.members;
+    by.set(key, cur);
+  }
+  return [...by.values()].sort((a, b) => b.people - a.people || a.city.localeCompare(b.city));
+});

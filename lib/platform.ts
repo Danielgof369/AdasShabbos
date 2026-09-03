@@ -4,7 +4,7 @@
  */
 export const PLATFORM = {
   name: "Kabbalos Shabbos",
-  tagline: "One small thing for Shabbos. Every week. Every shul.",
+  tagline: "One small thing for Shabbos. Every week. Together.",
   /** Where questions and change requests go. A person (and an agent)
    * reads this inbox — see deploy/SUPPORT.md. */
   contactEmail: process.env.PLATFORM_CONTACT_EMAIL ?? "support@kabbolasshabbos.com",

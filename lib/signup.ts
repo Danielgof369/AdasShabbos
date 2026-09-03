@@ -288,5 +288,6 @@ export async function createSignup(shul: Shul, body: SignupBody): Promise<Signup
 
   forget("national-stats");
   forget("directory");
+  forget("cities");
   return { ok: true, token: household.token };
 }

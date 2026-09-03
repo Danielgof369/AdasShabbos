@@ -13,7 +13,7 @@ import { raffleDraws } from "@/lib/raffle";
 import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/Logo";
 import { currentShul, unknownSubdomain, rootBaseUrl, ROOT_DOMAIN } from "@/lib/tenant";
-import { listDirectoryShuls } from "@/lib/directory";
+import { listDirectoryShuls, listCities } from "@/lib/directory";
 import { whyParagraphs, announcementOf, pluralWeeks } from "@/lib/copy";
 import { PLATFORM } from "@/lib/platform";
 import JoinNudge from "@/components/JoinNudge";
@@ -60,8 +60,8 @@ export default async function Home() {
   if (!shul) {
     const missing = await unknownSubdomain();
     if (missing) return <UnclaimedShul slug={missing} />;
-    const [stats, shuls, season] = await Promise.all([getNationalStats(), listDirectoryShuls(), getSeason()]);
-    return <NationalHome stats={stats} shuls={shuls} seasonLabel={season.label} />;
+    const [stats, shuls, cities, season] = await Promise.all([getNationalStats(), listDirectoryShuls(), listCities(), getSeason()]);
+    return <NationalHome stats={stats} shuls={shuls} cities={cities} seasonLabel={season.label} />;
   }
   if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
 

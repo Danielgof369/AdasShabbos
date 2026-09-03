@@ -56,7 +56,7 @@ export default async function ShulPage({ params }: { params: Promise<{ slug: str
         <div className="glow-dot absolute -top-24 right-0 h-96 w-96 rounded-full" />
         <div className="mx-auto max-w-4xl px-4 py-14 relative">
           <p className="text-gold-soft font-display tracking-widest uppercase text-sm mb-3">
-            <Link href="/shuls" className="hover:underline">All shuls</Link> &middot; {campaign.seasonLabel}
+            <Link href="/whos-in" className="hover:underline">Who&rsquo;s in</Link> &middot; {campaign.seasonLabel}
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-2">{shul.name}</h1>
           <p className="text-cream/75 text-lg mb-8">

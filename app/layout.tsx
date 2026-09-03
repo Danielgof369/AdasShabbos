@@ -64,8 +64,8 @@ export default async function RootLayout({
                 <span className="font-display text-lg sm:text-xl tracking-wide truncate">{PLATFORM.name}</span>
               </Link>
               <nav className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
-                <Link href="/shuls" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
-                  Shuls
+                <Link href="/whos-in" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
+                  Who&rsquo;s in
                 </Link>
                 <Link href="/find" className="hidden sm:block text-cream/85 hover:text-gold-soft whitespace-nowrap">
                   My family
@@ -101,9 +101,8 @@ export default async function RootLayout({
                 </div>
                 <div className="flex flex-wrap justify-center gap-4">
                   <Link href="/join" className="underline underline-offset-2 hover:text-gold-soft">Sign up</Link>
-                  <Link href="/shuls" className="underline underline-offset-2 hover:text-gold-soft">Shuls</Link>
+                  <Link href="/whos-in" className="underline underline-offset-2 hover:text-gold-soft">Who&rsquo;s in</Link>
                   <Link href="/find" className="underline underline-offset-2 hover:text-gold-soft">My family</Link>
-                  <Link href="/start" className="underline underline-offset-2 hover:text-gold-soft">Run your shul&rsquo;s own site</Link>
                   <a href={`mailto:${PLATFORM.contactEmail}`} className="underline underline-offset-2 hover:text-gold-soft">Contact</a>
                 </div>
               </div>

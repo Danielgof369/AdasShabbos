@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/Logo";
 import { currentShul, unknownSubdomain, rootBaseUrl, ROOT_DOMAIN } from "@/lib/tenant";
 import { listDirectoryShuls, listCities } from "@/lib/directory";
+import { getNationalMenu } from "@/lib/individuals";
 import { whyParagraphs, announcementOf, pluralWeeks } from "@/lib/copy";
 import { PLATFORM } from "@/lib/platform";
 import JoinNudge from "@/components/JoinNudge";
@@ -60,8 +61,8 @@ export default async function Home() {
   if (!shul) {
     const missing = await unknownSubdomain();
     if (missing) return <UnclaimedShul slug={missing} />;
-    const [stats, shuls, cities, season] = await Promise.all([getNationalStats(), listDirectoryShuls(), listCities(), getSeason()]);
-    return <NationalHome stats={stats} shuls={shuls} cities={cities} seasonLabel={season.label} />;
+    const [stats, shuls, cities, season, menu] = await Promise.all([getNationalStats(), listDirectoryShuls(), listCities(), getSeason(), getNationalMenu()]);
+    return <NationalHome stats={stats} shuls={shuls} cities={cities} seasonLabel={season.label} menu={menu} />;
   }
   if (!shul.approved && !(await isAdmin(shul))) return <PendingApproval shul={shul} />;
 

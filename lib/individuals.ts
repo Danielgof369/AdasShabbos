@@ -1,3 +1,5 @@
+import { memo } from "@/lib/memo";
+import type { SuggestionOption } from "@/lib/types";
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { PLATFORM, utcOffsetOn } from "@/lib/platform";
@@ -42,3 +44,13 @@ export async function getIndividualsShul(): Promise<Shul> {
 export function isIndividuals(shul: Pick<Shul, "slug">): boolean {
   return shul.slug === INDIVIDUALS_SLUG;
 }
+
+/** The commitment menu people pick from at signup (shown on the home page too). */
+export const getNationalMenu = memo("menu", 60_000, async (): Promise<SuggestionOption[]> => {
+  const shul = await getIndividualsShul();
+  return prisma.suggestion.findMany({
+    where: { shulId: shul.id, active: true, tier: { not: "kehilla" } },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, title: true, detail: true, categories: true, tier: true },
+  });
+});

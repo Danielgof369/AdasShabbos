@@ -12,7 +12,7 @@ export const PLATFORM = {
   notifyEmail: process.env.PLATFORM_NOTIFY_EMAIL ?? "daniel@gflowsystems.com",
   origin: { shul: "Adas Torah", city: "Los Angeles", season: "Elul 5786" },
   /** Program partner shown beside the initiative's logo. */
-  partner: { name: "Kedushas Shabbos", logoLight: "/kedushas-shabbos.png", logoDark: "/kedushas-shabbos-white.png" },
+  partner: { name: "Kedushas Shabbos", url: "https://kedushasshabbos.com/", logoLight: "/kedushas-shabbos.png", logoDark: "/kedushas-shabbos-white.png" },
   /** Credit line in the national footer. */
   builder: { name: "SHFA.ai", url: process.env.BUILDER_URL ?? "https://shfa.ai" },
   /** Fallback season for shuls families add from the national signup;

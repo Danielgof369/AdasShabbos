@@ -35,18 +35,26 @@ export default function NationalHome({ stats, shuls, seasonLabel }: { stats: Nat
         <div className="glow-dot absolute -bottom-40 -left-20 h-96 w-96 rounded-full opacity-60" />
         <div className="mx-auto max-w-5xl px-4 py-14 sm:py-20 relative">
           <div className="flex items-center gap-6 sm:gap-8 mb-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ksi-logo-white.png" alt={PLATFORM.name} className="h-32 sm:h-44 w-auto" />
+            <div className="flex flex-col items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ksi-mark-white.png" alt="" className="h-28 sm:h-36 w-auto" />
+              <span className="font-display tracking-[0.2em] uppercase text-base sm:text-lg text-cream">
+                {PLATFORM.name}
+              </span>
+            </div>
             {partnerDark && (
               <>
                 <span className="h-24 sm:h-32 w-px bg-cream/25" aria-hidden />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={partnerDark} alt={PLATFORM.partner.name} className="h-28 sm:h-40 w-auto" />
+                <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" title={PLATFORM.partner.name}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={partnerDark} alt={PLATFORM.partner.name} className="h-28 sm:h-40 w-auto" />
+                </a>
               </>
             )}
           </div>
           <p className="text-gold-soft font-display tracking-[0.25em] uppercase text-sm mb-5">
-            {seasonLabel} &middot; in partnership with {PLATFORM.partner.name}
+            {seasonLabel} &middot; in partnership with{" "}
+            <a href={PLATFORM.partner.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-gold">{PLATFORM.partner.name}</a>
           </p>
           <h1 className="font-display text-4xl sm:text-6xl leading-[1.08] mb-6 max-w-3xl" style={{ textWrap: "balance" }}>
             One small thing for Shabbos.

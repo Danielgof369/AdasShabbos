@@ -136,7 +136,7 @@ export async function runFridayForShul(shul: Shul, now = new Date()): Promise<Re
       );
     }
 
-    outbox.push({ household: h, message: { subject: `Shabbos is coming — week ${week} of ${campaign.name}`, text: lines.join("\n") }, kind: FRIDAY_KIND, week });
+    outbox.push({ household: h, message: { subject: `${fam(h)}Shabbos is coming (week ${week} of ${campaign.weeks})`, text: lines.join("\n") }, kind: FRIDAY_KIND, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;
@@ -144,6 +144,11 @@ export async function runFridayForShul(shul: Shul, now = new Date()): Promise<Re
   }
 
   return { week, sent, skipped, details };
+}
+
+/** "Gofman family: " prefix so each subject reads as a personal note, not a blast. */
+function fam(h: { familyName: string | null }): string {
+  return h.familyName ? `${h.familyName} family: ` : "";
 }
 
 /** Families with a goal this week that isn't confirmed yet. */
@@ -214,7 +219,7 @@ export async function runCheckinForShul(shul: Shul, now = new Date()): Promise<R
     ]
       .filter((l, i, a) => l !== "" || a[i - 1] !== "")
       .join("\n");
-    outbox.push({ household: h, message: { subject: `How did Shabbos go? Check in — week ${week}`, text }, kind: CHECKIN_KIND, week });
+    outbox.push({ household: h, message: { subject: `${fam(h)}how did Shabbos go? (week ${week})`, text }, kind: CHECKIN_KIND, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;
@@ -290,7 +295,7 @@ export async function runCheckinDripForShul(shul: Shul, now = new Date()): Promi
       ``,
       `Your family page: ${link}`,
     ].join("\n");
-    outbox.push({ household: h, message: { subject: `Still time to check in — week ${week} of ${campaign.name}`, text }, kind: DRIP_KIND, week });
+    outbox.push({ household: h, message: { subject: `${fam(h)}still time to check in (week ${week})`, text }, kind: DRIP_KIND, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;
@@ -436,7 +441,7 @@ export async function runErevShabbosForShul(shul: Shul): Promise<ReminderRunResu
     lines.push("");
     lines.push(`Wishing you and your family a beautiful, meaningful Shabbos! ${link}`);
 
-    outbox.push({ household: h, message: { subject: `Good Erev Shabbos! 🕯️`, text: lines.join("\n") }, kind: kind, week });
+    outbox.push({ household: h, message: { subject: `${fam(h)}Good Erev Shabbos`, text: lines.join("\n") }, kind: kind, week });
   }
   for (const [id, channel] of await sendBatch(outbox)) {
     sent++;

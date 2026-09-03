@@ -36,6 +36,7 @@ export async function sendWelcome(
     .filter((x) => x.goals.length)
     .map(({ m, goals }) => `• ${m.name}: ${goals.map((g) => g.suggestion?.title ?? g.customTitle).filter(Boolean).join(" + ")}`);
   const familyName = household.familyName ?? "Your";
+  const subject = household.familyName ? `${household.familyName} family: your ${campaign.name} page` : `Your ${campaign.name} page`;
   const text = [
     `Welcome to ${campaign.name}! 🕯️`,
     ``,
@@ -53,6 +54,6 @@ export async function sendWelcome(
       : []),
   ].join("\n");
 
-  const channel = await sendToHousehold(household, { subject: `Your family page — ${campaign.name}`, text }, "welcome", week);
+  const channel = await sendToHousehold(household, { subject, text }, "welcome", week);
   return channel ? "sent" : "failed";
 }

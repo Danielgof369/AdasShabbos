@@ -25,7 +25,8 @@ already connected) → Project name **`kabalos-shabbos`**.
 | `PLATFORM_ADMIN_PASSWORD` | anything strong — opens `/platform` |
 | `AUTH_SECRET` | 32+ random characters |
 | `CRON_SECRET` | 32+ random characters |
-| `DB_SETUP_ON_BUILD` | `1` |
+| `DB_SETUP_ON_BUILD` | `1` — pushes schema changes on every deploy (additive only); leave it on |
+| `SEED_ON_BUILD` | `1` for the very first deploy only, then remove |
 | `SEED_ADMIN_PASSWORD` | anything — the (unlisted) Adas shul's admin password |
 | `PLATFORM_NOTIFY_EMAIL` | your email (optional) |
 
@@ -46,7 +47,7 @@ Subdomain sites (`adas.…`) don't resolve on a `vercel.app` address; they
 work once the real domain and wildcard are attached.
 
 ## 4. Turning the demo into production later
-1. Remove `DB_SETUP_ON_BUILD`; delete any test shuls at `/platform` (or
+1. Remove `SEED_ON_BUILD` (keep `DB_SETUP_ON_BUILD`); delete any test shuls at `/platform` (or
    reset the Neon database and run `deploy/PLATFORM-MIGRATION.sql` to bring
    the Adas data over — see `deploy/PLATFORM.md`).
 2. Add the domain and wildcard, Resend key, and the rest of the env vars

@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Vercel build. When DB_SETUP_ON_BUILD=1 (a demo/staging project with its own
-# empty database), push the schema and seed before building so the project
-# is usable the moment the deploy finishes. Never set that flag on the
-# production project: the live database is migrated by hand (deploy/*.sql).
+# Vercel build. With DB_SETUP_ON_BUILD=1 the schema is pushed to the
+# database before building, so new columns land with the code that uses
+# them. It is additive-only: a change that would drop data fails the build
+# instead of applying (run such changes by hand with deploy/*.sql).
+# SEED_ON_BUILD=1 additionally runs the seed (fresh databases only).
 set -euo pipefail
 if [ "${DB_SETUP_ON_BUILD:-}" = "1" ]; then
-  echo "DB_SETUP_ON_BUILD=1: pushing schema and seeding"
-  npx prisma db push --accept-data-loss --skip-generate
-  npx prisma db seed
+  echo "DB_SETUP_ON_BUILD=1: pushing schema"
+  npx prisma db push --skip-generate
+  if [ "${SEED_ON_BUILD:-}" = "1" ]; then
+    echo "SEED_ON_BUILD=1: seeding"
+    npx prisma db seed
+  fi
 fi
 npx next build

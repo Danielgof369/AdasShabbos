@@ -170,6 +170,27 @@ export async function drawRaffleAction(formData: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * Hand a week's prize to a specific family — e.g. the drawn winner donates
+ * it. Replaces the saved winner; the homepage banner and blast follow.
+ */
+export async function setRaffleWinnerAction(formData: FormData) {
+  await requireAdmin();
+  const week = Number(formData.get("week"));
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!Number.isInteger(week) || week < 1 || week > 12 || !householdId) return;
+  const household = await prisma.household.findUnique({ where: { id: householdId } });
+  if (!household) return;
+  const familyName = household.familyName ?? household.token;
+  await prisma.raffleDraw.upsert({
+    where: { week },
+    update: { householdId: household.id, familyName, drawnAt: new Date() },
+    create: { week, householdId: household.id, familyName },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
 export async function mergeHouseholdsAction(formData: FormData) {
   await requireAdmin();
   const keepId = String(formData.get("keepId") ?? "");

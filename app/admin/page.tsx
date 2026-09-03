@@ -27,6 +27,7 @@ import {
   sendErevShabbosAction,
   sendRaffleDeadlineAction,
   drawRaffleAction,
+  setRaffleWinnerAction,
   cleanupAbandonedAction,
   emailAuditAction,
 } from "./actions";
@@ -115,6 +116,9 @@ export default async function AdminPage() {
       winner: draws.find((d) => d.week === w) ?? null,
     }))
   );
+  const familiesByName = [...households]
+    .filter((h) => h.members.length > 0)
+    .sort((a, b) => (a.familyName ?? a.token).localeCompare(b.familyName ?? b.token));
   const latestWin = draws.find((d) => d.week === doneWeek);
   const winnerBlast = latestWin
     ? [
@@ -311,6 +315,38 @@ export default async function AdminPage() {
                     )}
                   </form>
                 )}
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-ink-soft hover:text-navy">
+                    Hand this week&rsquo;s prize to a specific family (e.g. the winner donated it)
+                  </summary>
+                  <form
+                    action={setRaffleWinnerAction}
+                    className="mt-2 flex flex-col sm:flex-row gap-2 sm:items-center"
+                  >
+                    <input type="hidden" name="week" value={rw.week} />
+                    <select
+                      name="householdId"
+                      required
+                      defaultValue=""
+                      className="rounded-lg border border-parchment bg-cream px-3 py-2 text-sm flex-1"
+                    >
+                      <option value="" disabled>
+                        Choose a family…
+                      </option>
+                      {familiesByName.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.familyName ?? h.token} ({h.members.map((m) => m.name).join(", ")})
+                        </option>
+                      ))}
+                    </select>
+                    <ConfirmSubmit
+                      message={`Set this family as the week ${rw.week} winner? The homepage banner and the announcement text will change to them.`}
+                      className={btnCls}
+                    >
+                      Set as winner
+                    </ConfirmSubmit>
+                  </form>
+                </details>
               </div>
             ))}
             {winnerBlast && (

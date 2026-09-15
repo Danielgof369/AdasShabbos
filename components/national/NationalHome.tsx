@@ -5,6 +5,7 @@ import { PLATFORM } from "@/lib/platform";
 import type { NationalStats } from "@/lib/stats";
 import ShulDirectory, { type DirectoryShul } from "@/components/national/ShulDirectory";
 import CitiesBoard from "@/components/national/CitiesBoard";
+import ParticipantBanner from "@/components/national/ParticipantBanner";
 import type { CityRow } from "@/lib/directory";
 import type { SuggestionOption } from "@/lib/types";
 
@@ -90,6 +91,7 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel, menu }
               <Stat value={stats.cities.toLocaleString()} label={stats.cities === 1 ? "city" : "cities"} />
             </div>
           )}
+          <ParticipantBanner />
         </div>
       </section>
 

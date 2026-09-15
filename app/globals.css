@@ -61,3 +61,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .avatar-wrap, .avatar-pop { animation: none; }
 }
+
+/* Participating-shul logo strip: the list is rendered twice, so moving
+   exactly half its width and snapping back reads as an endless loop. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee { animation: marquee 40s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+}

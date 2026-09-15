@@ -23,14 +23,18 @@ function Stat({ value, label }: { value: number | string; label: string }) {
   );
 }
 
-/** Split the menu into the three columns people recognise from the signup form. */
+/** Split the menu into the four columns people recognise from the signup form. */
 function menuGroups(menu: SuggestionOption[]) {
-  const isChild = (o: SuggestionOption) => o.categories.split(",").map((c) => c.trim()).includes("child") && !o.categories.includes("both") && !o.categories.includes("adult");
+  const words = (o: SuggestionOption) => new Set(o.categories.split(",").map((c) => c.trim().toLowerCase()));
   const family = menu.filter((o) => o.tier === "family");
-  const children = menu.filter((o) => o.tier !== "family" && isChild(o));
-  const adults = menu.filter((o) => o.tier !== "family" && !isChild(o));
+  const rest = menu.filter((o) => o.tier !== "family");
+  const children = rest.filter((o) => { const w = words(o); return w.has("child") || w.has("kid") || w.has("boy") || w.has("girl"); });
+  const adults = rest.filter((o) => !children.includes(o));
+  const men = adults.filter((o) => { const w = words(o); return !w.has("woman") || w.has("man") || w.has("adult") || w.has("both"); });
+  const women = adults.filter((o) => { const w = words(o); return !w.has("man") || w.has("woman") || w.has("adult") || w.has("both"); });
   return [
-    { title: "For yourself", blurb: "One person, one kabbalah, every Shabbos.", items: adults },
+    { title: "For men", blurb: "One person, one kabbalah, every Shabbos.", items: men },
+    { title: "For women", blurb: "Your own kabbalah, every Shabbos.", items: women },
     { title: "For children", blurb: "Real jobs with real kavod Shabbos.", items: children },
     { title: "For the whole family", blurb: "Taken on together, at the table.", items: family },
   ].filter((g) => g.items.length > 0);
@@ -106,7 +110,7 @@ export default function NationalHome({ stats, shuls, cities, seasonLabel, menu }
               Each person picks one or more of these at signup and holds it every Shabbos of {seasonLabel}.
               Small on purpose: the point is every week, not once.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
               {menuGroups(menu).map((g) => (
                 <div key={g.title} className="bg-cream rounded-2xl border border-parchment p-5">
                   <h3 className="font-display text-xl text-navy mb-1">{g.title}</h3>

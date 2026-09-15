@@ -35,15 +35,29 @@ export function parseAudience(csv: string): Audience {
   return "adult";
 }
 
-/** Does a suggestion apply to a member of this category? */
+/**
+ * Does a suggestion apply to one specific category? Understands the
+ * gendered lists ("man", "woman", "boy", "girl") as well as the broad
+ * words ("adult", "child", "both").
+ */
+export function appliesTo(csv: string, category: Category): boolean {
+  const parts = new Set(csv.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+  if (parts.has("both") || parts.has("all")) return true;
+  if (parts.has(category)) return true;
+  if (isChildCategory(category)) return parts.has("child") || parts.has("kid");
+  if (parts.has("adult")) return true;
+  if (parts.has("man") || parts.has("woman")) return false; // the other gender's list
+  // Nothing adult-specific named: it's an adult item unless it's child-only.
+  return !(parts.has("child") || parts.has("kid") || parts.has("boy") || parts.has("girl"));
+}
+
+/** Does a suggestion apply to a member? Pass the category when known;
+ * a boolean (isChild) is the older, coarser call. */
 export function audienceMatches(csv: string, memberCategory: Category | boolean): boolean {
+  if (typeof memberCategory !== "boolean") return appliesTo(csv, memberCategory);
   const audience = parseAudience(csv);
   if (audience === "both") return true;
-  const isChild =
-    typeof memberCategory === "boolean"
-      ? memberCategory
-      : isChildCategory(memberCategory);
-  return audience === (isChild ? "child" : "adult");
+  return audience === (memberCategory ? "child" : "adult");
 }
 
 /**

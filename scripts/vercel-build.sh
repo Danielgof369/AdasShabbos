@@ -14,5 +14,7 @@ if [ "${DB_SETUP_ON_BUILD:-}" = "1" ]; then
   fi
   # Bounded one-off data fixes (see each script's header).
   npx tsx scripts/cleanup-test-signups.ts
+  # Keep the national commitment list in step with the template.
+  npx tsx scripts/sync-menu.ts
 fi
 npx next build

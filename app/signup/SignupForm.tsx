@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { audienceMatches, type Category } from "@/lib/categories";
+import { audienceMatches, isChildCategory, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import Avatar from "@/components/Avatar";
-import { randomAvatar, AVATAR_BY_ID } from "@/lib/avatars";
+import { randomAvatar, randomAvatarIn, AVATAR_BY_ID } from "@/lib/avatars";
 import { CITY_GROUPS } from "@/lib/cities";
 import type { SuggestionOption } from "@/lib/types";
 
@@ -310,26 +310,26 @@ export default function SignupForm({
           />
 
           <div className="flex flex-wrap gap-2 mb-4">
-            {(["adult", "child"] as const).map((a) => (
+            {(["man", "woman", "boy", "girl"] as const).map((c) => (
               <button
-                key={a}
+                key={c}
                 type="button"
                 onClick={() =>
                   updatePerson(i, {
-                    audience: a,
-                    ...(() => { const r = randomAvatar(a); return { avatar: r.group, avatarId: r.id }; })(),
+                    audience: isChildCategory(c) ? "child" : "adult",
+                    ...(() => { const r = randomAvatarIn(c); return { avatar: c, avatarId: r.id }; })(),
                     suggestionIds: [],
                     useCustom: false,
                     customTitle: "",
                   })
                 }
-                className={`rounded-full px-5 py-2 text-sm border transition-colors capitalize ${
-                  p.audience === a
+                className={`rounded-full px-5 py-2 text-sm border transition-colors ${
+                  p.avatar === c
                     ? "border-gold bg-gold-pale text-navy-deep font-semibold"
                     : "border-parchment bg-cream hover:border-gold-soft"
                 }`}
               >
-                {a}
+                {CATEGORY_LABELS[c]}
               </button>
             ))}
           </div>
@@ -348,7 +348,7 @@ export default function SignupForm({
               <button
                 type="button"
                 onClick={() => {
-                  const r = randomAvatar(p.audience!, p.avatarId ?? undefined);
+                  const r = p.avatar ? randomAvatarIn(p.avatar, p.avatarId ?? undefined) : randomAvatar(p.audience!, p.avatarId ?? undefined);
                   updatePerson(i, { avatar: r.group, avatarId: r.id });
                 }}
                 className="rounded-lg border border-parchment bg-white px-3 py-2 text-sm hover:border-gold-soft transition-colors whitespace-nowrap"
@@ -367,7 +367,7 @@ export default function SignupForm({
               </p>
               {(() => {
                 const visible = suggestions.filter(
-                  (s) => (s.tier ?? "individual") !== "kehilla" && audienceMatches(s.categories, p.audience === "child")
+                  (s) => (s.tier ?? "individual") !== "kehilla" && audienceMatches(s.categories, p.avatar ?? p.audience === "child")
                 );
                 const groups: { key: string; label: string | null; items: typeof visible }[] = [
                   { key: "individual", label: visible.some((s) => s.tier === "family") ? "For yourself" : null, items: visible.filter((s) => (s.tier ?? "individual") !== "family") },
@@ -440,7 +440,7 @@ export default function SignupForm({
             </>
           ) : (
             <p className="text-sm text-ink-soft italic">
-              Choose Adult or Child to see their commitment options.
+              Choose Man, Woman, Boy or Girl to see their kabbalos.
             </p>
           )}
         </section>

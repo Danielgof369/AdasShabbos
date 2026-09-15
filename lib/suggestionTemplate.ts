@@ -12,23 +12,40 @@ const t = (tier: T["tier"], categories: string, title: string, detail: string, u
   ({ tier, categories, title, detail, unitLabel, unitValue, active });
 
 export const SUGGESTION_TEMPLATE: T[] = [
-  // ---- Individual ----
-  t("individual", "adult", "Learn from a sefer on Kedushas Shabbos, 20 minutes a week", "A fixed 20-minute seder each week in a sefer on the kedushah of Shabbos.", "minutes learned about Shabbos", 20),
-  t("individual", "adult", "Learn Hilchos Shabbos, 20 minutes a week", "One siman or one melachah at a time — a fixed seder, not a one-off.", "minutes of Hilchos Shabbos learned", 20),
-  t("individual", "adult", "Set a weekly chavrusa in Hilchos Shabbos or Kedushas Shabbos", "A chavrusa keeps the seder happening week after week.", "chavrusa sessions held"),
-  t("individual", "both", "Be in shul on time for Pesukei D'Zimrah", "Start Shabbos morning davening from the beginning.", "on-time Pesukei D'Zimrah arrivals"),
-  t("individual", "both", "Daven Kabbalas Shabbos with extra focus", "Welcome Shabbos with real kavanah, from Lechu Neranena through Lecha Dodi.", "Kabbalas Shabbos davened with kavanah"),
-  t("individual", "both", "Pause and concentrate on the words of “LaKeil Asher Shavas”", "Slow down for that one paragraph every Shabbos morning.", "LaKeil Asher Shavas said with kavanah"),
-  t("individual", "both", "No talking during at least one complete tefillah on Shabbos", "Pick one — Kabbalas Shabbos, Shacharis, Mincha — and keep it fully quiet.", "tefillos without talking"),
-  t("individual", "both", "Attend Mincha on Shabbos and Maariv on Motzaei Shabbos", "Bookend Shabbos in shul.", "Mincha & Maariv attended"),
-  t("individual", "both", "Stay in Bigdei Shabbos the entire Shabbos", "From candle lighting to Havdalah, at home and out.", "Shabbosos in full bigdei Shabbos"),
-  t("individual", "adult", "Buy or prepare one special item each week lichvod Shabbos", "A dish, a flower, a treat — something that exists only because it's Shabbos.", "special items lichvod Shabbos"),
-  // Children (individual)
+  // ---- For men ----
+  t("individual", "man", "Learn from a sefer on Kedushas Shabbos, 20 minutes a week", "A fixed 20-minute seder each week in a sefer on the kedushah of Shabbos: Nefesh Shimshon, Shabbos Malkesa, Yoma D’nishmasa, Matnas Chaim and the like.", "minutes learned about Shabbos", 20),
+  t("individual", "man", "Learn Hilchos Shabbos, 20 minutes a week", "One siman or one melachah at a time — a fixed seder, not a one-off.", "minutes of Hilchos Shabbos learned", 20),
+  t("individual", "man", "Set a weekly chavrusa in Hilchos Shabbos or Kedushas Shabbos", "A chavrusa keeps the seder happening week after week.", "chavrusa sessions held"),
+  t("individual", "man", "Be in shul on time for Pesukei D'Zimrah", "Start Shabbos morning davening from the beginning.", "on-time Pesukei D'Zimrah arrivals"),
+  t("individual", "man", "Daven Kabbalas Shabbos with extra focus", "Welcome Shabbos with real kavanah, from Lechu Neranena through Lecha Dodi.", "Kabbalas Shabbos davened with kavanah"),
+  t("individual", "man", "Pause and concentrate on the words of “LaKeil Asher Shavas”", "Slow down for that one paragraph every Shabbos morning.", "LaKeil Asher Shavas said with kavanah"),
+  t("individual", "man", "No talking during at least one complete tefillah on Shabbos", "Pick one — Kabbalas Shabbos, Shacharis, Mincha — and keep it fully quiet.", "tefillos kept fully quiet"),
+  t("individual", "man", "Attend Mincha on Shabbos and Maariv on Motzaei Shabbos", "Bookend Shabbos in shul.", "Mincha & Maariv attended"),
+  t("individual", "adult", "Stay in Bigdei Shabbos the entire Shabbos", "From candle lighting to Havdalah, at home and out.", "Shabbosos in full bigdei Shabbos"),
+  t("individual", "man", "Buy or prepare one special item each week lichvod Shabbos", "A dish, a flower, a treat — something that exists only because it's Shabbos.", "special items lichvod Shabbos"),
+  t("individual", "man", "Be mekabel Shabbos five minutes earlier", "Add to your Shabbos on Erev Shabbos: accept Shabbos five minutes earlier than you normally do.", "minutes added to Shabbos", 5),
+  t("individual", "man", "Wait five more minutes before Havdalah", "Add to your Shabbos on Motzaei Shabbos: wait five additional minutes before making Havdalah.", "minutes added to Shabbos", 5),
+  // ---- For women ----
+  t("individual", "woman", "Buy and wear clothing specifically designated lichvod Shabbos", "Something in the closet that is only for Shabbos.", "Shabbos outfits worn lichvod Shabbos"),
+  t("individual", "woman", "Be fully dressed in Bigdei Shabbos by candle lighting", "Ready, dressed b'kavod, before the candles are lit.", "Shabbosos welcomed fully dressed"),
+  t("individual", "woman", "Light 10 minutes before candle lighting", "Bring Shabbos in early, with room to breathe.", "minutes added to Shabbos", 10),
+  t("individual", "woman", "Learn Nefesh Shimshon Shabbos Kodesh", "From R’ Shimshon Pincus zt”l — on your own, with a family member, or with a friend.", "Nefesh Shimshon sessions learned"),
+  t("individual", "woman", "Eat Shalosh Seudos", "Wash and eat a k’zayis every week.", "Shalosh Seudos eaten"),
+  t("individual", "woman", "Enhance your Shalosh Seudos", "Put thought and effort into upgrading your Shalosh Seudos — the way you serve it or the foods you serve.", "Shalosh Seudos enhanced"),
+  t("individual", "woman", "Eat Melaveh Malka", "Escort the Shabbos Queen out properly on Motzaei Shabbos.", "Melaveh Malkahs eaten"),
+  t("individual", "woman", "Uplift someone else’s Shabbos", "Call someone you wouldn’t have to, to wish them a Gut Shabbos.", "Gut Shabbos calls made"),
+  t("individual", "woman", "Become more fluent in hilchos Shabbos", "Learn hilchos Shabbos every week at the same time, even for a few minutes, to raise your level of Shmiras Shabbos.", "Hilchos Shabbos sessions learned"),
+  t("individual", "woman", "Daven Kabbalas Shabbos", "Daven all or some of Kabbalas Shabbos weekly.", "Kabbalas Shabbos davened"),
+  t("individual", "woman", "Anticipate the coming of Shabbos from early on in the week", "Start preparing something for Shabbos early in the week, lichvod Shabbos.", "Shabbos preparations started early"),
+  t("individual", "woman", "Light candles five minutes earlier", "Add to your Shabbos on Erev Shabbos: light five minutes earlier than you normally do.", "minutes added to Shabbos", 5),
+  t("individual", "woman", "Wait five more minutes before Baruch Hamavdil", "Add to your Shabbos on Motzaei Shabbos: wait five additional minutes before saying Baruch Hamavdil.", "minutes added to Shabbos", 5),
+  // ---- For children ----
   t("individual", "child", "Spend 15 minutes helping prepare for Shabbos", "Set the table, help in the kitchen — 15 minutes of kavod Shabbos.", "minutes children helped for Shabbos", 15),
   t("individual", "child", "Sing zemiros at the table", "Bring the niggunim — lead or join the zemiros at the seudah.", "tables singing zemiros"),
-  t("individual", "child", "Come to shul and stay through Kabbalas Shabbos", "Be there from Lecha Dodi through the end.", "Kabbalas Shabbos davened in shul"),
+  t("individual", "child", "Come to shul and stay through Kabbalas Shabbos and really daven", "Be there from Lecha Dodi through the end, without leaving to go play.", "Kabbalas Shabbos davened in shul"),
   t("individual", "child", "Clear the table after each seudah", "A simple, real way to give kavod to Shabbos.", "tables cleared"),
-  // ---- Family ----
+  t("individual", "child", "Bentch with Retzei", "Elevate your bentching: bentch with kavanah, looking in the bentcher.", "bentchings with kavanah"),
+  // ---- For the whole family ----
   t("family", "adult", "Learn two halachos together at a Shabbos seudah", "A few minutes of practical Hilchos Shabbos at the table, every week.", "halachos learned at the table", 2),
   t("family", "adult", "Sing at least one zemer at every seudah", "Warmth and simchah at the table — one zemer, every seudah.", "seudos with zemiros", 3),
   t("family", "adult", "Eat Melaveh Malkah together every week", "Escort the Shabbos Queen out properly on Motzaei Shabbos.", "Melaveh Malkahs eaten"),
@@ -37,7 +54,7 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("family", "adult", "Keep the seudah tables covered all Shabbos", "Tablecloths stay on from Friday night through Havdalah.", "tables kept covered"),
   t("family", "adult", "Set aside time on Shabbos to learn with the children", "A fixed slot, even ten minutes, every Shabbos.", "learning sessions with children"),
   t("family", "adult", "Share a halachah, story, or Shabbos thought at the seudah", "Turn the seudah into a conversation about Shabbos.", "Shabbos thoughts shared at the table"),
-  // ---- Kehilla ----
+  // ---- Kehilla (shul-wide; off by default) ----
   t("kehilla", "both", "A weekly vaad on a sefer that strengthens Kedushas Shabbos", "A standing group learning one sefer together.", "vaadim held", 1, false),
   t("kehilla", "both", "A regular Hilchos Shabbos shiur in shul", "Weekly, on the calendar, with a rav.", "shiurim given", 1, false),
   t("kehilla", "both", "On time for Pesukei D'Zimrah — as a kehilla", "The whole shul commits to a full Shacharis.", "kehilla commitments", 1, false),
@@ -48,6 +65,12 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("kehilla", "both", "A meaningful communal shalosh seudos", "Zemiros, a dvar Torah, and the whole shul at the table.", "kehilla commitments", 1, false),
   t("kehilla", "both", "Encourage Bigdei Shabbos the entire Shabbos", "A kehilla-wide standard for the whole day.", "kehilla commitments", 1, false),
 ].map((x, i) => ({ ...x, sortOrder: i + 1 }));
+
+/** Titles that changed wording; the sync keeps the same row so families'
+ * existing goals follow the new title. old → new. */
+export const SUGGESTION_RENAMES: Record<string, string> = {
+  "Come to shul and stay through Kabbalas Shabbos": "Come to shul and stay through Kabbalas Shabbos and really daven",
+};
 
 /** The original Adas Torah Elul list (kept for the Adas seed). */
 export const ADAS_TEMPLATE = [

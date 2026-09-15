@@ -6,5 +6,5 @@
 export type Participant = { name: string; logo: string; url?: string };
 
 export const PARTICIPANTS: Participant[] = [
-  // { name: "Adas Torah", logo: "/shul-logos/adas-torah.png", url: "https://shabboswithadas.com" },
+  { name: "K'hal Hampshire Hills, Jackson NJ", logo: "/shul-logos/khal-hampshire-hills-white.png" },
 ];

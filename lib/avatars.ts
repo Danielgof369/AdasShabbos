@@ -60,6 +60,12 @@ export function randomAvatar(audience: "adult" | "child", exclude?: string): Ava
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+/** A random avatar from one category (man / woman / boy / girl). */
+export function randomAvatarIn(category: Category, exclude?: string): AvatarDef {
+  const pool = AVATARS.filter((a) => a.group === category && a.id !== exclude);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /** Legacy members (no stored avatar) get a stable pick from their category. */
 export function fallbackAvatar(category: Category, seed = ""): AvatarDef {
   const pool = AVATARS.filter((a) => a.group === category);

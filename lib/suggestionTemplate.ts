@@ -28,7 +28,6 @@ export const SUGGESTION_TEMPLATE: T[] = [
   // ---- For women ----
   t("individual", "woman", "Buy and wear clothing specifically designated lichvod Shabbos", "Something in the closet that is only for Shabbos.", "Shabbos outfits worn lichvod Shabbos"),
   t("individual", "woman", "Be fully dressed in Bigdei Shabbos by candle lighting", "Ready, dressed b'kavod, before the candles are lit.", "Shabbosos welcomed fully dressed"),
-  t("individual", "woman", "Light 10 minutes before candle lighting", "Bring Shabbos in early, with room to breathe.", "minutes added to Shabbos", 10),
   t("individual", "woman", "Learn Nefesh Shimshon Shabbos Kodesh", "From R’ Shimshon Pincus zt”l — on your own, with a family member, or with a friend.", "Nefesh Shimshon sessions learned"),
   t("individual", "woman", "Eat Shalosh Seudos", "Wash and eat a k’zayis every week.", "Shalosh Seudos eaten"),
   t("individual", "woman", "Enhance your Shalosh Seudos", "Put thought and effort into upgrading your Shalosh Seudos — the way you serve it or the foods you serve.", "Shalosh Seudos enhanced"),

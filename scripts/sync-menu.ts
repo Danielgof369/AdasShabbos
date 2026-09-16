@@ -12,7 +12,14 @@ import { PARTICIPANTS } from "../lib/participants";
  */
 const prisma = new PrismaClient();
 
-async function syncShul(shulId: string, label: string) {
+async function syncShul(shulId: string, label: string, hideKehilla: string[] = []) {
+  // Kehilla items this shul opted out of: never created, removed if present
+  // (kehilla rows carry no family goals, so a plain delete is safe).
+  if (hideKehilla.length) {
+    const gone = await prisma.suggestion.deleteMany({ where: { shulId, tier: "kehilla", title: { in: hideKehilla } } });
+    if (gone.count) console.log(`sync-menu [${label}]: removed ${gone.count} kehilla item(s) this shul opted out of`);
+  }
+  const template = SUGGESTION_TEMPLATE.filter((t) => !(t.tier === "kehilla" && hideKehilla.includes(t.title)));
   const existing = await prisma.suggestion.findMany({ where: { shulId } });
   const used = new Set<string>();
   const pick = (title: string, categories: string) => {
@@ -26,7 +33,7 @@ async function syncShul(shulId: string, label: string) {
     );
   };
   let updated = 0, created = 0, deactivated = 0;
-  for (const t of SUGGESTION_TEMPLATE) {
+  for (const t of template) {
     const data = { title: t.title, detail: t.detail, unitLabel: t.unitLabel, unitValue: t.unitValue, categories: t.categories, tier: t.tier, sortOrder: t.sortOrder, active: t.active };
     const row = pick(t.title, t.categories);
     if (row) {
@@ -56,6 +63,6 @@ async function main() {
     console.log("sync-menu: no national pool yet, nothing to do");
     return;
   }
-  for (const s of shuls) await syncShul(s.id, s.slug);
+  for (const s of shuls) await syncShul(s.id, s.slug, PARTICIPANTS.find((p) => p.slug === s.slug)?.hideKehilla ?? []);
 }
 main().finally(() => prisma.$disconnect());

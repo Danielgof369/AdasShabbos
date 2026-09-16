@@ -12,10 +12,7 @@ const t = (tier: T["tier"], categories: string, title: string, detail: string, u
   ({ tier, categories, title, detail, unitLabel, unitValue, active });
 
 export const SUGGESTION_TEMPLATE: T[] = [
-  // ---- For men (in the order of the week: weekday learning, Erev Shabbos, Shabbos, Motzaei Shabbos) ----
-  t("individual", "man", "Learn from a sefer on Kedushas Shabbos, 20 minutes a week", "A fixed 20-minute seder each week in a sefer on the kedushah of Shabbos, i.e. Nefesh Shimshon, Shabbos Malkesa, Yoma D’nishmasa, Matnas Chaim.", "minutes learned about Shabbos", 20),
-  t("individual", "man", "Learn Hilchos Shabbos, 20 minutes a week", "One siman or one melachah at a time — a fixed seder, not a one-off.", "minutes of Hilchos Shabbos learned", 20),
-  t("individual", "man", "Set a weekly chavrusa in Hilchos Shabbos or Kedushas Shabbos", "A chavrusa keeps the seder happening week after week.", "chavrusa sessions held"),
+  // ---- For men (Erev Shabbos → Motzaei Shabbos; weekly seders last) ----
   t("individual", "man", "Buy or prepare one special item each week lichvod Shabbos", "A dish, a flower, a treat — something that exists only because it's Shabbos.", "special items lichvod Shabbos"),
   t("individual", "man", "Add to your Shabbos on Erev Shabbos", "Be mekabel Shabbos five minutes earlier than you normally do.", "minutes added to Shabbos", 5),
   t("individual", "man", "Daven Kabbalas Shabbos with hislavus", "Welcome Shabbos with real kavanah, from Lechu Neranena through Lecha Dodi.", "Kabbalas Shabbos davened with kavanah"),
@@ -23,10 +20,11 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("individual", "man", "Be in shul on time for Pesukei D'Zimrah, with hislavus", "Start Shabbos morning davening from the beginning.", "on-time Pesukei D'Zimrah arrivals"),
   t("individual", "man", "Pause and concentrate on the words of “LaKeil Asher Shavas”", "Slow down for that one paragraph every Shabbos morning.", "LaKeil Asher Shavas said with kavanah"),
   t("individual", "man", "Add to your Shabbos on Motzaei Shabbos", "Wait five additional minutes before making Havdalah.", "minutes added to Shabbos", 5),
+  t("individual", "man", "Learn from a sefer on Kedushas Shabbos, 20 minutes a week", "A fixed 20-minute seder each week in a sefer on the kedushah of Shabbos, i.e. Nefesh Shimshon, Shabbos Malkesa, Yoma D’nishmasa, Matnas Chaim.", "minutes learned about Shabbos", 20),
+  t("individual", "man", "Learn Hilchos Shabbos, 20 minutes a week", "One siman or one melachah at a time — a fixed seder, not a one-off.", "minutes of Hilchos Shabbos learned", 20),
+  t("individual", "man", "Set a weekly chavrusa in Hilchos Shabbos or Kedushas Shabbos", "A chavrusa keeps the seder happening week after week.", "chavrusa sessions held"),
   // ---- For women ----
   t("individual", "woman", "Anticipate the coming of Shabbos from early on in the week", "Start preparing something for Shabbos early in the week, lichvod Shabbos.", "Shabbos preparations started early"),
-  t("individual", "woman", "Become more fluent in hilchos Shabbos", "Learn hilchos Shabbos every week at the same time, even for a few minutes, to raise your level of Shmiras Shabbos.", "Hilchos Shabbos sessions learned"),
-  t("individual", "woman", "Learn Nefesh Shimshon Shabbos Kodesh", "From R’ Shimshon Pincus zt”l — on your own, with a family member, or with a friend.", "Nefesh Shimshon sessions learned"),
   t("individual", "woman", "Buy and wear clothing specifically designated lichvod Shabbos", "Something in the closet that is only for Shabbos.", "Shabbos outfits worn lichvod Shabbos"),
   t("individual", "woman", "Uplift someone else’s Shabbos", "Call someone you wouldn’t have to, to wish them a Gut Shabbos.", "Gut Shabbos calls made"),
   t("individual", "woman", "Be fully dressed in Bigdei Shabbos by candle lighting", "Ready, dressed b'kavod, before the candles are lit.", "Shabbosos welcomed fully dressed"),
@@ -37,6 +35,8 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("individual", "woman", "Enhance your Shalosh Seudos", "Put thought and effort into upgrading your Shalosh Seudos — the way you serve it or the foods you serve.", "Shalosh Seudos enhanced"),
   t("individual", "woman", "Add to your Shabbos on Motzaei Shabbos", "Wait five additional minutes before saying Baruch Hamavdil.", "minutes added to Shabbos", 5),
   t("individual", "woman", "Eat Melaveh Malka", "Escort the Shabbos Queen out properly on Motzaei Shabbos.", "Melaveh Malkahs eaten"),
+  t("individual", "woman", "Become more fluent in hilchos Shabbos", "Learn hilchos Shabbos every week at the same time, even for a few minutes, to raise your level of Shmiras Shabbos.", "Hilchos Shabbos sessions learned"),
+  t("individual", "woman", "Learn Nefesh Shimshon Shabbos Kodesh", "From R’ Shimshon Pincus zt”l — on your own, with a family member, or with a friend.", "Nefesh Shimshon sessions learned"),
   // ---- For children ----
   t("individual", "child", "Spend 15 minutes helping prepare for Shabbos", "Set the table, help in the kitchen — 15 minutes of kavod Shabbos.", "minutes children helped for Shabbos", 15),
   t("individual", "child", "Come to shul and stay through Kabbalas Shabbos and really daven", "Be there from Lecha Dodi through the end, without leaving to go play.", "Kabbalas Shabbos davened in shul"),

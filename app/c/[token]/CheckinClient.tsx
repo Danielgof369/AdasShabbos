@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Avatar from "@/components/Avatar";
 import { audienceMatches } from "@/lib/categories";
 import type { MemberGoalView, SuggestionOption } from "@/lib/types";
 
@@ -235,14 +234,6 @@ export default function CheckinClient({
           className="bg-white rounded-2xl border border-parchment shadow-sm p-5 sm:p-6"
         >
           <div className="flex items-start gap-4 mb-4">
-            <Avatar
-              category={m.category}
-              avatar={m.avatar}
-              seed={m.memberId}
-              title
-              celebrating={!!celebrating[m.memberId]}
-              className="h-20 w-auto shrink-0"
-            />
             <div className="min-w-0">
               <h2 className="font-display text-xl text-navy flex items-center gap-2 flex-wrap">
                 {m.name}

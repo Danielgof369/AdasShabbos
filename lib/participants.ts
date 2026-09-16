@@ -15,6 +15,8 @@ export type Participant = {
   /** Lower-case fragments; a note containing any of them (ignoring spaces
    * and punctuation) belongs to this shul. */
   noteMatch: string[];
+  /** Kehilla kabbolos this shul doesn't want listed on its page (titles). */
+  hideKehilla?: string[];
 };
 
 export const PARTICIPANTS: Participant[] = [
@@ -26,6 +28,11 @@ export const PARTICIPANTS: Participant[] = [
     logo: "/shul-logos/khal-hampshire-hills-white.png",
     logoLight: "/shul-logos/khal-hampshire-hills.png",
     noteMatch: ["hampshirehills", "khalhh", "khh"],
+    hideKehilla: [
+      "Stronger attendance at Mincha on Shabbos and Motzaei Shabbos Maariv",
+      "Encourage Bigdei Shabbos the entire Shabbos",
+      "A meaningful communal shalosh seudos",
+    ],
   },
 ];
 

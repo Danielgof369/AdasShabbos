@@ -5,9 +5,8 @@ import { campaignOf, activeWeek, shabbosOfWeek, formatShabbosDate } from "@/lib/
 import { currentShul, rootBaseUrl, shulBaseUrl } from "@/lib/tenant";
 import { getCampaignStats } from "@/lib/stats";
 import { familyStreakFromGoals } from "@/lib/household";
-import { memberCategory } from "@/lib/categories";
 import { PLATFORM, TIERS } from "@/lib/platform";
-import Avatar from "@/components/Avatar";
+import KabbalosMenu from "@/components/national/KabbalosMenu";
 
 /** A shul's page on the national site: who's there, what they've done.
  * Rendered at /<slug> and /s/<slug>. */
@@ -18,7 +17,7 @@ export default async function ShulPage({ slug }: { slug: string }) {
 
   const campaign = campaignOf(shul);
   const week = activeWeek(campaign);
-  const [stats, households, kehilla] = await Promise.all([
+  const [stats, households, kehilla, menu] = await Promise.all([
     getCampaignStats(campaign, week),
     prisma.household.findMany({
       where: { shulId: shul.id, familyName: { not: null } },
@@ -28,13 +27,17 @@ export default async function ShulPage({ slug }: { slug: string }) {
       where: { shulId: shul.id, tier: "kehilla" },
       orderBy: { sortOrder: "asc" },
     }),
+    prisma.suggestion.findMany({
+      where: { shulId: shul.id, active: true, tier: { not: "kehilla" } },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, title: true, detail: true, categories: true, tier: true },
+    }),
   ]);
   const families = households
     .filter((h) => h.members.length > 0)
     .map((h) => ({
       id: h.id,
       name: h.familyName as string,
-      categories: h.members.map((m) => ({ category: memberCategory(m), avatar: m.avatar, seed: m.id })),
       people: h.members.length,
       streak: familyStreakFromGoals(campaign, h.members),
     }))
@@ -100,6 +103,13 @@ export default async function ShulPage({ slug }: { slug: string }) {
         </section>
       )}
 
+      <KabbalosMenu
+        menu={menu}
+        seasonLabel={campaign.seasonLabel}
+        joinHref={joinHref}
+        intro={`Each person at ${shul.name} picks one or more of these at signup and holds it every Shabbos of ${campaign.seasonLabel}.`}
+      />
+
       <section className="mx-auto max-w-4xl px-4 py-12">
         <h2 className="font-display text-3xl text-navy mb-2 text-center">Who&rsquo;s here</h2>
         <p className="text-ink-soft text-center mb-8">
@@ -111,13 +121,8 @@ export default async function ShulPage({ slug }: { slug: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {families.map((f) => (
               <div key={f.id} className="bg-white rounded-2xl border border-parchment shadow-sm px-5 py-4">
-                <div className="flex -space-x-2 mb-2">
-                  {f.categories.slice(0, 6).map((c, i) => (
-                    <Avatar key={i} category={c.category} avatar={c.avatar} seed={c.seed} className="h-11 w-auto" title />
-                  ))}
-                  {f.categories.length > 6 && <span className="self-end text-xs text-ink-soft pl-2">+{f.categories.length - 6}</span>}
-                </div>
                 <div className="font-display text-lg text-navy">The {f.name} Family</div>
+                <div className="text-xs text-ink-soft">{f.people} {f.people === 1 ? "person" : "people"}</div>
                 {f.streak > 0 ? (
                   <span className="inline-block text-xs bg-gold-pale text-navy-deep rounded-full px-2.5 py-0.5 mt-1 font-medium">🔥 {f.streak}-week streak</span>
                 ) : (

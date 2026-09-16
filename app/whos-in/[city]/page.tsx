@@ -6,9 +6,7 @@ import { currentShul, rootBaseUrl } from "@/lib/tenant";
 import { findCity } from "@/lib/directory";
 import { getIndividualsShul } from "@/lib/individuals";
 import { familyStreakFromGoals, goalTitle } from "@/lib/household";
-import { memberCategory } from "@/lib/categories";
 import { PLATFORM } from "@/lib/platform";
-import Avatar from "@/components/Avatar";
 import { plural } from "@/components/national/CitiesBoard";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +47,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
       id: h.id,
       name: h.familyName?.trim() || null,
       shul: h.shulNote?.trim() || (h.shul.listed ? h.shul.name : null),
-      people: h.members.map((m) => ({ category: memberCategory(m), avatar: m.avatar, seed: m.id })),
+      people: h.members.length,
       streak: familyStreakFromGoals(campaign, h.members),
       thisWeek: h.members.flatMap((m) => m.goals.filter((g) => g.week === week).map(goalTitle)),
     }))
@@ -142,13 +140,8 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {families.map((f) => (
             <div key={f.id} className="bg-white rounded-2xl border border-parchment shadow-sm px-5 py-4">
-              <div className="flex -space-x-2 mb-2">
-                {f.people.slice(0, 6).map((c, i) => (
-                  <Avatar key={i} category={c.category} avatar={c.avatar} seed={c.seed} className="h-11 w-auto" title />
-                ))}
-                {f.people.length > 6 && <span className="self-end text-xs text-ink-soft pl-2">+{f.people.length - 6}</span>}
-              </div>
-              <div className="font-display text-lg text-navy">{f.name ? `The ${f.name} Family` : `A family of ${f.people.length}`}</div>
+              <div className="font-display text-lg text-navy">{f.name ? `The ${f.name} Family` : `A family of ${f.people}`}</div>
+              <div className="text-xs text-ink-soft">{f.people} {f.people === 1 ? "person" : "people"}</div>
               {f.shul && <div className="text-xs text-ink-soft truncate" title={f.shul}>{f.shul}</div>}
               {f.streak > 0 ? (
                 <span className="inline-block text-xs bg-gold-pale text-navy-deep rounded-full px-2.5 py-0.5 mt-1.5 font-medium">🔥 {f.streak}-week streak</span>

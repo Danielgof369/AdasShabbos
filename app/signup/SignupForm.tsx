@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { audienceMatches, isChildCategory, CATEGORY_LABELS, type Category } from "@/lib/categories";
-import Avatar from "@/components/Avatar";
-import { randomAvatar, randomAvatarIn, AVATAR_BY_ID } from "@/lib/avatars";
+import { randomAvatarIn } from "@/lib/avatars";
 import { CITY_GROUPS } from "@/lib/cities";
 import type { SuggestionOption } from "@/lib/types";
 
@@ -333,30 +332,6 @@ export default function SignupForm({
               </button>
             ))}
           </div>
-
-          {p.audience && p.avatar && (
-            <div className="flex items-center gap-4 mb-4 rounded-xl border border-parchment bg-cream px-4 py-3">
-              <Avatar category={p.avatar} avatar={p.avatarId} className="h-16 w-auto" title />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-navy">
-                  {p.avatarId ? AVATAR_BY_ID.get(p.avatarId)?.name : "Their avatar"}
-                </p>
-                <p className="text-xs text-ink-soft">
-                  Dealt at random — externals don&rsquo;t matter here, what you take on does.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const r = p.avatar ? randomAvatarIn(p.avatar, p.avatarId ?? undefined) : randomAvatar(p.audience!, p.avatarId ?? undefined);
-                  updatePerson(i, { avatar: r.group, avatarId: r.id });
-                }}
-                className="rounded-lg border border-parchment bg-white px-3 py-2 text-sm hover:border-gold-soft transition-colors whitespace-nowrap"
-              >
-                🎲 Shuffle
-              </button>
-            </div>
-          )}
 
           {p.audience ? (
             <>

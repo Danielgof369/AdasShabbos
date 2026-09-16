@@ -6,7 +6,6 @@ import PendingApproval from "@/components/PendingApproval";
 import { isAdmin } from "@/lib/adminAuth";
 import { familyStreakFromGoals } from "@/lib/household";
 import { memberCategory } from "@/lib/categories";
-import Avatar from "@/components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -62,16 +61,6 @@ export default async function FamiliesPage() {
               key={f.id}
               className="bg-white rounded-2xl border border-parchment shadow-sm px-5 py-4"
             >
-              <div className="flex -space-x-2 mb-2">
-                {f.categories.slice(0, 6).map((c, i) => (
-                  <Avatar key={i} category={c.category} avatar={c.avatar} seed={c.seed} className="h-11 w-auto" title />
-                ))}
-                {f.categories.length > 6 && (
-                  <span className="self-end text-xs text-ink-soft pl-2">
-                    +{f.categories.length - 6}
-                  </span>
-                )}
-              </div>
               <div>
                 <div className="font-display text-lg text-navy">
                   The {f.name} Family

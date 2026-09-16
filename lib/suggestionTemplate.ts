@@ -18,9 +18,9 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("individual", "man", "Set a weekly chavrusa in Hilchos Shabbos or Kedushas Shabbos", "A chavrusa keeps the seder happening week after week.", "chavrusa sessions held"),
   t("individual", "man", "Buy or prepare one special item each week lichvod Shabbos", "A dish, a flower, a treat — something that exists only because it's Shabbos.", "special items lichvod Shabbos"),
   t("individual", "man", "Add to your Shabbos on Erev Shabbos", "Be mekabel Shabbos five minutes earlier than you normally do.", "minutes added to Shabbos", 5),
-  t("individual", "man", "Daven Kabbalas Shabbos with hislahavus", "Welcome Shabbos with real kavanah, from Lechu Neranena through Lecha Dodi.", "Kabbalas Shabbos davened with kavanah"),
+  t("individual", "man", "Daven Kabbalas Shabbos with hislavus", "Welcome Shabbos with real kavanah, from Lechu Neranena through Lecha Dodi.", "Kabbalas Shabbos davened with kavanah"),
   t("individual", "man", "No talking during at least one complete tefillah on Shabbos", "Pick one — Kabbalas Shabbos, Shacharis, Mincha — and keep it fully quiet.", "tefillos kept fully quiet"),
-  t("individual", "man", "Be in shul on time for Pesukei D'Zimrah, with hislahavus", "Start Shabbos morning davening from the beginning.", "on-time Pesukei D'Zimrah arrivals"),
+  t("individual", "man", "Be in shul on time for Pesukei D'Zimrah, with hislavus", "Start Shabbos morning davening from the beginning.", "on-time Pesukei D'Zimrah arrivals"),
   t("individual", "man", "Pause and concentrate on the words of “LaKeil Asher Shavas”", "Slow down for that one paragraph every Shabbos morning.", "LaKeil Asher Shavas said with kavanah"),
   t("individual", "man", "Add to your Shabbos on Motzaei Shabbos", "Wait five additional minutes before making Havdalah.", "minutes added to Shabbos", 5),
   // ---- For women ----
@@ -31,7 +31,7 @@ export const SUGGESTION_TEMPLATE: T[] = [
   t("individual", "woman", "Uplift someone else’s Shabbos", "Call someone you wouldn’t have to, to wish them a Gut Shabbos.", "Gut Shabbos calls made"),
   t("individual", "woman", "Be fully dressed in Bigdei Shabbos by candle lighting", "Ready, dressed b'kavod, before the candles are lit.", "Shabbosos welcomed fully dressed"),
   t("individual", "woman", "Add to your Shabbos on Erev Shabbos", "Light candles five minutes earlier than you normally do.", "minutes added to Shabbos", 5),
-  t("individual", "woman", "Daven Kabbalas Shabbos with hislahavus", "Daven all or some of Kabbalas Shabbos weekly.", "Kabbalas Shabbos davened"),
+  t("individual", "woman", "Daven Kabbalas Shabbos with hislavus", "Daven all or some of Kabbalas Shabbos weekly.", "Kabbalas Shabbos davened"),
   t("individual", "woman", "Stay in Bigdei Shabbos the entire Shabbos", "From candle lighting to Havdalah, at home and out.", "Shabbosos in full bigdei Shabbos"),
   t("individual", "woman", "Eat Shalosh Seudos", "Wash and eat a k’zayis every week.", "Shalosh Seudos eaten"),
   t("individual", "woman", "Enhance your Shalosh Seudos", "Put thought and effort into upgrading your Shalosh Seudos — the way you serve it or the foods you serve.", "Shalosh Seudos enhanced"),
@@ -72,9 +72,11 @@ export const SUGGESTION_RENAMES: Record<string, string> = {
   "Light candles five minutes earlier": "Add to your Shabbos on Erev Shabbos",
   "Wait five more minutes before Havdalah": "Add to your Shabbos on Motzaei Shabbos",
   "Wait five more minutes before Baruch Hamavdil": "Add to your Shabbos on Motzaei Shabbos",
-  "Daven Kabbalas Shabbos with extra focus": "Daven Kabbalas Shabbos with hislahavus",
-  "Daven Kabbalas Shabbos": "Daven Kabbalas Shabbos with hislahavus",
-  "Be in shul on time for Pesukei D'Zimrah": "Be in shul on time for Pesukei D'Zimrah, with hislahavus",
+  "Daven Kabbalas Shabbos with extra focus": "Daven Kabbalas Shabbos with hislavus",
+  "Daven Kabbalas Shabbos": "Daven Kabbalas Shabbos with hislavus",
+  "Daven Kabbalas Shabbos with hislahavus": "Daven Kabbalas Shabbos with hislavus",
+  "Be in shul on time for Pesukei D'Zimrah": "Be in shul on time for Pesukei D'Zimrah, with hislavus",
+  "Be in shul on time for Pesukei D'Zimrah, with hislahavus": "Be in shul on time for Pesukei D'Zimrah, with hislavus",
 };
 
 /** The original Adas Torah Elul list (kept for the Adas seed). */

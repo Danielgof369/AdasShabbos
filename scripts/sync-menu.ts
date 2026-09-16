@@ -1,45 +1,61 @@
 import { PrismaClient } from "@prisma/client";
 import { SUGGESTION_TEMPLATE, SUGGESTION_RENAMES } from "../lib/suggestionTemplate";
+import { PARTICIPANTS } from "../lib/participants";
 
 /**
- * Runs on deploy: brings the national signup pool's commitment list in
- * line with lib/suggestionTemplate.ts. Rows are matched by title (or by
- * an entry in SUGGESTION_RENAMES), updated in place so families' existing
- * goals keep pointing at the same row, new items are created, and items
- * no longer in the template are switched off rather than deleted.
+ * Runs on deploy: brings the commitment list of every national-pool shul
+ * (the individuals pool and each participating shul) in line with
+ * lib/suggestionTemplate.ts. Rows are matched by title + audience, then by
+ * title, then by a renamed title, and updated in place so families'
+ * existing goals keep pointing at the same row. New items are created;
+ * items no longer in the template are switched off, never deleted.
  */
 const prisma = new PrismaClient();
-async function main() {
-  const shul = await prisma.shul.findUnique({ where: { slug: "individuals" }, select: { id: true } });
-  if (!shul) {
-    console.log("sync-menu: no national pool yet, nothing to do");
-    return;
-  }
-  const existing = await prisma.suggestion.findMany({ where: { shulId: shul.id } });
-  const byTitle = new Map(existing.map((s) => [s.title, s]));
-  const seen = new Set<string>();
+
+async function syncShul(shulId: string, label: string) {
+  const existing = await prisma.suggestion.findMany({ where: { shulId } });
+  const used = new Set<string>();
+  const pick = (title: string, categories: string) => {
+    const free = existing.filter((s) => !used.has(s.id));
+    const renamedTo = (s: { title: string }) => SUGGESTION_RENAMES[s.title];
+    return (
+      free.find((s) => s.title === title && s.categories === categories) ??
+      free.find((s) => renamedTo(s) === title && s.categories === categories) ??
+      free.find((s) => s.title === title) ??
+      free.find((s) => renamedTo(s) === title)
+    );
+  };
   let updated = 0, created = 0, deactivated = 0;
   for (const t of SUGGESTION_TEMPLATE) {
-    const oldTitle = Object.entries(SUGGESTION_RENAMES).find(([, n]) => n === t.title)?.[0];
-    const row = byTitle.get(t.title) ?? (oldTitle ? byTitle.get(oldTitle) : undefined);
     const data = { title: t.title, detail: t.detail, unitLabel: t.unitLabel, unitValue: t.unitValue, categories: t.categories, tier: t.tier, sortOrder: t.sortOrder, active: t.active };
+    const row = pick(t.title, t.categories);
     if (row) {
       await prisma.suggestion.update({ where: { id: row.id }, data });
-      seen.add(row.id);
+      used.add(row.id);
       updated++;
     } else {
-      const made = await prisma.suggestion.create({ data: { ...data, shulId: shul.id } });
-      seen.add(made.id);
+      const made = await prisma.suggestion.create({ data: { ...data, shulId } });
+      used.add(made.id);
       created++;
     }
   }
   for (const s of existing) {
-    if (!seen.has(s.id) && s.active) {
+    if (!used.has(s.id) && s.active) {
       await prisma.suggestion.update({ where: { id: s.id }, data: { active: false } });
       deactivated++;
-      console.log(`sync-menu: switched off "${s.title}"`);
+      console.log(`sync-menu [${label}]: switched off "${s.title}"`);
     }
   }
-  console.log(`sync-menu: ${updated} updated, ${created} created, ${deactivated} switched off`);
+  console.log(`sync-menu [${label}]: ${updated} updated, ${created} created, ${deactivated} switched off`);
+}
+
+async function main() {
+  const slugs = ["individuals", ...PARTICIPANTS.map((p) => p.slug)];
+  const shuls = await prisma.shul.findMany({ where: { slug: { in: slugs }, hasSite: false }, select: { id: true, slug: true } });
+  if (shuls.length === 0) {
+    console.log("sync-menu: no national pool yet, nothing to do");
+    return;
+  }
+  for (const s of shuls) await syncShul(s.id, s.slug);
 }
 main().finally(() => prisma.$disconnect());

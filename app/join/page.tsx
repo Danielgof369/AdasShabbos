@@ -21,13 +21,18 @@ export const metadata = { title: `Sign up | ${PLATFORM.name}` };
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shul?: string; city?: string }>;
+  searchParams: Promise<{ shul?: string; city?: string; s?: string }>;
 }) {
   // On a shul's own site, signup lives at /signup.
   if (await currentShul()) redirect("/signup");
-  const { shul: prefill, city: cityPrefill } = await searchParams;
+  const { shul: prefill, city: cityPrefill, s: slug } = await searchParams;
 
-  const shul = await getIndividualsShul();
+  // A participating shul's own signup link (/join?s=khh) puts the family
+  // straight onto that shul's page; otherwise it's the national pool.
+  const own = slug
+    ? await prisma.shul.findFirst({ where: { slug, hasSite: false, approved: true, active: true, listed: true } })
+    : null;
+  const shul = own ?? (await getIndividualsShul());
   const campaign = campaignOf(shul);
   const suggestions = await prisma.suggestion.findMany({
     where: { shulId: shul.id, active: true, tier: { not: "kehilla" } },
@@ -40,21 +45,27 @@ export default async function JoinPage({
   return (
     <div className="mx-auto max-w-xl px-4 py-10">
       <p className="text-gold font-display tracking-widest uppercase text-sm mb-2">
-        <Link href="/" className="hover:underline">← {PLATFORM.name}</Link>
+        {own ? (
+          <Link href={`/${own.slug}`} className="hover:underline">← {own.name}</Link>
+        ) : (
+          <Link href="/" className="hover:underline">← {PLATFORM.name}</Link>
+        )}
       </p>
-      <h1 className="font-display text-3xl text-navy mb-2">Sign up your family</h1>
+      <h1 className="font-display text-3xl text-navy mb-2">{own ? `Sign up with ${own.name}` : "Sign up your family"}</h1>
       <p className="text-ink-soft mb-8">
         Sign up on your own or with your whole household — each person takes on one or more
         commitments and holds them for the {pluralWeeks(campaign.weeks)} of {campaign.seasonLabel}
-        {campaign.weeks > 1 ? <>, {first} through {last}</> : <> on {first}</>}. Tell us your city and
-        your shul below, and your family shows up on your shul&rsquo;s page once it&rsquo;s set up.
+        {campaign.weeks > 1 ? <>, {first} through {last}</> : <> on {first}</>}.{" "}
+        {own
+          ? <>Your family will appear on the {own.name} page and in the national count.</>
+          : <>Tell us your city and your shul below, and your family shows up on your shul&rsquo;s page once it&rsquo;s set up.</>}
       </p>
       <SignupForm
         suggestions={suggestions}
         charityName={campaign.charityName}
         pledge={campaign.pledgePerSignup}
         shulId={shul.id}
-        askShul
+        askShul={!own}
         defaultShulNote={prefill ?? ""}
         askCity
         defaultCity={cityPrefill && ALL_CITIES.has(cityPrefill) ? cityPrefill : ""}

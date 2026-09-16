@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PARTICIPANTS, type Participant } from "@/lib/participants";
 
 /**
@@ -12,7 +13,7 @@ export default function ParticipantBanner({ participants = PARTICIPANTS }: { par
   const Logo = ({ p }: { p: Participant }) => {
     // eslint-disable-next-line @next/next/no-img-element
     const img = <img src={p.logo} alt={p.name} title={p.name} className="max-h-16 sm:max-h-20 w-auto max-w-[260px] object-contain opacity-95 hover:opacity-100 transition-opacity" />;
-    return p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="shrink-0">{img}</a> : <span className="shrink-0">{img}</span>;
+    return <Link href={`/${p.slug}`} className="shrink-0">{img}</Link>;
   };
   return (
     <div className="mt-12">
@@ -25,7 +26,7 @@ export default function ParticipantBanner({ participants = PARTICIPANTS }: { par
           </>
         )}
         <div className={scroll ? "flex min-w-max items-center gap-10 marquee" : "flex flex-wrap items-center gap-10"}>
-          {items.map((p, i) => <Logo key={`${p.name}-${i}`} p={p} />)}
+          {items.map((p, i) => <Logo key={`${p.slug}-${i}`} p={p} />)}
         </div>
       </div>
     </div>

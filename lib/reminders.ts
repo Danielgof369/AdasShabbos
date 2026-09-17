@@ -10,6 +10,26 @@ import { sendBatch, type OutboundItem } from "@/lib/messaging";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Days the cron sends nothing (Yom Tov, chutz la'aretz). Tishrei 5787 by
+ * default; override with REMINDER_QUIET_DATES="YYYY-MM-DD,..." for later
+ * seasons. Shabbos itself is always quiet.
+ */
+export const QUIET_DATES = new Set(
+  (process.env.REMINDER_QUIET_DATES ??
+    "2026-09-12,2026-09-13,2026-09-21,2026-09-26,2026-09-27,2026-10-03,2026-10-04")
+    .split(",").map((d) => d.trim()).filter(Boolean)
+);
+
+/** Calendar date in a timezone, as YYYY-MM-DD. */
+export function dateIn(timezone: string, now = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  } catch {
+    return now.toISOString().slice(0, 10);
+  }
+}
+
 /** MessageLog kinds for the weekly cadence. */
 export const FRIDAY_KIND = "friday_reminder";
 export const CHECKIN_KIND = "checkin_reminder";
@@ -480,10 +500,11 @@ export function weekdayIn(timezone: string, now = new Date()): string {
  * shul's local weekday and its families' check-in state:
  *   Friday      → pre-Shabbos reminder (skips families already done this week;
  *                 carries a P.S. for anyone still unconfirmed from last week)
- *   Saturday    → nothing
- *   Monday      → first check-in reminder for the Shabbos just passed
- *   Sun–Thu     → drip to families still unconfirmed, at most every 2 days
- *                 since their last reminder, only after the Monday reminder
+ *   Shabbos / Yom Tov (QUIET_DATES) → nothing
+ *   Mon–Thu     → check-in reminder to anyone who hasn't had this week's
+ *                 (Monday, or the next open day after a Yom Tov Monday),
+ *                 then the every-two-days drip
+ *   Sunday      → drip only
  * `only` forces a single job regardless of weekday (ops / testing).
  */
 export async function runDailyReminders(now = new Date(), only?: DailyJob): Promise<ReminderRunResult & { jobs: string[] }> {
@@ -505,16 +526,20 @@ export async function runDailyReminders(now = new Date(), only?: DailyJob): Prom
       if (only === "drip") await run("drip", () => runCheckinDripForShul(shul, now));
       return agg;
     }
-    if (day === "Sat") {
-      agg.details.push("Shabbos — nothing sent");
+    if (day === "Sat" || QUIET_DATES.has(dateIn(shul.timezone, now))) {
+      agg.details.push("Shabbos / Yom Tov — nothing sent");
     } else if (day === "Fri") {
       await run("friday", () => runFridayForShul(shul, now));
-    } else if (day === "Mon") {
-      await run("checkin", () => runCheckinForShul(shul, now));
-    } else {
-      // Sun–Thu: the every-two-days drip (Wednesday, in practice, then the
-      // Friday email's P.S. picks up anyone still open).
+    } else if (day === "Sun") {
       await run("drip", () => runCheckinDripForShul(shul, now));
+    } else {
+      // Mon–Thu: the check-in reminder goes to whoever hasn't had this
+      // week's yet (normally that means Monday; after a quiet Monday it
+      // catches up on Tuesday), then the every-two-days drip.
+      const before = agg.sent;
+      await run("checkin", () => runCheckinForShul(shul, now));
+      // Never a drip on top of a check-in reminder sent the same morning.
+      if (agg.sent === before) await run("drip", () => runCheckinDripForShul(shul, now));
     }
     return agg;
   });

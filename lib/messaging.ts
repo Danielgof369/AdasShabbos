@@ -40,25 +40,36 @@ async function sendTwilio(to: string, body: string, whatsapp: boolean): Promise<
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** One email through Resend. Resend allows ~10 requests/second; on a
+ * 429 (or a transient 5xx) this waits and retries a few times rather
+ * than dropping the family's reminder. */
 async function sendResend(to: string[], subject: string, text: string): Promise<void> {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "Elul Shabbos Project <onboarding@resend.dev>",
-      to,
-      subject,
-      text,
-      ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
-    }),
-  });
-  if (!res.ok) {
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM ?? "Elul Shabbos Project <onboarding@resend.dev>",
+        to,
+        subject,
+        text,
+        ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
+      }),
+    });
+    if (res.ok) return;
     const detail = await res.text().catch(() => "");
-    throw new Error(`Resend ${res.status}: ${detail.slice(0, 300)}`);
+    lastErr = new Error(`Resend ${res.status}: ${detail.slice(0, 300)}`);
+    if (res.status !== 429 && res.status < 500) throw lastErr;
+    const retryAfter = Number(res.headers.get("retry-after"));
+    await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1200 * (attempt + 1));
   }
+  throw lastErr ?? new Error("Resend: gave up");
 }
 
 /**

@@ -30,7 +30,12 @@ async function inBatches<T>(
   job: (item: T) => Promise<void>
 ): Promise<void> {
   for (let i = 0; i < items.length; i += size) {
+    const started = Date.now();
     await Promise.allSettled(items.slice(i, i + size).map(job));
+    // Resend allows ~10 requests/second: keep each batch of `size` to at
+    // least a second so a big shul never trips the limit.
+    const elapsed = Date.now() - started;
+    if (i + size < items.length && elapsed < 1100) await new Promise((r) => setTimeout(r, 1100 - elapsed));
   }
 }
 

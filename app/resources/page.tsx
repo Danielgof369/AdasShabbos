@@ -16,7 +16,7 @@ export default function ResourcesPage() {
 
       <div className="grid grid-cols-1 gap-5">
         <a
-          href="/dvar-halacha-pineapple-kugel.pdf"
+          href="/dvar-halacha-alexa-teshuva.pdf"
           target="_blank"
           className="block bg-white rounded-2xl border border-gold/50 shadow-sm p-6 hover:border-gold transition-colors"
         >
@@ -24,7 +24,34 @@ export default function ResourcesPage() {
             <div className="text-4xl shrink-0">📖</div>
             <div>
               <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">
-                Dvar Halacha · New this week
+                Dvar Halacha · New for Shabbos Shuva
+              </p>
+              <h2 className="font-display text-xl text-navy mb-1">
+                What Alexa Can Teach Us About Teshuva
+              </h2>
+              <p className="text-ink-soft text-sm mb-1">by Rabbi Yisroel Casen</p>
+              <p className="text-ink-soft text-sm">
+                Why a voice command to Alexa counts as your own act on Shabbos
+                — from Rav Moshe, through a Gemara about shouting at an animal,
+                to why teshuva needs vidui to become real.
+              </p>
+              <p className="text-navy text-sm font-semibold underline underline-offset-2 mt-2">
+                Download the PDF →
+              </p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/dvar-halacha-pineapple-kugel.pdf"
+          target="_blank"
+          className="block bg-white rounded-2xl border border-parchment shadow-sm p-6 hover:border-gold-soft transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="text-4xl shrink-0">📖</div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">
+                Dvar Halacha
               </p>
               <h2 className="font-display text-xl text-navy mb-1">Pineapple Kugel</h2>
               <p className="text-ink-soft text-sm mb-1">by Rabbi Yisroel Casen</p>
@@ -49,7 +76,7 @@ export default function ResourcesPage() {
             <div className="text-4xl shrink-0">📖</div>
             <div>
               <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">
-                Dvar Halacha · Last week
+                Dvar Halacha
               </p>
               <h2 className="font-display text-xl text-navy mb-1">
                 The Broken Water Heater

@@ -6,12 +6,12 @@ import { useEffect, useState } from "react";
 // the id keys the shown-once-per-device memory, so a new id re-arms the
 // popup for every visitor.
 const DVAR = {
-  id: "pineapple-kugel",
-  title: "Pineapple Kugel",
+  id: "alexa-teshuva",
+  title: "What Alexa Can Teach Us About Teshuva",
   author: "Rabbi Yisroel Casen",
   blurb:
-    "Picking the pineapple out of the kugel to save for dessert — eating, or Borer? A machlokes haPoskim for your table this week.",
-  pdf: "/dvar-halacha-pineapple-kugel.pdf",
+    "Why is a voice command to Alexa your own maaseh on Shabbos — and what does that tell us about why teshuva needs vidui? For your Shabbos Shuva table.",
+  pdf: "/dvar-halacha-alexa-teshuva.pdf",
 };
 
 const DVAR_SEEN_KEY = `dvarHalachaPopup:${DVAR.id}`;

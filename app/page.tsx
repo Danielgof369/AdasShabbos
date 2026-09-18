@@ -4,6 +4,7 @@ import {
   getCampaign,
   activeWeek,
   shabbosOfWeek,
+  checkinWindowOpen,
   formatShabbosDate,
   weekNumber,
 } from "@/lib/campaign";
@@ -36,11 +37,8 @@ export default async function Home() {
   const checkinHref = myToken ? `/c/${encodeURIComponent(myToken)}` : "/find";
 
   // Is a check-in window open (last Shabbos still accepting check-ins)?
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const lastWeek = lastShabbosWeek(campaign);
-  const checkinOpen =
-    lastWeek >= 1 &&
-    Date.now() - shabbosOfWeek(campaign, lastWeek).getTime() <= 8 * DAY_MS;
+  const checkinOpen = lastWeek >= 1 && checkinWindowOpen(campaign, lastWeek);
   const lastLabel = lastWeek >= 1 ? formatShabbosDate(shabbosOfWeek(campaign, lastWeek)) : "";
 
   // Known family with check-ins still waiting? Make it personal.

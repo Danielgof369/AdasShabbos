@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   getCampaign,
   shabbosOfWeek,
+  checkinWindowOpen,
   formatShabbosDate,
 } from "@/lib/campaign";
 import { lastShabbosWeek, nextShabbosWeek, goalTitle } from "@/lib/household";
@@ -86,7 +87,7 @@ export async function runThursdayReminders(): Promise<ReminderRunResult> {
     const prevWeek = week - 1;
     const prevUnchecked =
       prevWeek >= 1 &&
-      Date.now() - shabbosOfWeek(campaign, prevWeek).getTime() <= 8 * DAY_MS &&
+      checkinWindowOpen(campaign, prevWeek) &&
       h.members.some((m) => m.goals.some((g) => g.week === prevWeek && !g.checkedInAt));
 
     const link = `${baseUrl()}/c/${h.token}`;
@@ -146,7 +147,7 @@ export async function runCheckinReminders(): Promise<ReminderRunResult> {
   const daysSince = Math.floor(
     (Date.now() - shabbosOfWeek(campaign, week).getTime()) / DAY_MS
   );
-  if (daysSince > 8) {
+  if (!checkinWindowOpen(campaign, week)) {
     return { week, sent: 0, skipped: 0, details: ["Check-in window has closed."] };
   }
   const wave = daysSince <= 2 ? 1 : daysSince <= 4 ? 2 : 3;

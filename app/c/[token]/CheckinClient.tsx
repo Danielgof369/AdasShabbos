@@ -267,18 +267,18 @@ export default function CheckinClient({
             </div>
           )}
 
-          {m.pending && (
-            <div className="mb-4 rounded-xl border border-navy/15 bg-cream p-4">
+          {m.pendingWeeks.map((pending) => (
+            <div key={pending.week} className="mb-4 rounded-xl border border-navy/15 bg-cream p-4">
               <p className="text-xs uppercase tracking-wide text-ink-soft mb-1">
-                Week {m.pending.week} · Shabbos {m.pending.shabbosLabel}
+                Week {pending.week} · Shabbos {pending.shabbosLabel}
               </p>
               <p className="text-xs text-ink-soft mb-3">
-                {m.pending.late
+                {pending.late
                   ? "The streak window has closed — but check in anyway, it still counts toward the shul-wide totals."
                   : "Check in by Monday night to keep the streak."}
               </p>
               <div className="space-y-2">
-                {m.pending.items.map((item) => (
+                {pending.items.map((item) => (
                   <div key={item.goalId} className="flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-navy">{item.title}</span>
                     {item.done ? (
@@ -297,7 +297,7 @@ export default function CheckinClient({
                 ))}
               </div>
             </div>
-          )}
+          ))}
 
           {adjusting[m.memberId] ? (
             <div className="rounded-xl border border-gold/40 bg-white p-4">
@@ -339,7 +339,7 @@ export default function CheckinClient({
               />
             </div>
           ) : (
-            !m.pending && (
+            m.pendingWeeks.length === 0 && (
               <p className="text-sm text-ink-soft">
                 The campaign has wrapped up — thank you for being part of it!
               </p>

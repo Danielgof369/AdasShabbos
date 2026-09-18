@@ -13,6 +13,13 @@ export type PendingItem = {
   done: boolean;
 };
 
+export type PendingWeek = {
+  week: number;
+  shabbosLabel: string;
+  late: boolean;
+  items: PendingItem[];
+};
+
 export type MemberGoalView = {
   memberId: string;
   name: string;
@@ -25,13 +32,8 @@ export type MemberGoalView = {
   /** Current suggestion ids (for pre-selecting the adjust picker). */
   currentSuggestionIds: string[];
   currentCustomTitle: string | null;
-  /** Week awaiting check-ins (its Shabbos has passed). */
-  pending: {
-    week: number;
-    shabbosLabel: string;
-    late: boolean;
-    items: PendingItem[];
-  } | null;
+  /** Past weeks still awaiting check-ins, most recent first. */
+  pendingWeeks: PendingWeek[];
   /** The upcoming Shabbos and what they're doing. */
   upcoming: {
     week: number;

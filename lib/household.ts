@@ -3,12 +3,11 @@ import {
   CampaignInfo,
   shabbosOfWeek,
   checkinDeadline,
+  checkinWindowOpen,
   formatShabbosDate,
 } from "@/lib/campaign";
 import { memberCategory, isChildCategory } from "@/lib/categories";
-import type { MemberGoalView } from "@/lib/types";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+import type { MemberGoalView, PendingWeek } from "@/lib/types";
 
 export function goalTitle(goal: {
   customTitle: string | null;
@@ -77,31 +76,29 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       }
       if (w > lastWeek) return "set";
       // A past week stays "open" (not missed) while late check-ins are
-      // still being accepted — same grace as the pending card.
-      const age = now.getTime() - shabbosOfWeek(campaign, w).getTime();
-      return age <= 8 * DAY_MS ? "set" : "missed";
+      // still being accepted — same grace as the pending cards.
+      return checkinWindowOpen(campaign, w, now) ? "set" : "missed";
     };
 
-    // Pending: most recent past week with any unchecked goal, ~8 day grace.
-    let pending: MemberGoalView["pending"] = null;
+    // Pending: every past week with an unchecked goal whose late window is
+    // still open, most recent first. (Weeks can overlap after a Yom Tov gap.)
+    const pendingWeeks: PendingWeek[] = [];
     for (let w = lastWeek; w >= 1; w--) {
       const goals = byWeek.get(w) ?? [];
       if (goals.length === 0) continue;
+      if (!goals.some((g) => !g.checkedInAt)) continue;
+      if (!checkinWindowOpen(campaign, w, now)) continue;
       const shabbos = shabbosOfWeek(campaign, w);
-      const age = now.getTime() - shabbos.getTime();
-      if (goals.some((g) => !g.checkedInAt) && age <= 8 * DAY_MS) {
-        pending = {
-          week: w,
-          shabbosLabel: formatShabbosDate(shabbos),
-          late: now.getTime() > checkinDeadline(campaign, w).getTime(),
-          items: goals.map((g) => ({
-            goalId: g.id,
-            title: goalTitle(g),
-            done: !!g.checkedInAt,
-          })),
-        };
-      }
-      break; // only the most recent past week matters
+      pendingWeeks.push({
+        week: w,
+        shabbosLabel: formatShabbosDate(shabbos),
+        late: now.getTime() > checkinDeadline(campaign, w).getTime(),
+        items: goals.map((g) => ({
+          goalId: g.id,
+          title: goalTitle(g),
+          done: !!g.checkedInAt,
+        })),
+      });
     }
 
     // Upcoming + current commitment set (from the latest week with goals)
@@ -140,7 +137,7 @@ export async function getHouseholdView(token: string, campaign: CampaignInfo) {
       currentCustomTitle:
         (upcomingGoals.length ? upcomingGoals : currentGoals).find((g) => !g.suggestionId)
           ?.customTitle ?? null,
-      pending,
+      pendingWeeks,
       upcoming:
         upcomingGoals.length > 0
           ? {

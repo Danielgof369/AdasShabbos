@@ -81,6 +81,25 @@ export function checkinDeadline(campaign: CampaignInfo, week: number): Date {
   return new Date(shabbos.getTime() + 3 * DAY_MS);
 }
 
+/**
+ * How long a week keeps accepting (late) check-ins: through 8 days after the
+ * NEXT campaign Shabbos, so a week missed over a Yom Tov gap can still be
+ * reported once the family is back; the final week gets 14 days.
+ */
+export function checkinWindowEnd(campaign: CampaignInfo, week: number): Date {
+  const isLast = week >= SHABBOS_DATES.length;
+  const anchor = shabbosOfWeek(campaign, isLast ? week : week + 1);
+  return new Date(anchor.getTime() + (isLast ? 14 : 8) * DAY_MS);
+}
+
+/** Whether a week's Shabbos has arrived and its check-in window is still open. */
+export function checkinWindowOpen(campaign: CampaignInfo, week: number, now = new Date()): boolean {
+  return (
+    now.getTime() >= shabbosOfWeek(campaign, week).getTime() &&
+    now.getTime() <= checkinWindowEnd(campaign, week).getTime()
+  );
+}
+
 export function formatShabbosDate(d: Date): string {
   return d.toLocaleDateString("en-US", {
     month: "long",
